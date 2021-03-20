@@ -2,6 +2,9 @@
 
 
 
+## status
+> Development Stage
+<!--
 #Put all data in data folder - each dataset has to be in the form:
 
 Name: Sequence: Target
@@ -42,4 +45,4 @@ print(data)
 scaler = StandardScaler()
 # transform data
 scaled = scaler.fit_transform(data)
-print(scaled)
+print(scaled) -->
