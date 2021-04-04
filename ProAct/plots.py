@@ -2,12 +2,13 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-from globals import *
+
+from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
 
 def plot_reg(Y_true, Y_pred, r2):
 
     fig, ax = plt.subplots(figsize=(8, 8))
-    ax = sns.regplot(Y_true,Y_pred,  marker="+", truncate=False,fit_reg=True)
+    ax = sns.regplot(x=Y_true,y=Y_pred,  marker="+", truncate=False,fit_reg=True)
     r2_annotation = 'R2: {:.3f} '.format(r2)
     ax.text(0.15, 0.92, r2_annotation, ha="left", va="top", fontsize=15, color="green", fontweight="bold",transform=ax.transAxes)
     plt.xlabel('Predicted Value')

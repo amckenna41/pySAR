@@ -1,59 +1,368 @@
 
+#########################################################################
+###                         ProtSAR                                   ###
+#########################################################################
+
 import pandas as pd
 import numpy as np
-from aaindex import *
-from utils import *
-from tests.test_aaindex import *
-from model import *
-from proteinSpectra import *
-from evaluate import *
-from plots import *
-from descriptors import *
+import datetime, time
 import argparse
 import itertools
+import pickle
+import yaml
+import io
+import os
 from difflib import get_close_matches
-#1.) Dataset path and name passed as parameter to class - __init__ func
-#2.) Import dataset and seqeunces into dataframe
-#3.) Pre-processing all sequences
-#4.) Import AAIndex Class
-#5.) Exit class initialisation process
-#6.) Class func to calcualte AAIndex def calculate_aai(index):
-#7.) Class func to calculate descriptors def calcualte_descriptor(desc)
-#8.) If AAI and Descriptors applied, concat function to concatenate features
-#9.) Class func to build predictve model from accumulated features
-#10.) Class func to plot and output results
-# - Create config file that contains all the parameters etc , pass this into function
+import json
+
+from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+from aaindex import  AAIndex
+from model import Model
+from proDSP import ProDSP
+from evaluate import Evaluate
+import utils as utils
+from plots import plot_reg
+import descriptors as descriptors
+
+####Add StanardScaler after every AAIndex encoding and before model building####
+
 class ProAct():
 
-    def __init__(self,dataset,activity,seq_col='sequence'):
+    def __init__(self,data_json=None,dataset="",seq_col="sequence", activity="",aa_indices="", window="hamming", filter="",spectrum="",
+                    descriptors="",algorithm="",parameters={}, test_split=0.2):
 
         self.dataset = dataset
         self.seq_col = seq_col
         self.activity = activity
+        self.window = window
+        self.filter = filter
+        self.spectrum = spectrum
+        self.aa_indices = aa_indices
+        self.descriptors = descriptors
+        self.algorithm = algorithm
+        self.parameters = parameters
+        self.test_split = test_split
+        self.using_aa_indices = False
+        self.using_desc_features = False
 
-        using_aa_features = False
-        using_desc_features = False
+        self.data = self.read_data(data_json)
 
-        if (os.path.isfile(dataset)):
+        self.num_seqs = len(self.data[self.seq_col])
+        self.seq_len = len(self.data[self.seq_col][0])
+
+        self.preprocessing()
+
+        self.model = Model(algorithm=self.algorithm, parameters=self.parameters, test_split=self.test_split)
+
+        utils.create_output_dir()
+
+    def read_data(self, data_json):
+
+        if data_json!="" and data_json!=None:
+
+             self.dataset, self.seq_col, self.activity, self.aa_indices, self.window, \
+             self.filter, self.spectrum, self.descriptors, self.algorithm, \
+             self.parameters, self.test_split = utils.parse_json(data_json)
+
+        if self.aa_indices!="":
+            self.using_aa_features = True
+        if self.descriptors!="":
+            self.using_desc_features = True
+
+        dataset_file = os.path.join(DATA_DIR,self.dataset)
+
+        if (os.path.isfile(dataset_file)):
             try:
-                self.data = pd.read_csv(self.dataset, sep=",", header=0)
-
-    #   self.data['activity'].fillna(0,inplace=True)    #fill with 0 any missing acitivty values
-
+                data = pd.read_csv(dataset_file, sep=",", header=0)
+                return data
             except IOError as e:
                 print('Error opening dataset file: ',dataset)
         else:
-            print('Dataset file not in directory')
-            return
+            raise IOError('File not found in directory: {}'.format(dataset_file))
 
-        #pre-processing
-        invalid_seq = valid_sequence(self.get_seqs())
-        assert invalid_seq == {}, ('Invalid AA found in dataset '+ str(invalid_seq))
-        assert activity in self.data
-        assert seq_col in self.data
+    def preprocessing(self):
 
-        # assertions....
-        # self.pre_processing()  - check all sequences in dataset to see if they are correct and valid
+        seqColMatches = get_close_matches(self.seq_col,self.data.columns)
+
+        if seqColMatches!=[]:
+            self.seq_col = seqColMatches[0]
+        else:
+            raise ValueError('Sequence Column not present in dataset columns - {} /n '.format(self.data.columns))
+
+        self.data[self.seq_col] = utils.remove_gaps(self.data[self.seq_col])
+
+        invalid_seqs = utils.valid_sequence(self.get_seqs())
+        if invalid_seqs!=None:
+            raise ValueError('Invalid Amino Acids found in protein sequence dataset: {}'.format(invalid_seqs))
+
+        activityMatches = get_close_matches(self.activity,self.data.columns)
+
+        if activityMatches!=[]:
+            self.activity = activityMatches[0]
+        else:
+            raise ValueError('Activity Column not present in dataset columns - {} /n '.format(self.data.columns))
+
+        self.data[self.activity].replace([np.inf,-np.inf], np.nan)
+        self.data[self.activity].fillna(0,inplace=True)
+
+    # def aaindex_encoding(self, aaindex):
+    def aaindex_encoding(self, indices):
+
+        aaindex = AAIndex()
+
+        encoded_indices = []
+
+        if not isinstance(indices, list):
+
+            if indices == None or indices == "":
+                raise ValueError('No AA Indices have been input, aa_indices attribute is empty')
+
+            # encoded_aai = aaindex.get_feature_from_code(self.aa_indices)['values']
+
+            encoded_aai = aaindex.get_feature_from_code(indices)['values']
+            # encoded_vals = list((aa_index.get_feature_from_code(indices)['values']).values())
+
+            temp_seq_vals = []
+            temp_all_seqs = []
+
+            for protein in range(0, len(self.data[self.seq_col])):
+                for aa in self.data[self.seq_col][protein]:
+                    temp_seq_vals.append(encoded_aai[aa])
+
+                temp_all_seqs.append(temp_seq_vals)
+                temp_seq_vals = []
+
+            temp_all_seqs = utils.zero_padding(temp_all_seqs)
+
+            temp_all_seqs = np.array(temp_all_seqs)
+            # encoded_aai_reshaped = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
+
+            self.using_aa_features = True
+
+            return temp_all_seqs
+
+        else:
+
+            print('here1')
+            encoded_aai_reshaped = np.zeros((self.num_seqs, self.seq_len))
+
+            #if multiple indices used then calcualte FFT encoding for each and then concatenate after each calculation
+            for ind in range(0,len(indices)):
+                encoded_aai = aaindex.get_feature_from_code(indices[ind])['values']
+
+                temp_seq_vals = []
+                temp_all_seqs = []
+                #reshaping issue here caused by zero padding - all seqs were not of the same length
+                for protein in range(0, len(self.data[self.seq_col])):
+                    for aa in self.data[self.seq_col][protein]:
+                        temp_seq_vals.append(encoded_aai[aa])
+
+                    temp_all_seqs.append(temp_seq_vals)
+                    temp_seq_vals = []
+
+                temp_all_seqs = zero_padding(temp_all_seqs)
+
+                temp_all_seqs =np.array(temp_all_seqs)
+
+                # encoded_aai_ = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
+
+                #in first iteration through indices set encoded_ai_ to zeros initialised np array, else concatenate to array in previous iteration
+                if ind == 0:
+                    encoded_aai_reshaped = temp_all_seqs
+                else:
+                    encoded_aai_reshaped = np.concatenate((encoded_aai_reshaped,temp_all_seqs), axis=1)
+
+            self.using_aa_features = True
+
+            self.encoded_aai_reshaped = encoded_aai_reshaped
+
+            return self.encoded_aai_reshaped
+
+
+    def encode_aaindices(self, verbose=True):
+
+        aaindex = AAIndex()
+        # model = self.model.copy()
+
+        aai_df = pd.DataFrame(columns=['Index','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+
+        encoded_seqs = self.aaindex_encoding(self.aa_indices)
+        proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum, window=self.window, filter=self.filter)
+        proDSP.encode_seqs()
+        X = pd.DataFrame(proDSP.spectrum_encoding)
+
+        # if len(self.aa_indices)>1:
+        #     scale=True
+        # else:
+        #     scale=False
+
+        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X, self.get_activity(), test_size = self.test_split)
+
+        self.model.fit()
+        Y_pred = self.model.predict()
+
+        eval = Evaluate(Y_test, Y_pred)
+
+        print(self.aa_indices)
+
+        # aai_df['Index'] = ' '.join(self.aa_indices)
+        # aai_df['Index'] = self.aa_indices
+        # aai_df['R2'] = eval.r2
+        # aai_df['RMSE'] = eval.rmse
+        # aai_df['MSE'] = eval.mse
+        # aai_df['RPD'] = eval.rpd
+        # aai_df['MAE'] = eval.mae
+        # aai_df['Explained Var'] = eval.explained_var
+
+        aai_dict = eval.all_metrics()
+
+        self.output_results(aai_dict)
+
+        plot_reg(Y_test, Y_pred, eval.r2)
+
+        utils.save_results(aai_dict, 'aai_encoding')
+
+        return aai_dict
+
+    def desc_encoding(self):
+
+        #split this into 2 funcs: 1 does the desc encoding and then 1 does the model building and results
+        if self.descriptors == None or self.descriptors == "":
+            raise ValueError('No descriptors have been input, descriptors attribute is empty')
+
+        encoded_desc = []
+        encoded_desc_vals = []
+
+        desc = descriptors.Descriptors(self.data[self.seq_col])
+        # if not isinstance(self.descriptors, list):
+
+        # encoded_desc = desc.get_descriptor_encoding(self.descriptors)
+        for d in range(0,len(self.descriptors)):
+            encoded_desc = desc.get_descriptor_encoding(self.descriptors[d])
+            encoded_desc_vals.append(list(encoded_desc))
+            encoded_desc = []
+
+        X = pd.DataFrame(np.concatenate(encoded_desc_vals))
+
+        self.using_desc_features = True
+
+        return X
+
+    def encoded_desc(self):
+
+        desc_df = pd.DataFrame(columns=['Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+
+        X = self.desc_encoding()
+
+        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X, self.get_activity(), test_size = self.test_split)
+
+        self.model.fit()
+        Y_pred = self.model.predict()
+
+        eval = Evaluate(Y_test, Y_pred)
+
+        # aai_df['Index'] = ' '.join(self.aa_indices)
+        # desc_df['Descriptor'] = self.aa_indices
+        # desc_df['R2'] = eval.r2
+        # desc_df['RMSE'] = eval.rmse
+        # desc_df['MSE'] = eval.mse
+        # desc_df['RPD'] = eval.rpd
+        # desc_df['MAE'] = eval.mae
+        # desc_df['Explained Var'] = eval.explained_var
+
+        desc_dict = eval.all_metrics()
+
+        self.output_results(desc_dict)
+
+        plot_reg(Y_test, Y_pred, eval.r2)
+
+        utils.save_results(desc_dict, 'desc_encoding')
+
+        return desc_dict
+
+        # encoded_desc_vals = (list(itertools.chain.from_iterable(encoded_desc_vals)))
+        # encoded_desc_vals = np.reshape(encoded_desc_vals, (self.get_num_seqs(), len(encoded_desc[0])))
+
+    def encode_aai_descriptor(self):
+
+        """
+        Encode using both AAI1 indices and the descriptors. Function will parse
+        the classes input parameters to get the required AA indices and descriptors
+        to use and calculate their respective values. The two outputs from the
+        individual encoding strategies will be concatenated together and used in
+        the building of the predictve models. The resulting model assets and its
+        results will be exported to the directory pointed to by the global variable
+        OUTPUT_DIR.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        mse : float
+
+        """
+        if (self.descriptors == None or self.descriptors == "") \
+            or (self.aa_indices == None or self.aa_indices == ""):
+            raise ValueError('AAI and descriptor values both need to be present')
+
+        aaindex = AAIndex()
+        aai_desc_df = pd.DataFrame(columns=['Index_Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+
+        aai_encoding = self.aaindex_encoding(aaindex)
+        aai_encoding = pd.DataFrame(aai_encoding)
+        descriptor_encoding=self.desc_encoding()
+
+        aai_desc = [aai_encoding, descriptor_encoding]
+        X = pd.concat(aai_desc, axis = 1)
+
+        print('aai_encoding',aai_encoding.shape)
+        print('descriptor_encoding',descriptor_encoding.shape)
+
+        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X, self.get_activity(), test_size = self.test_split)
+
+        self.model.fit()
+        Y_pred = self.model.predict()
+
+        eval = Evaluate(Y_test, Y_pred)
+
+        index_desc = (str(self.aa_indices) + str(self.descriptors))
+        aai_desc_df['Index_Descriptor'] = index_desc
+        aai_desc_df['R2'] = eval.r2
+        aai_desc_df['RMSE'] = eval.rmse
+        aai_desc_df['MSE'] = eval.mse
+        aai_desc_df['RPD'] = eval.rpd
+        aai_desc_df['MAE'] = eval.mae
+        aai_desc_df['Explained Var'] = eval.explained_var
+
+        aai_desc_dict = eval.all_metrics()
+
+        plot_reg(Y_test, Y_pred, eval.r2)
+
+        self.output_results(aai_desc_dict)
+
+        utils.save_results(aai_desc_dict, 'aai_desc_encoding')
+
+
+    def output_results(self, results):
+
+        print('\n####################################')
+        print('############# Results ##############')
+        print('####################################\n')
+
+        print('############ Parameters ############\n')
+        print('Dataset -> {}\nActivity -> {}\nSpectrum -> {}\nWindow -> {}\nFilter -> {}\nAAIndices -> {}\nDescriptors -> {}\nAlgorithm -> {}\nParameters -> {}\nTest Split -> {}\n'
+                        .format(self.dataset,self.activity, self.spectrum, self.window, self.fitler,
+                                self.aa_indices, self.descriptors, self.algorithm, self.parameters, self.test_split))
+
+        print('############# Metrics #############\n')
+        print('# R2: {}'.format(results['R2']))
+        print('# RMSE: {} '.format(results['RMSE']))
+        print('# MSE: {} '.format(results['MSE']))
+        print('# MAE: {}'.format(results['MAE']))
+        print('# RPD {}'.format(results['RPD']))
+        print('# Variance {}'.format(results['Explained Var']))
+        print('###################################')
 
     def get_seqs(self):
 
@@ -63,236 +372,136 @@ class ProAct():
 
         return self.data['name']
 
-    def get_num_seqs(self):
-
-        return len(self.data['name'])
-
-    def get_seq_len(self):
-
-        return len(self.data[self.seq_col][0])
-
     def get_activity(self):
 
         return self.data[self.activity].values.reshape((-1,1))
+
+    @property
+    def using_aa_features(self):
+        return self._using_aa_features
+
+    @using_aa_features.setter
+    def using_aa_features(self, val):
+        self._using_aa_features = val
+
+    @property
+    def using_desc_features(self):
+        return self._using_desc_features
+
+    @using_desc_features.setter
+    def using_desc_features(self, val):
+        self._using_desc_features = val
+
+    @property
+    def dataset(self):
+        return self._dataset
+
+    @dataset.setter
+    def dataset(self, val):
+        self._dataset = val
+
+    @property
+    def seq_col(self):
+        return self._seq_col
+
+    @seq_col.setter
+    def seq_col(self, val):
+        self._seq_col = val
+
+    @property
+    def activity(self):
+        return self._activity
+
+    @activity.setter
+    def activity(self, val):
+        self._activity = val
+
+    @property
+    def window(self):
+        return self._window
+
+    @window.setter
+    def window(self, val):
+        self._window = val
+
+    @property
+    def filter(self):
+        return self._filter
+
+    @filter.setter
+    def filter(self, val):
+        self._filter = val
+
+    @property
+    def spectrum(self):
+        return self._spectrum
+
+    @spectrum.setter
+    def spectrum(self, val):
+        self._spectrum = val
+
+    @property
+    def aa_indices(self):
+        return self._aa_indices
+
+    @aa_indices.setter
+    def aa_indices(self, val):
+        self._aa_indices = val
+
+    @property
+    def descriptors(self):
+        return self._descriptors
+
+    @descriptors.setter
+    def descriptors(self, val):
+        self._descriptors = val
+
+    @property
+    def algorithm(self):
+        return self._algorithm
+
+    @algorithm.setter
+    def algorithm(self, val):
+        self._algorithm = val
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, val):
+        self._parameters = val
+
+    @property
+    def test_split(self):
+        return self._test_split
+
+    @test_split.setter
+    def test_split(self, val):
+        self._test_split = val
+
+    @property
+    def num_seqs(self):
+        return self._num_seqs
+
+    @num_seqs.setter
+    def num_seqs(self, val):
+        self._num_seqs = val
+
+    @property
+    def seq_len(self):
+        return self._seq_len
+
+    @seq_len.setter
+    def seq_len(self, val):
+        self._seq_len = val
 
     def __len__(self):
 
         return len(self.data['name'])
 
-    def using_aa(self):
-
-        return using_aa_features
-
-    def using_desc(self):
-
-        return using_desc_features
-
-    def head(self):
-
-        return self.data.head()
-
-    def aaindex_encoding(self, aaindex, indices):
-
-        encoded_indices = []
-
-        if not isinstance(indices, list):
-            encoded_aai = aaindex.get_feature_from_code(indices)['values']
-            # encoded_vals = list((aa_index.get_feature_from_code(indices)['values']).values())
-
-            temp_seq_vals = []
-            temp_all_seqs = []
-
-            for protein in range(0, len(self.data['sequence'])):
-                for aa in self.data['sequence'][protein]:
-                    temp_seq_vals.append(encoded_aai[aa])
-
-                temp_all_seqs.append(temp_seq_vals)
-                temp_seq_vals = []
-
-
-            encoded_ai_reshaped = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
-            # encoded_ai_reshaped = np.reshape(temp_all_seqs, (152, 398))
-
-            using_aa_features = True
-            return encoded_ai_reshaped
-
-        else:
-
-            encoded_ai_reshaped = np.zeros((self.get_num_seqs(), self.get_seq_len()))
-
-            #if multiple indices used then calcualte FFT encoding for each and then concatenate after each calculation
-            for ind in range(0,len(indices)):
-                encoded_aai = aaindex.get_feature_from_code(indices[ind])['values']
-
-                temp_seq_vals = []
-                temp_all_seqs = []
-
-                for protein in range(0, len(self.data['sequence'])):
-                    for aa in self.data['sequence'][protein]:
-                        temp_seq_vals.append(encoded_aai[aa])
-
-                    temp_all_seqs.append(temp_seq_vals)
-                    temp_seq_vals = []
-
-                encoded_ai_ = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
-
-                if ind == 0:
-                    encoded_ai_reshaped = encoded_ai_
-                else:
-                    encoded_ai_reshaped = np.concatenate((encoded_ai_reshaped,encoded_ai_), axis=1)
-
-            using_aa_features = True
-
-            self.encoded_ai_reshaped = encoded_ai_reshaped
-            return self.encoded_ai_reshaped
-            # encoded_df = pd.DataFrame(encoded_indices, columns=encoded_aai.keys())
-
-    def desc_encoding(self, desc, descriptors):
-
-        encoded_desc = []
-        encoded_desc_vals = []
-
-        if not isinstance(descriptors, list):
-              encoded_desc = desc.get_descriptor_encoding(descriptors)
-
-        #     encoded_desc = desc.get_descriptor_encoding(descriptors)
-        #     for d in range(0,len(encoded_desc)):
-        #         encoded_desc_vals.append(list(encoded_desc[d].values()))
-        #
-        # encoded_desc_vals = (list(itertools.chain.from_iterable(encoded_desc_vals)))
-        # encoded_desc_vals = np.reshape(encoded_desc_vals, (self.get_num_seqs(), len(encoded_desc[0])))
-        using_desc_features = True
-
-        self.encoded_desc = encoded_desc
-
-        return self.encoded_desc
-
-    def __doc__(self):
-
-        '''Documentaion of class:
-           Description
-           Parameters
-           Attributes
-           Example
-           e.g model = PlsRegression()
-           print(model.__doc__)
-        '''
+    def __str__(self):
         pass
 
-    #
-    # def get_aaindex(indices):
-    #
-    #     loop through indices and get all index values
-    #     self.aaindex[]
-    #
-    #     using_aaindex_feautures = True
-    #
-    #     if using_desc_features ==1:
-    #         concat with aa_index_features
-    #     return self.concatenated_aaindex_features
-    #
-    # def get_descriptors(desc):
-    #
-    #     loop through all dwscriptors:
-    #     if self.descriptors doesnt exist then run import_descriptors
-    #
-    #     using_desc_feautures = True
-    #
-    #     if aa_index_features ==1:
-    #         concat with using_desc_feautures
-    #     return self.concartenatred_descriptor_feautes
-
-#main for testing
-def main2():
-
-    aaindex2 = AAIndex2()
-
-def main(args):
-
-    dataset = str(args.dataset)
-    activity = str(args.activity)
-    aaindices = args.aaindices
-    aa_spectrum = str(args.aa_spectrum)
-    window = str(args.window)
-    filter = str(args.filter)
-    descriptors = args.descriptors
-    model_ = str(args.model)
-    model_params = args.model_params
-
-    # from difflib import get_close_matches - validation for when using puts in model close to existing model:
-    #e.g plsregresion instead of plsregression
-    #matches = get_close_matches(model_, all_models))
-    #chosen_model = matches[0]
-
-    proAct = ProAct(dataset,activity)
-
-    # indices = ['ZASB820101', 'ZHOH040101', 'ZHOH040102','ZHOH040102']
-    indices = ['ZASB820101']
-    desc = 'aa_comp'
-
-    aa_index = AAIndex()
-    #
-    encoded_seqs = proAct.aaindex_encoding(aa_index,indices)
-    proteinDSP = ProteinDSP(encoded_seqs)
-
-    proteinDSP.encode_aaindex()
-
-    encoded_aa = proteinDSP.fft
-    encoded_aa_real = proteinDSP.fft.real
-    encoded_aa_power = proteinDSP.power
-
-    model = Model(model_)
-    desc = Descriptors(proAct.get_seqs())
-
-    encoded_desc = proAct.desc_encoding(desc, 'aa_comp')
-
-    print(encoded_desc[0])
-
-    #Concatenate AAIndex + Desc before building model
-
-    model.build(encoded_aa_power, proAct.get_activity())
-
-    Y_pred = model.model_fit.predict(model.X_test)
-
-    r2 = r2_score(model.Y_test,Y_pred)
-    metrics = get_all_metrics(model.model_fit, model.Y_test, Y_pred)
-
-    output_results(args,metrics)
-
-    plot_reg(model.Y_test, Y_pred, metrics['R2'])
-    # #output results to CSV
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Protein Sequence Activity Relationship (name)')
-
-    parser.add_argument('-dataset', '--dataset', type=str, default=(os.path.join('data','enantioselectivity.txt')),
-                        help='', required=False)
-
-    parser.add_argument('-activity', '--activity', type=str, default='e-value',
-                        help='', required=False)
-
-    parser.add_argument('-aaindices', '--aaindices', default=[],
-                        help='',required=False)
-
-    parser.add_argument('-aa_spectrum', '--aa_spectrum', default='power',
-                        help='', required=False)
-
-    parser.add_argument('-window', '--window', default='hamming',
-                        help='', required=False)
-
-    parser.add_argument('-filter', '--filter', default='',
-                        help='', required=False)
-
-    parser.add_argument('-descriptors', '--descriptors', default=[],
-                        help='', required=False)
-
-    parser.add_argument('-model', '--model', default='plsregression',
-                        help='',required=False)
-
-    parser.add_argument('-model_params', '--model_params', default={},
-                        help='',required=False)
-
-    args = parser.parse_args()
-
-    main2()
+    def __repr__(self):
+        pass

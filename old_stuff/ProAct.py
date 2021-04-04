@@ -187,3 +187,136 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+
+
+    pass
+
+
+#
+# def get_aaindex(indices):
+#
+#     loop through indices and get all index values
+#     self.aaindex[]
+#
+#     using_aaindex_feautures = True
+#
+#     if using_desc_features ==1:
+#         concat with aa_index_features
+#     return self.concatenated_aaindex_features
+#
+# def get_descriptors(desc):
+#
+#     loop through all dwscriptors:
+#     if self.descriptors doesnt exist then run import_descriptors
+#
+#     using_desc_feautures = True
+#
+#     if aa_index_features ==1:
+#         concat with using_desc_feautures
+#     return self.concartenatred_descriptor_feautes
+
+#main for testing
+# def main2(args):
+#
+#     input_path = str(args.input_data)
+#
+#     assert os.path.isfile(input_path), 'Input data file not correct filepath'
+#     _, file_extension = os.path.splitext(input_path)
+#     print(file_extension)
+#
+#     if (file_extension == '.yml') or (file_extension == '.yaml'):
+#         print('hello')
+#         with open(input_path) as f:
+#             # The FullLoader parameter handles the conversion from YAML
+#             # scalar values to Python the dictionary format
+#             data = yaml.load(f, Loader=yaml.FullLoader)
+#
+#     elif (file_extension == '.json'):
+#         with open(input_path) as f:
+#             data = json.load(f)
+#         dataset = data['dataset']
+#         activity = data['activity']
+#
+#         print(dataset)
+#         print(activity)
+#
+#         #parse json
+#     else:
+#         raise ValueError('Input data file must be of type yml or json')
+
+
+# def encode_aaindices(self, combo2 = False, verbose=True):
+#
+#     aaindex = AAIndex()
+#     model = self.model.copy()
+#     features = aaindex.get_feature_codes(combo2)
+#
+#     r2_ = []
+#     mse_ = []
+#     index_ = []
+#     rmse_ = []
+#     rpd_ = []
+#     mae_ = []
+#     explained_var_ = []
+#     index_count = 1
+#
+#     aai_df = pd.DataFrame(columns=['Index','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+#
+#     for feature in features:
+#
+#         if verbose:
+#           print('\nIndex {} using {} spectrum ###### {}/{}'.format(feature , self.spectrum,index_count, len(features)))
+#           index_count+=1
+#
+#         if combo2:
+#
+#             encoded_seqs = proAct.aaindex_encoding(aaindex,feature[0])
+#             proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum, window=self.window, filter=self.filter)
+#             proDSP.encode_seqs()
+#             aa_1 = pd.DataFrame(proDSP.spectrum_encoding)
+#
+#             encoded_seqs = proAct.aaindex_encoding(aaindex,feature[1])
+#             proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum, window=self.window, filter=self.filter)
+#             proDSP.encode_seqs()
+#             aa_2 = pd.DataFrame(proDSP.spectrum_encoding)
+#
+#             X_ = [aa_1, aa_2]
+#             X = pd.concat(X_, axis = 1)
+#
+#             X = scaler.fit_transform(X)
+#
+#         else:
+#
+#             encoded_seqs = proAct.aaindex_encoding(aaindex,feature)
+#             proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum, window=self.window, filter=self.filter)
+#             proDSP.encode_seqs()
+#             X = pd.DataFrame(proDSP.spectrum_encoding)
+#
+#
+#         X_train, X_test, Y_train, Y_test = model.train_test_split(X, self.get_activity(), test_size = 0.2)
+#
+#         model_copy = self.model.copy()
+#         model_copy.fit(X_train, Y_train)
+#         Y_pred = model_copy.predict(X_test)
+#
+#         eval = Evaluate(model_copy, Y_test, Y_pred)
+#
+#         index_.append(feature)
+#         r2_.append(eval.r2)
+#         rmse_.append(eval.rmse)
+#         mse_.append(eval.mse)
+#         rpd_.append(eval.rpd)
+#         mae_.append(eval.mae)
+#         explained_var_.append(eval.explained_var)
+#
+#     aa_df['Index'] = index_
+#     aa_df['R2'] = r2_
+#     aa_df['RMSE'] = rmse_
+#     aa_df['MSE'] = mse_
+#     aa_df['RPD'] = rpd_
+#     aa_df['MAE'] = mae_
+#     aa_df['Explained Var'] = explained_var_
+#
+#     aa_df.sort_values(by=['R2'], ascending=False, inplace=True)
+#
+#     return aa_df

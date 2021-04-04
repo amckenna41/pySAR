@@ -1,0 +1,33 @@
+language: python
+
+python:
+  - 3.6
+  - 3.7
+
+before_install:
+  - echo "Upgrading pip"
+  - python3 -m pip install --upgrade pip
+  - echo "Python Version"
+  - python3 --version
+  - export PYTHONPATH=$PYTHONPATH:$(pwd)
+  - echo "Travis CI Dir $TRAVIS_BUILD_DIR"
+
+install:
+  - echo "Install project dependancies and requirements"
+  - pip3 install codecov
+  # - pip3 install -r requirements.txt
+  - pip3 install pytest
+  - python3 setup.py install
+
+script:
+  - cd $TRAVIS_BUILD_DIR/psp
+  - echo "Travis CI Dir $TRAVIS_BUILD_DIR"
+  - echo "Running AAIndex tests"
+  - python3 -m tests.test_aaindex
+  - echo "Running model tests"
+
+
+# python -m unittest discover -s tests -p "*_test.py" -v
+after_success:
+  - codecov
+  - echo "Build success"
