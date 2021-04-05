@@ -201,7 +201,7 @@ class Evaluate():
     def __repr__(self):
         return "Instance of Evaluate class(Y_true: {} Y_pred: {})".format(
             self.Y_true, self.Y_pred
-        )"
+        )
 
     def __str__(self):
         pass

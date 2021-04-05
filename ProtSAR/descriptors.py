@@ -118,6 +118,8 @@ class Descriptors():
         -------
 
         """
+        print('Importing Descriptors File....')
+
         try:
             descriptor_df = pd.read_csv(self.desc_dataset)
         except IOError:
@@ -133,8 +135,8 @@ class Descriptors():
         self.CTD =  descriptor_df.iloc[:,9140:9287] #split into C, T and D?
         self.conjoint_triad = descriptor_df.iloc[:,9287:9630]
         self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]
-        self.quasi_seqOrder = descriptor_df.iloc[:,9690:9790]
-        self.pseudoAAC = descriptor_df.iloc[:,9790:9840]
+        self.quasi_seq_order = descriptor_df.iloc[:,9690:9790]
+        self.pseudo_AAC = descriptor_df.iloc[:,9790:9840]
         self.amp_pseudo_AAC = descriptor_df.iloc[:,9840:9920]
         self.all_descriptors = descriptor_df.iloc[:,:]
 
