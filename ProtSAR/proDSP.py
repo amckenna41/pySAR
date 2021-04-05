@@ -213,7 +213,8 @@ class ProDSP():
         elif self.spectra == 'abs':
             self.spectrum_encoding = self.fft_abs
         else:
-            raise ValueError('Inputted Spectrum type not available in: {}'.format(all_spectra))
+            raise ValueError('Inputted Spectrum type ({}) not available in: {}'.format(
+                    self.spectra, all_spectra))
 
 
     def plot_freq(self, fft_seq, fft_freqs):
@@ -320,7 +321,8 @@ class ProDSP():
         self._filter = val
 
     def __str__(self):
-        pass
+
+        return "Instance of ProDSP class"
 
     def __repr__(self):
 

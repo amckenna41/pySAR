@@ -14,8 +14,10 @@ import pickle
 import yaml
 import io
 import os
+import time
 from difflib import get_close_matches
 import json
+from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
 
 from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
@@ -23,11 +25,11 @@ from aaindex import  AAIndex
 from model import Model
 from proDSP import ProDSP
 from evaluate import Evaluate
-from ProAct import ProAct
+from ProtSAR import ProtSAR
 import utils as utils
 from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, PseudoAAC
 
-
+#show progress of each descriptor calculation - https://pypi.org/project/progress/
 class Descriptors():
 
     # """
@@ -54,7 +56,7 @@ class Descriptors():
     #
     # """
 
-    def __init__(self, protein_seqs, all_desc=False):
+    def __init__(self, protein_seqs, desc_dataset="", all_desc=False):
 
         self.protein_seqs = protein_seqs
         #remove any gaps from protein sequences
@@ -71,26 +73,70 @@ class Descriptors():
         #get the total number of inputted protein sequences
         self.num_seqs = len(self.protein_seqs)
 
-        #initialise all descriptor variables to empty dataframes
+        self.all_desc = all_desc
+
         self.aa_composition = pd.DataFrame()
         self.dipeptide_composition = pd.DataFrame()
         self.tripeptide_composition = pd.DataFrame()
         self.normalized_moreaubroto_autocorrelation = pd.DataFrame()
         self.moran_autocorrelation = pd.DataFrame()
         self.geary_autocorrelation = pd.DataFrame()
-        self.normalized_moreaubroto_autocorrelation = pd.DataFrame()
         self.CTD = pd.DataFrame()
         self.conjoint_triad = pd.DataFrame()
         self.seq_order_coupling_number = pd.DataFrame()
-        self.quasi_seqOrder = pd.DataFrame()
-        self.pseudoAAC = pd.DataFrame()
-        self.ampPseudoAAC = pd.DataFrame()
+        self.quasi_seq_order = pd.DataFrame()
+        self.pseudo_AAC = pd.DataFrame()
+        self.amp_pseudo_AAC = pd.DataFrame()
         self.all_descriptors = pd.DataFrame()
 
-        #if all_desc parameter true then calculate all descriptor value and store
-        #in their respective instance variables
-        if all_desc:
-            self.all_descriptors = self.get_all_descriptors()
+        self.desc_dataset = os.path.join(DATA_DIR, desc_dataset)
+        if os.path.isfile(self.desc_dataset):
+            self.import_descriptors(self.desc_dataset)
+        else:
+            #initialise all descriptor variables to empty dataframes
+
+
+            #if all_desc parameter true then calculate all descriptor value and store
+            #in their respective instance variables
+            if all_desc:
+                self.all_descriptors = self.get_all_descriptors()
+                self.all_descriptors.to_csv(os.path.join(DATA_DIR, 'descriptors.csv'))
+
+    def import_descriptors(self):
+
+        """
+        By default, the class will search for a file in the DATA_DIR called
+        desciptors_(desc_dataset).csv with ALL ofthe pre-calculated descriptor values.
+        This function parses this file and sets the descriptor instance variables
+        to the correct features. The descriptors file should be of size N x 9920,
+        where N is the number of protein sequences in the dataset, the method does
+        not work if the file is not of this size. To create an descriptors file,
+        create an instance of the desc class, with the parameter all_desc=True; this
+        will calculate all descriptors and store them to the DATA_DIR.
+
+        Returns
+        -------
+
+        """
+        try:
+            descriptor_df = pd.read_csv(self.desc_dataset)
+        except IOError:
+            print('Error opening descriptor file')
+            return None
+
+        self.aa_composition = descriptor_df.iloc[:,: 20]
+        self.dipeptide_composition = descriptor_df.iloc[:,20:420]
+        self.tripeptide_composition = descriptor_df.iloc[:,420:8420]
+        self.normalized_moreaubroto_autocorrelation = descriptor_df.iloc[:,8420:8660]
+        self.moran_autocorrelation = descriptor_df.iloc[:,8660: 8900]
+        self.geary_autocorrelation = descriptor_df.iloc[:,8900:9140]
+        self.CTD =  descriptor_df.iloc[:,9140:9287] #split into C, T and D?
+        self.conjoint_triad = descriptor_df.iloc[:,9287:9630]
+        self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]
+        self.quasi_seqOrder = descriptor_df.iloc[:,9690:9790]
+        self.pseudoAAC = descriptor_df.iloc[:,9790:9840]
+        self.amp_pseudo_AAC = descriptor_df.iloc[:,9840:9920]
+        self.all_descriptors = descriptor_df.iloc[:,:]
 
     def get_aa_composition(self):
 
@@ -113,7 +159,7 @@ class Descriptors():
             20 amino acids).
 
         """
-        print('Getting AA Composition Descriptors...')
+        print('\nGetting AA Composition Descriptors...')
         print('#####################################\n')
         AA_comp = []
 
@@ -123,12 +169,15 @@ class Descriptors():
 
         #iterate through all sequences, calculate descriptor values and append to
         #AA_Comp list
-        for seq in self.protein_seqs:
-            AAComp=AAComposition.CalculateAAComposition(seq)
+        time.sleep(1)
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Amid Composition"):
+            AAComp=AAComposition.CalculateAAComposition([seq])
             aa_comp.append(list(AAComp.values()))
 
         #convert calculated AAComp values into dataframe
         aa_comp_df = pd.DataFrame(data=aa_comp, columns=aa)
+
+        self.aa_composition = aa_comp_df
 
         return aa_comp_df
 
@@ -157,7 +206,7 @@ class Descriptors():
             the 20 canonical amino acids).
 
         """
-        print('Getting Dipeptide Composition Descriptors...')
+        print('\nGetting Dipeptide Composition Descriptors...')
         print('############################################\n')
 
         dipeptide_comp = []
@@ -166,11 +215,14 @@ class Descriptors():
 
         #iterate through all sequences, calculate descriptor values and append to
         #dipeptide_comp list
-        for seq in self.protein_seqs:
+        time.sleep(1)
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Dipeptide Composition"):
             AADipeptide=AAComposition.CalculateDipeptideComposition(seq)
             dipeptide_comp.append(list(AADipeptide.values()))
 
         dipeptide_comp_df = pd.DataFrame(data=dipeptide_comp, columns=dipeptides)
+
+        self.dipeptide_composition = dipeptide_comp_df
 
         #convert calculated Dipeptide_comp values into dataframe
         return dipeptide_comp_df
@@ -200,7 +252,7 @@ class Descriptors():
             the 20 canonical amino acids).
 
         """
-        print('Getting Tripeptide Composition Descriptors...')
+        print('\nGetting Tripeptide Composition Descriptors...')
         print('#############################################\n')
 
         tripeptide_comp = []
@@ -209,16 +261,18 @@ class Descriptors():
 
         #iterate through all sequences, calculate descriptor values and append to
         #tripeptide_comp list
-        for seq in self.protein_seqs:
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Tripeptide Comp"):
             AATripeptide=AAComposition.GetSpectrumDict(seq)
             tripeptide_comp.append(list(AATripeptide.values()))
 
         #convert calculated Tripeptide_comp values into dataframe
         tripeptide_comp_df = pd.DataFrame(data=tripeptide_comp, columns=tripeptides)
 
+        self.tripeptide_composition = tripeptide_comp_df
+
         return tripeptide_comp_df
 
-    def autocorrelation(self, aa_encoding=Autocorrelation._AAProperty, aa_name=Autocorrelation._AAPropertyName):
+    def get_autocorrelation(self, aa_encoding=Autocorrelation._AAProperty, aa_name=Autocorrelation._AAPropertyName):
 
         """
         #Autocorrelation output is of shape N x 240.
@@ -267,7 +321,7 @@ class Descriptors():
 
         """
 
-        print('Getting Autocorrelation Descriptors...')
+        print('\nGetting Autocorrelation Descriptors...')
         print('######################################\n')
 
         norm_moreaubroto_autocorr = []
@@ -283,7 +337,7 @@ class Descriptors():
         geary_autocorr_values = []
 
         #iterate through protein sequences and calculate the Norm_MoreauBroto for each, append to list of values
-        for seq in self.protein_seqs:
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Autocorrelation"):
             normMoreauBroto = Autocorrelation.CalculateNormalizedMoreauBrotoAuto(seq, aa_encoding,aa_name)
             norm_moreaubroto_autocorr.append(normMoreauBroto)
             moranautocorr = Autocorrelation.CalculateMoranAuto(seq, aa_encoding,aa_name)
@@ -334,6 +388,9 @@ class Descriptors():
         moran_autocorr_df = pd.DataFrame(data=moran_autocorr_values_, columns=moran_autocorr_keys)
         geary_autocorr_df = pd.DataFrame(data=geary_autocorr_values_, columns=geary_autocorr_keys)
 
+        self.normalized_moreaubroto_autocorrelation = norm_moreaubroto_autocorr_df
+        self.moran_autocorrelation = moran_autocorr_df
+        self.geary_autocorrelation = geary_autocorr_df
 
         return norm_moreaubroto_autocorr_df,moran_autocorr_df,geary_autocorr_df
 
@@ -348,7 +405,7 @@ class Descriptors():
         ctd_df : pd.DataFrame
 
         """
-        print('Getting CTD Descriptors...')
+        print('\nGetting CTD Descriptors...')
         print('##########################\n')
 
         ctd = []
@@ -357,12 +414,15 @@ class Descriptors():
 
         #iterate through all sequences, calculate descriptor values and append to
         #ctd list
-        for seq in self.protein_seqs:
+        time.sleep(1)
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="CTD"):
             ctd_=CTD.CalculateCTD(seq)
             ctd.append(list(ctd_.values()))
 
         #convert calculated ctd values into dataframe
         ctd_df = pd.DataFrame(data=ctd, columns=keys)
+
+        self.CTD = ctd_df
 
         return ctd_df
 
@@ -377,7 +437,7 @@ class Descriptors():
         ct_df : pd.DataFrame
 
         """
-        print('Getting Conjoint Triad Descriptors...')
+        print('\nGetting Conjoint Triad Descriptors...')
         print('##################################\n')
 
         ct = []
@@ -386,12 +446,15 @@ class Descriptors():
 
         #iterate through all sequences, calculate descriptor values and append to
         #ct list
-        for seq in self.protein_seqs:
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Conjoint Triad"):
+
             conTri=ConjointTriad.CalculateConjointTriad(seq)
             ct.append(list(conTri.values()))
 
         #convert calculated CT values into dataframe
         ct_df = pd.DataFrame(data=ct, columns=keys)
+
+        self.conjoint_triad = ct_df
 
         return ct_df
 
@@ -406,19 +469,21 @@ class Descriptors():
         seq_order_df : pd.DataFrame
 
         """
-        print('Getting Sequence Order Coupling Descriptors...')
+        print('\nGetting Sequence Order Coupling Descriptors...')
         print('#############################################\n')
 
         seq_order = []
 
         #iterate through all sequences, calculate descriptor values and append to
         #seq_order list
-        for seq in self.protein_seqs:
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Sequence Order Coupling Number"):
             seq_order_num = QuasiSequenceOrder.GetSequenceOrderCouplingNumber(seq)
             seq_order.append(seq_order_num)
 
         #convert calculated seq_order values into dataframe
         seq_order_df = pd.DataFrame(data=seq_order)
+
+        self.seq_order_coupling_number = seq_order_df
 
         return seq_order_df
 
@@ -433,7 +498,7 @@ class Descriptors():
         quasi_seq_order_df : pd.DataFrame
 
         """
-        print('Getting Quasi Sequence Order Descriptors...')
+        print('\nGetting Quasi Sequence Order Descriptors...')
         print('###########################################\n')
 
         quasi_seq_order = []
@@ -442,12 +507,14 @@ class Descriptors():
 
         #iterate through all sequences, calculate descriptor values and append to
         #quasi_seq_order list
-        for seq in self.protein_seqs:
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Quasi Sequence Order"):
             quasi_seq=QuasiSequenceOrder.GetQuasiSequenceOrder(seq)
             quasi_seq_order.append(list(quasi_seq.values()))
 
         #convert calculated quasi_seq_order values into dataframe
         quasi_seq_order_df = pd.DataFrame(data=quasi_seq_order, columns=keys)
+
+        self.quasi_seq_order = quasi_seq_order_df
 
         return quasi_seq_order_df
 
@@ -462,7 +529,7 @@ class Descriptors():
         psuedo_AAComp_df : pd.DataFrame
 
         """
-        print('Getting Psuedo Amino Acid Composition Descriptors...')
+        print('\nGetting Psuedo Amino Acid Composition Descriptors...')
         print('####################################################\n')
 
         psuedoAAComp = []
@@ -471,12 +538,14 @@ class Descriptors():
 
         #iterate through all sequences, calculate descriptor values and append to
         #psuedoAAComp list
-        for seq in self.protein_seqs[:1]:
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Psuedo Amino Acid Composition"):
             psuedoAA=PseudoAAC.GetPseudoAAC(seq, AAP=AAP)
             psuedoAAComp.append(list(psuedoAA.values()))
 
         #convert calculated PsuedoAAComp values into dataframe
         psuedo_AAComp_df = pd.DataFrame(data=psuedoAAComp, columns=keys)
+
+        self.pseudo_AAC = psuedo_AAComp_df
 
         return psuedo_AAComp_df
 
@@ -491,18 +560,20 @@ class Descriptors():
         amp_pseudo_AAComp_df : pd.DataFrame
 
         """
-        print('Getting Amphiphilic Amino Acid Composition Descriptors...')
+        print('\nGetting Amphiphilic Amino Acid Composition Descriptors...')
         print('#########################################################\n')
 
         amp_pseudo_AAComp = []
         keys = list((PseudoAAC.GetAPseudoAAC(self.protein_seqs[0])).keys())
 
-        for seq in self.protein_seqs:
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Ampiphillic Amino Acid Composition"):
             amp_psuedo=PseudoAAC.GetAPseudoAAC(seq)
             amp_pseudo_AAComp.append(list(amp_psuedo.values()))
 
         #convert calculated APsuedo_AAComp values into dataframe
-        amp_pseudo_AAComp_df = pd.DataFrame(data=ampPseudoAAComp, columns=keys)
+        amp_pseudo_AAComp_df = pd.DataFrame(data=amp_pseudo_AAComp, columns=keys)
+
+        self.amp_pseudo_AAC = amp_pseudo_AAComp_df
 
         return amp_pseudo_AAComp_df
 
@@ -576,19 +647,24 @@ class Descriptors():
         self.dipeptide_composition = self.get_dipeptide_composition()
         self.tripeptide_composition = self.get_tripeptide_composition()
         self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation, \
-        self.geary_autocorrelation = self.autocorrelation()
+        self.geary_autocorrelation = self.get_autocorrelation()
         self.CTD = self.get_ctd()
         self.conjoint_triad = self.get_conjoint_triad()
         self.seq_order_coupling_number = self.get_seq_order_coupling_number()
-        self.quasi_seqOrder = self.get_quasi_seq_order()
-        self.pseudoAAC = self.get_pseudo_AAC()
-        self.ampPseudoAAC = self.get_amp_pseudo_AAC()
+ #       self.quasi_seqOrder = self.get_quasi_seq_order()
+        # self.pseudoAAC = self.get_pseudo_AAC()
+        # self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
 
         # all_desc = [self.aa_composition, self.dipeptide_composition]
+        # all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
+        #                    self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
+        #                    self.geary_autocorrelation, self.CTD, self.conjoint_triad,
+        #                    self.seq_order_coupling_number, self.quasi_seqOrder, self.pseudoAAC, self.ampPseudoAAC]
+
         all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
                            self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
-                           self.geary_autocorrelation, self.CTD, self.conjoint_triad,
-                           self.seq_order_coupling_number, self.quasi_seqOrder, self.pseudoAAC, self.ampPseudoAAC]
+                           self.geary_autocorrelation, self.CTD, self.conjoint_triad, self.seq_order_coupling_number]
+
 
         all_desc_df = pd.concat(all_desc, axis = 1)
 
@@ -685,44 +761,42 @@ class Descriptors():
     def seq_order_coupling_number(self, val):
         self._seq_order_coupling_number = val
 
-    @property
-    def quasi_seqOrder(self):
-        return self._quasi_seqOrder
-
-    @quasi_seqOrder.setter
-    def quasi_seqOrder(self, val):
-        self._quasi_seqOrder = val
 
     @property
-    def pseudoAAC(self):
-        return self._pseudoAAC
+    def quasi_seq_order(self):
+        return self._quasi_seq_order
 
-    @pseudoAAC.setter
-    def pseudoAAC(self, val):
-        self._pseudoAAC = val
+    @quasi_seq_order.setter
+    def quasi_seq_order(self, val):
+        self._quasi_seq_order = val
 
     @property
-    def ampPseudoAAC(self):
-        return self._ampPseudoAAC
+    def pseudo_AAC(self):
+        return self._pseudo_AAC
 
-    @ampPseudoAAC.setter
-    def ampPseudoAAC(self, val):
-        self._ampPseudoAAC = val
+    @pseudo_AAC.setter
+    def pseudo_AAC(self, val):
+        self._pseudo_AAC = val
+
+    @property
+    def amp_pseudo_AAC(self):
+        return self._amp_pseudo_AAC
+
+    @amp_pseudo_AAC.setter
+    def amp_pseudo_AAC(self, val):
+        self._amp_pseudo_AAC = val
 
     def desc_to_class(self,str):
 
         return getattr(sys.modules[__name__], str)
 
-    def desc_to_csv(self,save_path):
-
-        #save all descriptors to folder
-        pass
-
     def __str__(self):
         pass
 
     def __repr__(self):
-        pass
+        return "Descriptor(Num Sequences: {}, Using All Descriptors: {})".format(
+            self.num_seqs, self.all_desc
+        )
 
     def __doc__(self):
         pass

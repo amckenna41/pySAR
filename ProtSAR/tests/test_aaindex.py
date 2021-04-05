@@ -1,3 +1,7 @@
+################################################################################
+#################             AAIndex Module Tests             #################
+################################################################################
+
 import os
 import sys
 from aaindex import AAIndex
@@ -5,11 +9,6 @@ from globals import DATA_DIR, OUTPUT_FOLDER, OUTPUT_DIR
 import unittest
 import requests
 import urllib.request
-
-#self.assertEqual
-#self.assertTrue , self.assertFalse
-# with self.assertRaises(TypeError):
-#             s.split(2)
 
 class AAIndexTests(unittest.TestCase):
 
@@ -132,7 +131,6 @@ class AAIndexTests(unittest.TestCase):
         feature_vals = self.aaindex.get_feature_from_code(feature1)['values']
         self.assertEqual(feature_vals == feature1_vals)
 
-
         feature_vals = self.aaindex.get_feature_from_code(feature2)['values']
         self.assertEqual(feature_vals == feature2_vals)
 
@@ -225,7 +223,7 @@ class AAIndexTests(unittest.TestCase):
         index.
 
         """
-        print('Testing AAi references from indices...')
+        print('Testing AAI references from indices...')
 
         feature1 = 'VELV850101'
         feature2 = 'QIAN880139'

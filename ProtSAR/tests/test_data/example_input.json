@@ -1,0 +1,17 @@
+{
+  "dataset": "T50.txt",
+  "activity": "T50",
+  "sequence_col": "sequence",
+  "aa_indices": "ARGP820101",
+  "window": "hamming",
+  "filter": "",
+  "spectrum": "power",
+  "descriptors":[
+    "aa_compos"
+  ],
+  "algorithm":"Plsreg",
+  "parameters":{},
+  "test_split":0.2
+
+
+}

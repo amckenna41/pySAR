@@ -1,4 +1,4 @@
-
+#maybe move main up a dir
 import pandas as pd
 import numpy as np
 # import  aaindex as aaindex
@@ -9,19 +9,10 @@ from proDSP import *
 from evaluate import *
 from plots import *
 from descriptors import *
-from ProAct import *
+from ProtSAR import *
 from encoding import *
 import datetime, time
 import argparse
-import itertools
-import pickle
-import yaml
-import io
-import os
-from difflib import get_close_matches
-import json
-import sklearn
-import scipy
 
 
 if __name__ == '__main__':
@@ -42,14 +33,14 @@ if __name__ == '__main__':
     # desc_results = encoding.descriptor_encoding()
 
     #Filter encoding strategy input and then create class instances accordingly
-    # proAct = ProAct(input_data)
-    # encoded_seqs = proAct.aaindex_encoding(proAct._aa_indices)
-    # proDSP = ProDSP(encoded_seqs, spectrum=proAct.spectrum, window=proAct.window, filter=proAct.filter)
-    # proDSP.encode_seqs()
+    proAct = ProtSAR(input_data)
+    encoded_seqs = proAct.aaindex_encoding(proAct._aa_indices)
+    proDSP = ProDSP(encoded_seqs, spectrum=proAct.spectrum, window=proAct.window, filter=proAct.filter)
+    proDSP.encode_seqs()
     #
 
     # print(input_data)
-    aa_df = encoding.aai_descriptor_encoding()
+    # aa_df = encoding.aai_descriptor_encoding()
     #
     # print(aa_df)
     # model = Model('randomforest')

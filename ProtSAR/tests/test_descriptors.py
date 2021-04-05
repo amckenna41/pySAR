@@ -1,11 +1,15 @@
+################################################################################
+#################            Descriptors Module Tests          #################
+################################################################################
 
 import pandas as pd
 import numpy as np
 import os
 import unittest
+import random
 
 from descriptors import Descriptors
-from ProAct import ProAct
+from ProtSAR import ProtSAR
 from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, PseudoAAC
 import utils as utils
 
@@ -50,28 +54,42 @@ class DescriptorTests(unittest.TestCase):
         if invalid_seqs!=None:
             raise ValueError('Invalid Amino Acids found in protein sequence dataset: {}'.format(invalid_seqs))
 
-    def tearDown(self):
+    def test_aacomposition(self):
 
-        del self.test_dataset1
-        del self.test_dataset2
-        del self.test_dataset3
-        del self.test_dataset4
+        print('Testing AA Composition Descriptor....')
 
+        random_seq = random.randint(0,len(self.test_dataset1))
 
-    # def test_aacomposition(self):
-    #
-    #     print('Testing AA Composition Descriptor....')
-    #     desc = Descriptors(self.test_dataset1['sequence'])
-    #
-    #     aa_comp = desc.get_aa_composition()
-    #
-    #     self.assertIsInstance(aa_comp, pd.DataFrame)
-    #     self.assertTrue('-' not in desc.protein_seqs)
-    #     self.assertEqual(AAComposition.AALetter, list(aa_comp.columns))
-    #
-    #     #self.assert(aa_comp_df_keys == [] )
-    #     #self.assert(aa_comp[1;10] == type(float))
-    #     #pd.testing.assert_frame_equal(my_df, expected_df)
+        desc = Descriptors(self.test_dataset1['sequence'][random_seq])
+
+        aa_comp = desc.get_aa_composition()
+
+        self.assertEqual(aa_comp.shape, (1,20))
+        self.assertNotIn('-' ,desc.protein_seqs)
+        self.assertIsInstance(aa_comp, pd.DataFrame)
+        self.assertEqual(AAComposition.AALetter, list(aa_comp.columns))
+
+        random_seq = random.randint(0,len(self.test_dataset2))
+
+        desc = Descriptors(self.test_dataset2['sequence'][random_seq])
+
+        aa_comp = desc.get_aa_composition()
+
+        self.assertEqual(aa_comp.shape, (1,20))
+        self.assertNotIn('-' ,desc.protein_seqs)
+        self.assertIsInstance(aa_comp, pd.DataFrame)
+        self.assertEqual(AAComposition.AALetter, list(aa_comp.columns))
+
+        random_seq = random.randint(0,len(self.test_dataset3))
+
+        desc = Descriptors(self.test_dataset3['sequence'][random_seq])
+
+        aa_comp = desc.get_aa_composition()
+
+        self.assertEqual(aa_comp.shape, (1,20))
+        self.assertNotIn('-' ,desc.protein_seqs)
+        self.assertIsInstance(aa_comp, pd.DataFrame)
+        self.assertEqual(AAComposition.AALetter, list(aa_comp.columns))
     #
     #     #assert concatenation of 2 descriptors works
     #     # self.assertEqual(aa_comp.shape == (self.test_dataset1.shape[0], 20))
@@ -148,7 +166,12 @@ class DescriptorTests(unittest.TestCase):
     #     pass
 
 
+    def tearDown(self):
 
+        del self.test_dataset1
+        del self.test_dataset2
+        del self.test_dataset3
+        del self.test_dataset4
 
 
 

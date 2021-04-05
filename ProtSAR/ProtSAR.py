@@ -26,7 +26,7 @@ import descriptors as descriptors
 
 ####Add StanardScaler after every AAIndex encoding and before model building####
 
-class ProAct():
+class ProtSAR():
 
     def __init__(self,data_json=None,dataset="",seq_col="sequence", activity="",aa_indices="", window="hamming", filter="",spectrum="",
                     descriptors="",algorithm="",parameters={}, test_split=0.2):

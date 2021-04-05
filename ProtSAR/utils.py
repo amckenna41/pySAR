@@ -1,9 +1,8 @@
 
-#########################################################################
-###                         Utilities                                 ###
-#########################################################################
+################################################################################
+#################             Utilities Modules                #################
+################################################################################
 
-#prepare dataset
 import pandas as pd
 pd.options.mode.chained_assignment = None  #stop pandas warnings, default='warn'
 import numpy as np
@@ -14,7 +13,6 @@ import csv
 from pathlib import Path
 
 from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-
 
 
 def valid_sequence(sequences):
@@ -108,6 +106,31 @@ def flatten(array):
         return flatten(array)
     except:
         raise ValueError('Error flattening array of type: {} and size {}'.format(type(array),len(array)))
+
+def zero_padding(seqs):
+    """
+    Pad seqences in seqs with 0's such that every sequence is of the same length
+    of max(len(seq)).
+
+    Parameters
+    ----------
+    seqs: np.ndarray / list
+        array or list of encoded protein sequences
+
+    Returns
+    -------
+    seqs: np.ndarray / list
+        input sequences but with every sequence in the object now zero paddded
+        to be the same length.
+
+    """
+    max_len = len(max(seqs,key=len))
+
+    for s in range(0,len(seqs)):
+        if len(seqs[s])<max_len:
+            seqs[s]+= [0] * (max_len - len(seqs[s]))
+
+    return seqs
 
 def parse_json(data_json):
 
@@ -292,10 +315,10 @@ def output_to_yml(output):
 
     pass
 
-def get_top_k():
-
-    #output top K results from inputted results file
-    pass
+# def get_top_k():
+#
+#     #output top K results from inputted results file
+#     pass
 
 
 # Function to convert a CSV to JSON
@@ -332,13 +355,3 @@ def get_top_k():
 #
 # # Call the make_json function
 # make_json(csvFilePath, jsonFilePath)
-
-def zero_padding(seqs):
-
-    max_len = len(max(seqs,key=len))
-
-    for s in range(0,len(seqs)):
-        if len(seqs[s])<max_len:
-            seqs[s]+= [0] * (max_len - len(seqs[s]))
-
-    return seqs

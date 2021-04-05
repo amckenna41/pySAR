@@ -39,7 +39,7 @@ from . aaindex import  AAIndex
 from . model import Model
 from . proDSP import ProDSP
 from . evaluate import Evaluate
-from . ProAct import ProAct
+from . ProtSAR import ProtSAR
 from . utils import *
 from . descriptors import Descriptors
 from . plots import plot_reg

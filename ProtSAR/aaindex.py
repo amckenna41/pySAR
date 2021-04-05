@@ -20,7 +20,6 @@ from difflib import get_close_matches
 from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
 
 class AAIndex():
-
     """
     Python parser for AAindex1: Amino Acid Index Database
               (**abbreviated to AAI1 onwards**)
@@ -231,54 +230,6 @@ class AAIndex():
           json.dump(self.out_dict, outputF,indent = 4, sort_keys=True)
 
         return self.out_dict
-    #
-    # def parse_aaindex_from_json(self, json_data):
-    #
-    #     # get indices/feature in AAI1
-    #     features = list(json_data.keys())
-    #     features.sort()
-    #
-    #     # Get all amino acids
-    #     amino_acids = list(json_data[list(json_data.keys())[0]]["values"].keys())
-    #     amino_acids.sort()
-    #
-    #     # Data will be a num_feature x num_aa array with standardized features
-    #     data = np.zeros((len(features),len(amino_acids)),dtype=float)
-    #
-    #     for i, f in enumerate(features):
-    #
-    #         # Get values
-    #         values = [json_data[f]["values"][aa] for aa in amino_acids]
-    #
-    #         # Turn to float, converting "NA" to nan
-    #         out = []
-    #         for v in values:
-    #             try:
-    #                 out.append(float(v))
-    #             except ValueError:
-    #                 out.append(np.nan)
-    #
-    #         # Replace nan with the mean value for the vector.
-    #         out = np.array(out)
-    #
-    #         na_mask = np.isnan(out)
-    #         not_na_mask = np.array(1-na_mask,dtype=bool)
-    #
-    #         mean_value = np.mean(out[not_na_mask])
-    #         out[na_mask] = mean_value
-    #
-    #         # # Standardize data so mean is zero and standard deviation is -1 to 1
-    #         out = out - np.mean(out)
-    #         out = out/np.std(out)
-    #
-    #         # Record data
-    #         data[i,:] = out
-    #         self.feature_data = data
-    #     # with open(os.path.join('features', self.aa_index_json_filename)) as output_json:
-    #     #     json.dump(data, output_json,indent = 4, sort_keys=True)
-    #
-    #     return self.feature_data
-
 
     def parse_aaindex_to_category(self, aaindex_category_file = 'aaindex-to-category.txt'):
         """

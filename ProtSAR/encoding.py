@@ -62,7 +62,9 @@ class Encoding(ProAct):
         self.data = self.read_data(data_json)
 
         print(self.model)
-
+        print('algorithm',self.algorithm)
+        print('dataset',self.dataset)
+        print('model',self.model)
         utils.create_output_dir()
     # aa_df = encoding.aai_encoding(aaindex, combo2 = False, cutoff=1, verbose=True)
 
@@ -237,14 +239,14 @@ class Encoding(ProAct):
         msle_ = []
         desc_count = 1
 
-        all_descriptors = desc.all_descriptors_list(desc_combo)
-
+        all_descriptors = desc.all_descriptors_list(desc_combo)[:-3]
+        print(all_descriptors)
         featureIndex = 1
-
+        print('here')
         for descr in all_descriptors:
 
-            print('Descriptor: {} ###### {}/{}'.format(descriptor , desc_count, len(all_descriptors)))
-
+            print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
+            desc_count+=1
             if desc_combo == 2 or desc_combo == 3:
 
                 for de in descr:
@@ -257,13 +259,28 @@ class Encoding(ProAct):
 
             X = desc_
 
-
+            if X.shape[0] != self.num_seqs:
+              raise ValueError('Feature data doesnt have the correct number of sequences: {},\
+                      proabable error in getting descriptor values'.format(self.num_seqs))
+            print('X.shape here',X.shape)
+            print(repr(self.model))
             Y  = self.get_activity()
 
-            X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
-
-            model_fit = self.model.fit()
-            Y_pred = self.model.predict()
+            #if using the PlsRegression algorithm and there is only 1 feature (1-dimension)
+            #in the feature data X then create a new PLSReg model with the n_components
+            #parameter set to 1 instead of the default 2 - this stops the error:
+            #ValueError - Invalid Number of Components: 2
+            if X.shape[1] == 1 and repr(self.model) == "PLSRegression":
+              print('here now here')
+              tmp_model = Model('plsreg',parameters={'n_components':1})
+              X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X, Y)
+              model_fit = tmp_model.fit()
+              Y_pred = tmp_model.predict()
+            else:
+              print('fitting model')
+              X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
+              model_fit = self.model.fit()
+              Y_pred = self.model.predict()
 
             eval = Evaluate(Y_test,Y_pred)
 
@@ -275,6 +292,7 @@ class Encoding(ProAct):
             mae_.append(eval.mae)
             explained_var_.append(eval.explained_var)
 
+        print('getting here')
         desc_metrics_= desc_metrics_df.copy()
         desc_metrics_['Descriptor'] = descriptor
         desc_metrics_['R2'] = r2_
@@ -292,8 +310,6 @@ class Encoding(ProAct):
             save_path = 'desc_results'
 
         utils.save_results(desc_metrics_,save_path)
-
-        desc_metrics_= desc_metrics_df.copy()
 
         return desc_metrics_
 
