@@ -414,12 +414,9 @@ class Model():
 
     def __repr__(self):
 
-        return "Model of type {} using {} parameters, model fit = {}".format(
-            type(self.model).__name__, self.parameters, self.modelFitted())
-
-    def __type__(self):
-
         return type(self.model).__name__
+        # return "Model of type {} using {} parameters, model fit = {}".format(
+        #     type(self.model).__name__, self.parameters, self.modelFitted())
 
     def __sizeof__(self):
 

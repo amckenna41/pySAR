@@ -1,4 +1,11 @@
-# ProtSAR # <a name="TOP"></a>
+# ProtSAR <a name="TOP"></a>
+
+## status
+> Development Stage
+
+[![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
+
+![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)
 
 ProtSAR is a Python library for analysing the sequence activity relationship (SAR)
 between proteins. ProtSAR allows the encoding of protein sequences using indices
@@ -63,12 +70,6 @@ foobar.singularize('phenomena') # returns 'phenomenon'
 ### Encoding using AAI + protein descriptors
 
 
-## status
-> Development Stage
-
-[![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
-
-![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)
 
 ## System Requirements ##
 
@@ -77,10 +78,3 @@ numpy >= 1.16.6
 pandas >= 1.1.0
 scikit-learn >= 0.24
 scipy >= 1.4.1
-
-
-
-## Installation ##
-```
-git clone ....
-```

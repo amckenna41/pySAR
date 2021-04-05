@@ -9,6 +9,7 @@ import numpy as np
 import os
 import shutil
 import json
+import yaml
 import csv
 from pathlib import Path
 
@@ -135,17 +136,20 @@ def zero_padding(seqs):
 def parse_json(data_json):
 
     #To DO: Check if input file is of type json or yaml
-        # assert os.path.isfile(input_path), 'Input data file not correct filepath'
-        # _, file_extension = os.path.splitext(input_path)
-        # print(file_extension)
-        #
-        # if (file_extension == '.yml') or (file_extension == '.yaml'):
-        #     print('hello')
-        #     with open(input_path) as f:
-        #         # The FullLoader parameter handles the conversion from YAML
-        #         # scalar values to Python the dictionary format
-        #         data = yaml.load(f, Loader=yaml.FullLoader)
-        #
+        assert os.path.isfile(data_json), 'Input data file not correct filepath'
+        _, file_extension = os.path.splitext(input_path)
+        print(file_extension)
+
+        if (file_extension == '.yml') or (file_extension == '.yaml'):
+            print('hello')
+            try:
+                with open(input_path) as f:
+                    # The FullLoader parameter handles the conversion from YAML
+                    # scalar values to Python the dictionary format
+                    data = yaml.load(f, Loader=yaml.FullLoader)
+            except OSError('Error opening Yaml File {}'.format(data_json)):
+                return None
+
         # elif (file_extension == '.json'):
         #     with open(input_path) as f:
         #         data = json.load(f)

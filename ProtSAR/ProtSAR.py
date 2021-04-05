@@ -42,8 +42,6 @@ class ProtSAR():
         self.algorithm = algorithm
         self.parameters = parameters
         self.test_split = test_split
-        self.using_aa_indices = False
-        self.using_desc_features = False
 
         self.data = self.read_data(data_json)
 
@@ -63,11 +61,6 @@ class ProtSAR():
              self.dataset, self.seq_col, self.activity, self.aa_indices, self.window, \
              self.filter, self.spectrum, self.descriptors, self.algorithm, \
              self.parameters, self.test_split = utils.parse_json(data_json)
-
-        if self.aa_indices!="":
-            self.using_aa_features = True
-        if self.descriptors!="":
-            self.using_desc_features = True
 
         dataset_file = os.path.join(DATA_DIR,self.dataset)
 
@@ -137,8 +130,6 @@ class ProtSAR():
             temp_all_seqs = np.array(temp_all_seqs)
             # encoded_aai_reshaped = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
 
-            self.using_aa_features = True
-
             return temp_all_seqs
 
         else:
@@ -171,8 +162,6 @@ class ProtSAR():
                     encoded_aai_reshaped = temp_all_seqs
                 else:
                     encoded_aai_reshaped = np.concatenate((encoded_aai_reshaped,temp_all_seqs), axis=1)
-
-            self.using_aa_features = True
 
             self.encoded_aai_reshaped = encoded_aai_reshaped
 
@@ -243,8 +232,6 @@ class ProtSAR():
             encoded_desc = []
 
         X = pd.DataFrame(np.concatenate(encoded_desc_vals))
-
-        self.using_desc_features = True
 
         return X
 
@@ -375,22 +362,6 @@ class ProtSAR():
     def get_activity(self):
 
         return self.data[self.activity].values.reshape((-1,1))
-
-    @property
-    def using_aa_features(self):
-        return self._using_aa_features
-
-    @using_aa_features.setter
-    def using_aa_features(self, val):
-        self._using_aa_features = val
-
-    @property
-    def using_desc_features(self):
-        return self._using_desc_features
-
-    @using_desc_features.setter
-    def using_desc_features(self, val):
-        self._using_desc_features = val
 
     @property
     def dataset(self):

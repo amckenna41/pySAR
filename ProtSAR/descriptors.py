@@ -27,7 +27,7 @@ from proDSP import ProDSP
 from evaluate import Evaluate
 from ProtSAR import ProtSAR
 import utils as utils
-from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, PseudoAAC
+from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, pseudoAAC
 
 #show progress of each descriptor calculation - https://pypi.org/project/progress/
 class Descriptors():
@@ -171,7 +171,8 @@ class Descriptors():
         #AA_Comp list
         time.sleep(1)
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Amid Composition"):
-            AAComp=AAComposition.CalculateAAComposition([seq])
+            # AAComp=AAComposition.CalculateAAComposition([seq])
+            AAComp=AAComposition.CalculateAAComposition(seq)
             aa_comp.append(list(AAComp.values()))
 
         #convert calculated AAComp values into dataframe
@@ -518,10 +519,10 @@ class Descriptors():
 
         return quasi_seq_order_df
 
-    def get_pseudo_AAC(self, AAP=[PseudoAAC._Hydrophobicity]):
+    def get_pseudo_AAC(self, AAP=[pseudoAAC._Hydrophobicity]):
 
         """
-        Calculate Pseudo Amino Acid Composition features for the protein sequences.
+        Calculate pseudo Amino Acid Composition features for the protein sequences.
         PsuedoAAComp is ...
 
         Returns
@@ -534,12 +535,12 @@ class Descriptors():
 
         psuedoAAComp = []
         #get feature names for PsuedoAAComp descriptor
-        keys = (list(PseudoAAC.GetPseudoAAC(self.protein_seqs[0], AAP=AAP).keys()))
+        keys = (list(pseudoAAC.GetpseudoAAC(self.protein_seqs[0], AAP=AAP).keys()))
 
         #iterate through all sequences, calculate descriptor values and append to
         #psuedoAAComp list
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Psuedo Amino Acid Composition"):
-            psuedoAA=PseudoAAC.GetPseudoAAC(seq, AAP=AAP)
+            psuedoAA=pseudoAAC.GetpseudoAAC(seq, AAP=AAP)
             psuedoAAComp.append(list(psuedoAA.values()))
 
         #convert calculated PsuedoAAComp values into dataframe
@@ -564,10 +565,10 @@ class Descriptors():
         print('#########################################################\n')
 
         amp_pseudo_AAComp = []
-        keys = list((PseudoAAC.GetAPseudoAAC(self.protein_seqs[0])).keys())
+        keys = list((pseudoAAC.GetApseudoAAC(self.protein_seqs[0])).keys())
 
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Ampiphillic Amino Acid Composition"):
-            amp_psuedo=PseudoAAC.GetAPseudoAAC(seq)
+            amp_psuedo=pseudoAAC.GetApseudoAAC(seq)
             amp_pseudo_AAComp.append(list(amp_psuedo.values()))
 
         #convert calculated APsuedo_AAComp values into dataframe
@@ -651,7 +652,7 @@ class Descriptors():
         self.CTD = self.get_ctd()
         self.conjoint_triad = self.get_conjoint_triad()
         self.seq_order_coupling_number = self.get_seq_order_coupling_number()
- #       self.quasi_seqOrder = self.get_quasi_seq_order()
+ #       self.quasi_seq_order = self.get_quasi_seq_order()
         # self.pseudoAAC = self.get_pseudo_AAC()
         # self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
 
@@ -659,7 +660,7 @@ class Descriptors():
         # all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
         #                    self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
         #                    self.geary_autocorrelation, self.CTD, self.conjoint_triad,
-        #                    self.seq_order_coupling_number, self.quasi_seqOrder, self.pseudoAAC, self.ampPseudoAAC]
+        #                    self.seq_order_coupling_number, self.quasi_seq_order, self.pseudo_AAC, self.amp_pseudo_AAC]
 
         all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
                            self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,

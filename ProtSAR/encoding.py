@@ -11,6 +11,7 @@ import itertools
 import pickle
 import yaml
 import io
+from tqdm import tqdm
 from os import path, makedirs, remove
 from difflib import get_close_matches
 import json
@@ -20,12 +21,12 @@ from aaindex import  AAIndex
 from model import Model
 from proDSP import ProDSP
 from evaluate import Evaluate
-from ProAct import ProAct
+from ProtSAR import ProtSAR
 import utils as utils
 from descriptors import Descriptors
 from plots import plot_reg
 
-class Encoding(ProAct):
+class Encoding(ProtSAR):
 
     # """
     # Digital Signal Processing on protein sequences. Transform protein sequences into their spectral form
@@ -84,7 +85,7 @@ class Encoding(ProAct):
 
         """
         # assert(type(aaindex) ==)
-        # aaindex = AAIndex()
+        aaindex = AAIndex()
         #initialise dataframe to store all output results of AAI encoding
         aaindex_metrics_df = pd.DataFrame(columns=['Index','Category','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
@@ -116,7 +117,8 @@ class Encoding(ProAct):
         cutoff_index = int(len(all_features) * cutoff)
         # cutoff_index = 50
 
-        for index in all_features[:cutoff_index]:
+        # for index in all_features[:cutoff_index]:
+        for index in tqdm(all_features[:cutoff_index],unit=" indices",position=0,desc="AAIndex"):
 
             #if verbose, print out the current index and the current number of indices
             #   iterated through so far, increment counter to keep track of this
@@ -194,6 +196,8 @@ class Encoding(ProAct):
         aaindex_metrics_['RPD'] = rpd_
         aaindex_metrics_['MAE'] = mae_
         aaindex_metrics_['Explained Var'] = explained_var_
+
+        aaindex_metrics_ = aaindex_metrics_.sort_values(by=['R2'],ascending=False)
 
         #set results dataframe according to the number of combinations of AAI used.
         if combo2:
@@ -302,6 +306,8 @@ class Encoding(ProAct):
         desc_metrics_['MAE'] = mae_
         desc_metrics_['Explained Var'] = explained_var_
 
+        desc_metrics_ = desc_metrics_.sort_values(by=['R2'],ascending=False)
+
         if desc_combo == 2:
             save_path = 'desc_combo2_results'
         elif desc_combo == 3:
@@ -390,14 +396,17 @@ class Encoding(ProAct):
 
                 Y  = self.get_activity()
 
-                print(X.shape)
-                print(Y.shape)
-
-
-                X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
-
-                model_fit = self.model.fit()
-                Y_pred = self.model.predict()
+                if X.shape[1] == 1 and repr(self.model) == "PLSRegression":
+                  print('here now here')
+                  tmp_model = Model('plsreg',parameters={'n_components':1})
+                  X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X, Y)
+                  model_fit = tmp_model.fit()
+                  Y_pred = tmp_model.predict()
+                else:
+                  print('fitting model')
+                  X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
+                  model_fit = self.model.fit()
+                  Y_pred = self.model.predict()
 
                 eval = Evaluate(Y_test,Y_pred)
                 index_.append(feature)
@@ -423,6 +432,9 @@ class Encoding(ProAct):
         aai_desc_metrics_df_['RPD'] = rpd_
         aai_desc_metrics_df_['MAE'] = mae_
         aai_desc_metrics_df_['Explained Var'] = explained_var_
+
+        #sort results by R2
+        aai_desc_metrics_df_ = aai_desc_metrics_df_.sort_values(by=['R2'],ascending=False)
 
         #set save path according to the descriptor combinations type
         if desc_combo == 2:
