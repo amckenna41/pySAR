@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     #Filter encoding strategy input and then create class instances accordingly
     # proAct = ProtSAR(dataset="T50.txt" ,activity="T50",aa_indices=["LEVM780106"],algorithm="randomforest")
-    proAct = ProtSAR(dataset="T50.txt" ,activity="T50",aa_indices="LEVM780105",algorithm="randomforest")
+    proAct = ProtSAR(dataset="T50.txt" ,activity="T50",aa_indices="MEIH800101",algorithm="bagging")
 
 
     # encoded_seqs = proAct.aaindex_encoding(proAct.aa_indices)

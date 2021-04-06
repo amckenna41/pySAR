@@ -120,6 +120,15 @@ class Encoding(ProtSAR):
         cutoff_index = int(len(all_features) * cutoff)
         # cutoff_index = 50
 
+        '''
+        1.) Get AAI index - encode it into a protein spectra according to the spectrum
+        input parameter.
+        2.) Build model using encoded AAI spectral features.
+        3.) Predict and evaluate the model using the test data.
+        4.) Append index and calculated metrics to lists.
+        5.) Repeat steps 1 - 4 for all indices.
+        6.) Output results into a final dataframe, save it and return.
+        '''
         # for index in all_features[:cutoff_index]:
         for index in tqdm(all_features[:cutoff_index],unit=" indices",position=0,desc="AAIndex"):
 
@@ -249,7 +258,15 @@ class Encoding(ProtSAR):
         all_descriptors = desc.all_descriptors_list(desc_combo)
         print(all_descriptors)
         featureIndex = 1
-        print('here')
+
+        '''
+        1.) Get current descriptor value from all_descriptors list.
+        2.) Build model using descriptor features from current descriptor.
+        3.) Predict and evaluate the model using the test data.
+        4.) Append descriptor and calculated metrics to lists.
+        5.) Repeat steps 1 - 4 for all descriptors.
+        6.) Output results into a final dataframe, save it and return.
+        '''
         for descr in all_descriptors:
 
             print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
@@ -269,8 +286,7 @@ class Encoding(ProtSAR):
             if X.shape[0] != self.num_seqs:
               raise ValueError('Feature data doesnt have the correct number of sequences: {},\
                       proabable error in getting descriptor values'.format(self.num_seqs))
-            print('X.shape here',X.shape)
-            print(repr(self.model))
+
             Y  = self.get_activity()
 
             #if using the PlsRegression algorithm and there is only 1 feature (1-dimension)
@@ -278,13 +294,11 @@ class Encoding(ProtSAR):
             #parameter set to 1 instead of the default 2 - this stops the error:
             #ValueError - Invalid Number of Components: 2
             if X.shape[1] == 1 and repr(self.model) == "PLSRegression":
-              print('here now here')
               tmp_model = Model('plsreg',parameters={'n_components':1})
               X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X, Y)
               model_fit = tmp_model.fit()
               Y_pred = tmp_model.predict()
             else:
-              print('fitting model')
               X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
               model_fit = self.model.fit()
               Y_pred = self.model.predict()
@@ -299,7 +313,6 @@ class Encoding(ProtSAR):
             mae_.append(eval.mae)
             explained_var_.append(eval.explained_var)
 
-        print('getting here')
         desc_metrics_= desc_metrics_df.copy()
         desc_metrics_['Descriptor'] = descriptor
         desc_metrics_['R2'] = r2_
@@ -342,7 +355,8 @@ class Encoding(ProtSAR):
         """
         aaindex = AAIndex()
         desc = Descriptors(self.data[self.seq_col], all_desc = True)
-        aaindex_metrics_df = pd.DataFrame(columns=['Index_Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+        # aaindex_metrics_df = pd.DataFrame(columns=['Index_Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+        aaindex_metrics_df = pd.DataFrame(columns=['Index','Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
         index_ = []
         descriptor_ = []
@@ -360,6 +374,17 @@ class Encoding(ProtSAR):
         #get list of all descriptors
         all_descriptors = desc.all_descriptors_list(desc_combo)
 
+        '''
+        1.) Get AAI index - encode it into a protein spectra according to the spectrum
+        input parameter.
+        2.) Get all 15 descriptor values and concatenate to AAI encoding features.
+        3.) Build model using concatenated AAI and Descriptor features as the training
+        data.
+        4.) Predict and evaluate the model using the test data.
+        5.) Append index, descriptor and calculated metrics to lists.
+        6.) Repeat steps 1 - 5 for all indices in the AAI.
+        7.) Output results into a final dataframe, save it and return.
+        '''
         for feature in (aaindex.get_feature_codes()):
 
             if verbose:
@@ -400,13 +425,11 @@ class Encoding(ProtSAR):
                 Y  = self.get_activity()
 
                 if X.shape[1] == 1 and repr(self.model) == "PLSRegression":
-                  print('here now here')
                   tmp_model = Model('plsreg',parameters={'n_components':1})
                   X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X, Y)
                   model_fit = tmp_model.fit()
                   Y_pred = tmp_model.predict()
                 else:
-                  print('fitting model')
                   X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
                   model_fit = self.model.fit()
                   Y_pred = self.model.predict()
@@ -427,8 +450,8 @@ class Encoding(ProtSAR):
         aai_desc_metrics_df_['Index'] = index_
         aai_desc_metrics_df_['Descriptor'] = descriptor_
         # aai_desc_metrics_df_['Index_Descriptor'] = (list(map(list, zip(aaindex_metrics_df_['Index'], aaindex_metrics_df_['Descriptor']))))
-        aai_desc_metrics_df_['Index_Descriptor'] = (list(map(list, zip(index_, descriptor_))))
-        aai_desc_metrics_df_.drop(['Index','Descriptor'],axis=1, inplace=True)
+        # aai_desc_metrics_df_['Index_Descriptor'] = (list(map(list, zip(index_, descriptor_))))
+        # aai_desc_metrics_df_.drop(['Index','Descriptor'],axis=1, inplace=True)
         aai_desc_metrics_df_['R2'] = r2_
         aai_desc_metrics_df_['RMSE'] = rmse_
         aai_desc_metrics_df_['MSE'] = mse_

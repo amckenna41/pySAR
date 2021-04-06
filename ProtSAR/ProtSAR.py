@@ -189,9 +189,11 @@ class ProtSAR():
 
         aai_df = pd.DataFrame(columns=['Index','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
+        print('encoding using',self.aa_indices)
         encoded_seqs = self.aaindex_encoding(self.aa_indices)
         proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum, window=self.window, filter=self.filter)
         proDSP.encode_seqs()
+        print('spectral encoding', proDSP.spectrum_encoding.shape)
         X = pd.DataFrame(proDSP.spectrum_encoding)
 
         # if len(self.aa_indices)>1:
@@ -219,6 +221,7 @@ class ProtSAR():
 
         aai_dict = eval.all_metrics()
 
+        print('aai_dict',aai_dict)
         self.output_results(aai_dict)
 
         plot_reg(Y_test, Y_pred, eval.r2)
@@ -354,7 +357,7 @@ class ProtSAR():
         print('############ Parameters ############\n')
         print('Dataset -> {}\nActivity -> {}\nSpectrum -> {}\nWindow -> {}\nFilter -> {}\nAAIndices -> {}\nDescriptors -> {}\nAlgorithm -> {}\nParameters -> {}\nTest Split -> {}\n'
                         .format(self.dataset,self.activity, self.spectrum, self.window, self.filter,
-                                self.aa_indices, self.descriptors, self.algorithm, self.parameters, self.test_split))
+                                self.aa_indices, self.descriptors, repr(self.model), self.parameters, self.test_split))
 
         print('############# Metrics #############\n')
         print('# R2: {}'.format(results['R2']))
@@ -379,7 +382,7 @@ class ProtSAR():
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
-            sort_keys=True, indent=4)
+            sort_keys=True, indenst=4)
 
     @property
     def dataset(self):

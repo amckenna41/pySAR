@@ -107,7 +107,7 @@ class ProDSP():
 
         window_matches = (get_close_matches(self.window, all_windows, cutoff=0.4))[0]
 
-        if window_matches == [] or window_matches == None:
+        if window_matches == [] or window_matches == None:      #change this to just use no window
             raise ValueError('Invalid window function type ({}) not available in valid \
                 windows: {}'.format(self.window, all_windows))
         else:
