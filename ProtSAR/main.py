@@ -28,15 +28,21 @@ if __name__ == '__main__':
     input_data = args.input_data
 
     aaindex = AAIndex()
-    encoding = Encoding(data_json=input_data)
+    # encoding = Encoding(data_json=input_data)
+    # encoding = Encoding(data_json=input_data)
+
     #aa_df = encoding.aai_encoding(aaindex,verbose=True)
     # desc_results = encoding.descriptor_encoding()
 
     #Filter encoding strategy input and then create class instances accordingly
-    proAct = ProtSAR(input_data)
-    encoded_seqs = proAct.aaindex_encoding(proAct._aa_indices)
-    proDSP = ProDSP(encoded_seqs, spectrum=proAct.spectrum, window=proAct.window, filter=proAct.filter)
-    proDSP.encode_seqs()
+    # proAct = ProtSAR(dataset="T50.txt" ,activity="T50",aa_indices=["LEVM780106"],algorithm="randomforest")
+    proAct = ProtSAR(dataset="T50.txt" ,activity="T50",aa_indices="LEVM780105",algorithm="randomforest")
+
+
+    # encoded_seqs = proAct.aaindex_encoding(proAct.aa_indices)
+    # proDSP = ProDSP(encoded_seqs, spectrum=proAct.spectrum, window=proAct.window, filter=proAct.filter)
+    # proDSP.encode_seqs()
+    aa_df = proAct.encode_aaindices()
     #
 
     # print(input_data)

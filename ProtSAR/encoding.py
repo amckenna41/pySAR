@@ -69,7 +69,7 @@ class Encoding(ProtSAR):
         utils.create_output_dir()
     # aa_df = encoding.aai_encoding(aaindex, combo2 = False, cutoff=1, verbose=True)
 
-    def aai_encoding(self, aaindex, combo2 = False, cutoff=1, verbose=True):
+    def aai_encoding(self, aaindex, combo2 = False, cutoff=1, verbose=False):
 
         """
         Encoding all protein sequences using each of the indices in the AAI1.

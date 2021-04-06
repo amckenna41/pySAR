@@ -440,7 +440,7 @@ class AAIndex():
       """
       #stripping input of whitespace
       feature_code.strip()
-      assert feature_code in (self.get_feature_codes()), 'Feature Index not in AAIndex'
+      assert feature_code in (self.get_feature_codes()), 'Feature Index ({}) not in AAIndex'.format(feature_code)
       values = (self.aaindex_json[feature_code])
 
       return values

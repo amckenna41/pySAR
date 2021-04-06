@@ -77,8 +77,12 @@ def remove_gaps(protein_seqs):
     """
 
     for row in range(0, len(protein_seqs)):
-        protein_seqs[row] = protein_seqs[row].replace("-","")
-
+        try:
+            # print(row)
+            protein_seqs[row] = protein_seqs[row].replace("-","")
+        except ValueError:
+            print('Error removing gaps from sequences')
+            return None
     return protein_seqs
 
 #check the output type for this func
@@ -137,7 +141,7 @@ def parse_json(data_json):
 
     #To DO: Check if input file is of type json or yaml
         assert os.path.isfile(data_json), 'Input data file not correct filepath'
-        _, file_extension = os.path.splitext(input_path)
+        _, file_extension = os.path.splitext(data_json)
         print(file_extension)
 
         if (file_extension == '.yml') or (file_extension == '.yaml'):

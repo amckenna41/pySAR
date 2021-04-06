@@ -28,9 +28,11 @@ import descriptors as descriptors
 
 class ProtSAR():
 
-    def __init__(self,data_json=None,dataset="",seq_col="sequence", activity="",aa_indices="", window="hamming", filter="",spectrum="",
-                    descriptors="",algorithm="",parameters={}, test_split=0.2):
+    def __init__(self,data_json=None,dataset="",seq_col="sequence", activity="",\
+        aa_indices="", window="hamming", filter="",spectrum="power", descriptors="", \
+        algorithm="",parameters={}, test_split=0.2):
 
+        self.data_json = data_json
         self.dataset = dataset
         self.seq_col = seq_col
         self.activity = activity
@@ -43,6 +45,12 @@ class ProtSAR():
         self.parameters = parameters
         self.test_split = test_split
 
+        if self.data_json!="" and self.data_json!=None:
+
+            self.dataset, self.seq_col, self.activity, self.aa_indices, self.window, \
+            self.filter, self.spectrum, self.descriptors, self.algorithm, \
+            self.parameters, self.test_split = utils.parse_json(data_json)
+
         self.data = self.read_data(data_json)
 
         self.num_seqs = len(self.data[self.seq_col])
@@ -54,13 +62,19 @@ class ProtSAR():
 
         utils.create_output_dir()
 
+        all_attrs = vars(self)
+        # del all_attrs['data']
+
+        with open("sample.json", "w") as outfile:
+            json.dump(all_attrs, outfile)
+        # print(', '.join("%s: %s" % item for item in all_attrs.items()))
+        # a_file = open("data.pkl", "wb")
+        # pickle.dump(all_attrs, a_file)
+        # a_file.close()
+
+        #output parameters to dict/json/yml
+
     def read_data(self, data_json):
-
-        if data_json!="" and data_json!=None:
-
-             self.dataset, self.seq_col, self.activity, self.aa_indices, self.window, \
-             self.filter, self.spectrum, self.descriptors, self.algorithm, \
-             self.parameters, self.test_split = utils.parse_json(data_json)
 
         dataset_file = os.path.join(DATA_DIR,self.dataset)
 
@@ -71,7 +85,7 @@ class ProtSAR():
             except IOError as e:
                 print('Error opening dataset file: ',dataset)
         else:
-            raise IOError('File not found in directory: {}'.format(dataset_file))
+            raise IOError('Dataset file not found in directory: {}'.format(dataset_file))
 
     def preprocessing(self):
 
@@ -93,7 +107,7 @@ class ProtSAR():
         if activityMatches!=[]:
             self.activity = activityMatches[0]
         else:
-            raise ValueError('Activity Column not present in dataset columns - {} /n '.format(self.data.columns))
+            raise ValueError('Activity Column not present in dataset columns - {} /n '.format(list(self.data.columns)))
 
         self.data[self.activity].replace([np.inf,-np.inf], np.nan)
         self.data[self.activity].fillna(0,inplace=True)
@@ -151,7 +165,7 @@ class ProtSAR():
                     temp_all_seqs.append(temp_seq_vals)
                     temp_seq_vals = []
 
-                temp_all_seqs = zero_padding(temp_all_seqs)
+                temp_all_seqs = utils.zero_padding(temp_all_seqs)
 
                 temp_all_seqs =np.array(temp_all_seqs)
 
@@ -339,7 +353,7 @@ class ProtSAR():
 
         print('############ Parameters ############\n')
         print('Dataset -> {}\nActivity -> {}\nSpectrum -> {}\nWindow -> {}\nFilter -> {}\nAAIndices -> {}\nDescriptors -> {}\nAlgorithm -> {}\nParameters -> {}\nTest Split -> {}\n'
-                        .format(self.dataset,self.activity, self.spectrum, self.window, self.fitler,
+                        .format(self.dataset,self.activity, self.spectrum, self.window, self.filter,
                                 self.aa_indices, self.descriptors, self.algorithm, self.parameters, self.test_split))
 
         print('############# Metrics #############\n')
@@ -348,7 +362,7 @@ class ProtSAR():
         print('# MSE: {} '.format(results['MSE']))
         print('# MAE: {}'.format(results['MAE']))
         print('# RPD {}'.format(results['RPD']))
-        print('# Variance {}'.format(results['Explained Var']))
+        print('# Variance {}\n'.format(results['Explained Var']))
         print('###################################')
 
     def get_seqs(self):

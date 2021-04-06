@@ -32,7 +32,7 @@ class UtilsTest(unittest.TestCase):
             raise IOError('Error reading in test_dataset4')
 
     def test_valid_sequence(self):
-        
+
         pass
 
     def test_remove_gaps(self):

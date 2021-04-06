@@ -27,7 +27,7 @@ from proDSP import ProDSP
 from evaluate import Evaluate
 from ProtSAR import ProtSAR
 import utils as utils
-from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, pseudoAAC
+from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, PseudoAAC
 
 #show progress of each descriptor calculation - https://pypi.org/project/progress/
 class Descriptors():
@@ -102,7 +102,7 @@ class Descriptors():
                 self.all_descriptors = self.get_all_descriptors()
                 self.all_descriptors.to_csv(os.path.join(DATA_DIR, 'descriptors.csv'))
 
-    def import_descriptors(self):
+    def import_descriptors(self, descriptor_file):
 
         """
         By default, the class will search for a file in the DATA_DIR called
@@ -121,7 +121,7 @@ class Descriptors():
         print('Importing Descriptors File....')
 
         try:
-            descriptor_df = pd.read_csv(self.desc_dataset)
+            descriptor_df = pd.read_csv(descriptor_file)
         except IOError:
             print('Error opening descriptor file')
             return None
@@ -132,12 +132,18 @@ class Descriptors():
         self.normalized_moreaubroto_autocorrelation = descriptor_df.iloc[:,8420:8660]
         self.moran_autocorrelation = descriptor_df.iloc[:,8660: 8900]
         self.geary_autocorrelation = descriptor_df.iloc[:,8900:9140]
-        self.CTD =  descriptor_df.iloc[:,9140:9287] #split into C, T and D?
-        self.conjoint_triad = descriptor_df.iloc[:,9287:9630]
-        self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]
-        self.quasi_seq_order = descriptor_df.iloc[:,9690:9790]
-        self.pseudo_AAC = descriptor_df.iloc[:,9790:9840]
-        self.amp_pseudo_AAC = descriptor_df.iloc[:,9840:9920]
+        self.CTD =  descriptor_df.iloc[:,9140:9287] #split into C, T and D? **check conjoint - should it be 512?
+        # self.conjoint_triad = descriptor_df.iloc[:,9287:9630]
+        # self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]    **this should be one?
+        # self.quasi_seq_order = descriptor_df.iloc[:,9690:9790]      100
+        # self.pseudo_AAC = descriptor_df.iloc[:,9790:9840]   50
+        # self.amp_pseudo_AAC = descriptor_df.iloc[:,9840:9920]       80
+        # self.all_descriptors = descriptor_df.iloc[:,:]
+        self.conjoint_triad = descriptor_df.iloc[:,9287:9799]
+        self.seq_order_coupling_number = descriptor_df.iloc[:,9799:9800]
+        self.quasi_seq_order = descriptor_df.iloc[:,9800:9900]
+        self.pseudo_AAC = descriptor_df.iloc[:,9900:9950]
+        self.amp_pseudo_AAC = descriptor_df.iloc[:,9950:10030]
         self.all_descriptors = descriptor_df.iloc[:,:]
 
     def get_aa_composition(self):
@@ -521,7 +527,7 @@ class Descriptors():
 
         return quasi_seq_order_df
 
-    def get_pseudo_AAC(self, AAP=[pseudoAAC._Hydrophobicity]):
+    def get_pseudo_AAC(self, AAP=[PseudoAAC._Hydrophobicity]):
 
         """
         Calculate pseudo Amino Acid Composition features for the protein sequences.
@@ -537,12 +543,12 @@ class Descriptors():
 
         psuedoAAComp = []
         #get feature names for PsuedoAAComp descriptor
-        keys = (list(pseudoAAC.GetpseudoAAC(self.protein_seqs[0], AAP=AAP).keys()))
+        keys = (list(pseudoAAC.GetPseudoAAC(self.protein_seqs[0], AAP=AAP).keys()))
 
         #iterate through all sequences, calculate descriptor values and append to
         #psuedoAAComp list
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Psuedo Amino Acid Composition"):
-            psuedoAA=pseudoAAC.GetpseudoAAC(seq, AAP=AAP)
+            psuedoAA=pseudoAAC.GetPseudoAAC(seq, AAP=AAP)
             psuedoAAComp.append(list(psuedoAA.values()))
 
         #convert calculated PsuedoAAComp values into dataframe
@@ -567,10 +573,10 @@ class Descriptors():
         print('#########################################################\n')
 
         amp_pseudo_AAComp = []
-        keys = list((pseudoAAC.GetApseudoAAC(self.protein_seqs[0])).keys())
+        keys = list((PseudoAAC.GetAPseudoAAC(self.protein_seqs[0])).keys())
 
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Ampiphillic Amino Acid Composition"):
-            amp_psuedo=pseudoAAC.GetApseudoAAC(seq)
+            amp_psuedo=PseudoAAC.GetAPseudoAAC(seq)
             amp_pseudo_AAComp.append(list(amp_psuedo.values()))
 
         #convert calculated APsuedo_AAComp values into dataframe
@@ -646,17 +652,61 @@ class Descriptors():
 
         """
         print('Calculating all Descriptor values:\n')
-        self.aa_composition = self.get_aa_composition()
-        self.dipeptide_composition = self.get_dipeptide_composition()
-        self.tripeptide_composition = self.get_tripeptide_composition()
-        self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation, \
-        self.geary_autocorrelation = self.get_autocorrelation()
-        self.CTD = self.get_ctd()
-        self.conjoint_triad = self.get_conjoint_triad()
-        self.seq_order_coupling_number = self.get_seq_order_coupling_number()
- #       self.quasi_seq_order = self.get_quasi_seq_order()
-        # self.pseudoAAC = self.get_pseudo_AAC()
-        # self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
+
+        # if not hasattr(self, 'aa_composition'):
+        #     self.aa_composition = self.get_aa_composition()
+        # if not hasattr(self, 'dipeptide_composition'):
+        #     self.dipeptide_composition = self.get_dipeptide_composition()
+        # if not hasattr(self, 'tripeptide_composition'):
+        #     self.tripeptide_composition = self.get_tripeptide_composition()
+        # if not hasattr(self, 'normalized_moreaubroto_autocorrelation') or \
+        #     not hasattr(self, 'moran_autocorrelation') or \
+        #     not hasattr(self, 'geary_autocorrelation'):
+        #     self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation, \
+        #     self.geary_autocorrelation = self.get_autocorrelation()
+        # if not hasattr(self, 'CTD'):
+        #     self.CTD = self.get_ctd()
+        # if not hasattr(self, 'conjoint_triad'):
+        #     self.conjoint_triad = self.get_conjoint_triad()
+        # if not hasattr(self, 'seq_order_coupling_number'):
+        #     self.seq_order_coupling_number = self.get_seq_order_coupling_number()
+        # if not hasattr(self, 'quasi_seq_order'):
+        #     self.quasi_seq_order = self.get_quasi_seq_order()
+        # if not hasattr(self, 'pseudo_AAC'):
+        #     self.pseudo_AAC = self.get_pseudo_AAC()
+        # if not hasattr(self, 'amp_pseudo_AAC'):
+        #     self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
+        if (getattr(self, "aa_composition").empty):
+                self.aa_composition = self.get_aa_composition()
+        if (getattr(self, "dipeptide_composition").empty):
+                self.dipeptide_composition = self.get_dipeptide_composition()
+
+        if (getattr(self, "tripeptide_composition").empty):
+                self.tripeptide_composition = self.get_tripeptide_composition()
+
+        if (getattr(self, "normalized_moreaubroto_autocorrelation").empty) or \
+            (getattr(self, "moran_autocorrelation").empty) or \
+            (getattr(self, "geary_autocorrelation").empty):
+            self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation, \
+            self.geary_autocorrelation = self.get_autocorrelation()
+
+        if (getattr(self, "CTD").empty):
+                self.CTD = self.get_ctd()
+
+        if (getattr(self, "conjoint_triad").empty):
+                self.conjoint_triad = self.get_conjoint_triad()
+
+        if (getattr(self, "seq_order_coupling_number").empty):
+                self.seq_order_coupling_number = self.get_seq_order_coupling_number()
+
+        if (getattr(self, "quasi_seq_order").empty):
+                self.quasi_seq_order = self.get_quasi_seq_order()
+
+        if (getattr(self, "pseudo_AAC").empty):
+                self.pseudo_AAC = self.get_pseudo_AAC()
+
+        if (getattr(self, "amp_pseudo_AAC").empty):
+                self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
 
         # all_desc = [self.aa_composition, self.dipeptide_composition]
         # all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
@@ -670,6 +720,8 @@ class Descriptors():
 
 
         all_desc_df = pd.concat(all_desc, axis = 1)
+
+        self.all_descriptors = all_desc_df
 
         return all_desc_df
 

@@ -37,22 +37,35 @@ class DescriptorTests(unittest.TestCase):
     def test_descriptor(self):
 
         desc = Descriptors(self.test_dataset1['sequence'])
-        print('here')
-        gaps_test = utils.remove_gaps(desc.protein_seqs)
-        print('gaps',gaps_test)
 
-        self.assertIsNone(gaps_test)
+        self.assertEqual(desc.num_seqs, len(self.test_dataset1['sequence']))
+        self.assertFalse(desc.all_desc)
 
-        invalid_testdata1_copy = self.test_dataset1.append(['J,O,U,Z'])
+        for seq in desc.protein_seqs:
+            self.assertNotIn('-',seq)
 
-        with self.assertRaises(ValueError):
-            fail_desc = Descriptors(invalid_testdata1_copy)
+        self.assertTrue(desc.aa_composition.empty)
+        self.assertTrue(desc.dipeptide_composition.empty)
+        self.assertTrue(desc.tripeptide_composition.empty)
+        self.assertTrue(desc.normalized_moreaubroto_autocorrelation.empty)
+        self.assertTrue(desc.moran_autocorrelation.empty)
+        self.assertTrue(desc.geary_autocorrelation.empty)
+        self.assertTrue(desc.CTD.empty)
+        self.assertTrue(desc.conjoint_triad.empty)
+        self.assertTrue(desc.seq_order_coupling_number.empty)
+        self.assertTrue(desc.quasi_seq_order.empty)
+        self.assertTrue(desc.pseudo_AAC.empty)
+        self.assertTrue(desc.amp_pseudo_AAC.empty)
+        self.assertTrue(desc.all_descriptors.empty)
 
+        invalid_testdata1_copy = self.test_dataset1
+        invalid_testdata1_copy['sequence'][0] = 'JOUZ'
 
-        invalid_testdata1_copy[0]
-        invalid_seqs = utils.valid_sequence(self.protein_seqs)
-        if invalid_seqs!=None:
-            raise ValueError('Invalid Amino Acids found in protein sequence dataset: {}'.format(invalid_seqs))
+        # with self.assertRaises(ValueError):
+        #     fail_desc = Descriptors(invalid_testdata1_copy)
+
+        #
+
 
     def test_aacomposition(self):
 
@@ -62,12 +75,16 @@ class DescriptorTests(unittest.TestCase):
 
         desc = Descriptors(self.test_dataset1['sequence'][random_seq])
 
+
+        #assert aa_comp dataframe is initially empty
         aa_comp = desc.get_aa_composition()
 
+        #assert aa_comp contains no NAN or +/- infinity
         self.assertEqual(aa_comp.shape, (1,20))
         self.assertNotIn('-' ,desc.protein_seqs)
         self.assertIsInstance(aa_comp, pd.DataFrame)
         self.assertEqual(AAComposition.AALetter, list(aa_comp.columns))
+        self.assertFalse(np.isnan(aa_comp).any())
 
         random_seq = random.randint(0,len(self.test_dataset2))
 
@@ -79,6 +96,7 @@ class DescriptorTests(unittest.TestCase):
         self.assertNotIn('-' ,desc.protein_seqs)
         self.assertIsInstance(aa_comp, pd.DataFrame)
         self.assertEqual(AAComposition.AALetter, list(aa_comp.columns))
+        self.assertFalse(np.isnan(aa_comp).any())
 
         random_seq = random.randint(0,len(self.test_dataset3))
 
@@ -86,17 +104,34 @@ class DescriptorTests(unittest.TestCase):
 
         aa_comp = desc.get_aa_composition()
 
+        self.assertTrue(self.aa_composition.empty)
+
         self.assertEqual(aa_comp.shape, (1,20))
         self.assertNotIn('-' ,desc.protein_seqs)
         self.assertIsInstance(aa_comp, pd.DataFrame)
         self.assertEqual(AAComposition.AALetter, list(aa_comp.columns))
+        self.assertFalse(np.isnan(aa_comp).any())
+
     #
-    #     #assert concatenation of 2 descriptors works
-    #     # self.assertEqual(aa_comp.shape == (self.test_dataset1.shape[0], 20))
-    #
+    # #     #assert concatenation of 2 descriptors works
+    # #     # self.assertEqual(aa_comp.shape == (self.test_dataset1.shape[0], 20))
+    # #
     # def test_dipeptidecomposition(self):
     #
     #     print('Testing Dipeptide Composition Descriptor....')
+    #
+    #     random_seq = random.randint(0,len(self.test_dataset1))
+    #
+    #     desc = Descriptors(self.test_dataset1['sequence'][random_seq])
+    #
+    #     dipeptide_comp = desc.get_dipeptide_composition()
+    #
+    #     self.assertEqual(aa_comp.shape, (1,20))
+    #     self.assertNotIn('-' ,desc.protein_seqs)
+    #     self.assertIsInstance(aa_comp, pd.DataFrame)
+    #     self.assertEqual(AAComposition.AALetter, list(aa_comp.columns))
+
+
 
     #     # desc = Descriptors(self.test_dataset1['sequence'])
     #     #
@@ -140,8 +175,11 @@ class DescriptorTests(unittest.TestCase):
     #     print('Testing Quasi Sequence Order Descriptor....')
     #     pass
     #
+
     # def test_pseudo_AAC(self):
     #     print('Testing Pseudo Amino Acid Composition Descriptor....')
+            # random_seq = random.randint(0,len(self.test_dataset1))
+
     #     pass
     #
     # def test_amp_pseudo_AAC(self):
