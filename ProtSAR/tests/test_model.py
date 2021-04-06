@@ -98,6 +98,10 @@ class ModelTests(unittest.TestCase):
 
     def test_model_input_closeness(self):
 
+        model = Model('plsreg')
+        self.assertEqual(model.algorithm, "PLSRegression")
+
+        self.assertEqual(repr(model), "PLSRegression")
         #test if inputting similar like algorithm names still gives similar output
         # e.g model = Model('plsreg') etc
 

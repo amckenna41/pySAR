@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # encoding = Encoding(data_json=input_data)
     # encoding = Encoding(data_json=input_data)
 
-    #aa_df = encoding.aai_encoding(aaindex,verbose=True)
+    #aa_df = encoding.aai_encoding(verbose=True)
     # desc_results = encoding.descriptor_encoding()
 
     #Filter encoding strategy input and then create class instances accordingly

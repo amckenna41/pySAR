@@ -94,13 +94,35 @@ class ProDSP():
                        'kaiser']
         all_filters = []
 
-        self.spectra = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))[0]
-        window = (get_close_matches(self.window, all_windows, cutoff=0.4))[0]
+        spectra_matches = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))[0]
 
-        if window == 'hamming':
-            self.window = hamming(self.signal_len, sym=True)
+        if spectra_matches == [] or spectra_matches == None:
+            raise ValueError('Invalid input Spectrum type ({}) not available in valid \
+                spectrums: {}'.format(self.spectrum, all_spectra))
         else:
-            self.window = ""
+            self.spectra = spectra_matches
+
+        # self.spectra = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))[0]
+
+
+        window_matches = (get_close_matches(self.window, all_windows, cutoff=0.4))[0]
+
+        if window_matches == [] or window_matches == None:
+            raise ValueError('Invalid window function type ({}) not available in valid \
+                windows: {}'.format(self.window, all_windows))
+        else:
+            # self.window = window_matches
+            if window_matches == 'hamming':
+                self.window = hamming(self.signal_len, sym=True)
+            elif window_matches == "blackman":
+                self.window = blackman(self.signal_len, sym=True)
+
+        # window = (get_close_matches(self.window, all_windows, cutoff=0.4))[0]
+        #
+        # if window == 'hamming':
+        #     self.window = hamming(self.signal_len, sym=True)
+        # else:
+        #     self.window = ""
 
     def encode_seqs(self):
 
@@ -212,9 +234,7 @@ class ProDSP():
             self.spectrum_encoding = self.fft_imag
         elif self.spectra == 'abs':
             self.spectrum_encoding = self.fft_abs
-        else:
-            raise ValueError('Inputted Spectrum type ({}) not available in: {}'.format(
-                    self.spectra, all_spectra))
+
 
 
     def plot_freq(self, fft_seq, fft_freqs):

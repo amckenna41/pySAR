@@ -153,7 +153,8 @@ def parse_json(data_json):
                     data = yaml.load(f, Loader=yaml.FullLoader)
             except OSError('Error opening Yaml File {}'.format(data_json)):
                 return None
-
+        # elif (file_extension == ".json"):
+            
         # elif (file_extension == '.json'):
         #     with open(input_path) as f:
         #         data = json.load(f)

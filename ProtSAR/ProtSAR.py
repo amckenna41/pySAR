@@ -377,6 +377,10 @@ class ProtSAR():
 
         return self.data[self.activity].values.reshape((-1,1))
 
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__,
+            sort_keys=True, indent=4)
+            
     @property
     def dataset(self):
         return self._dataset

@@ -53,17 +53,19 @@ class Model():
         self.minMaxScaler = MinMaxScaler()
 
         #list of valid models available to use for this class
-        self.validModels = ['PlsRegression','RandomForestRegressor','AdaBoostRegressor','BaggingRegressor',
-                                'DecisionTreeRegressor','LinearRegression','Lasso','SVR','KNeighborsRegressor']
+        self.valid_models = ['PlsRegression','RandomForestRegressor','AdaBoostRegressor',\
+                            'BaggingRegressor','DecisionTreeRegressor','LinearRegression',\
+                            'Lasso','SVR','KNeighborsRegressor', 'KNN']
 
         #get closest match of valid model from the input algorithm parameter value
-        modelMatches = get_close_matches(self.algorithm,self.validModels, cutoff=0.4)
+        # modelMatches = get_close_matches(self.algorithm,self.valid_models, cutoff=0.4)
+        modelMatches = get_close_matches(self.algorithm.lower(),[item.lower() for item in self.valid_models], cutoff=0.4)
 
         #if algorithm is a valid model then set it to self.algorithm else raise error
         if modelMatches!=[]:
             self.algorithm = modelMatches[0]
         else:
-            raise ValueError('Input algorithm ('+ self.algorithm + ') not in available models \n\n'+ ' '.join(self.validModels))
+            raise ValueError('Input algorithm ('+ self.algorithm + ') not in available models \n\n'+ ' '.join(self.valid_models))
 
         #create instance of algorithm object
         self.model = self.get_model()
@@ -165,8 +167,9 @@ class Model():
             else:
                 model = SVR()
 
-        elif self.algorithm.lower() == 'knn':
-
+        elif self.algorithm.lower() == 'knn' or \
+           self.algorithm.lower() == 'kneighborsregressor':
+           
             model_params = set(dir(KNeighborsRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
 
@@ -377,11 +380,11 @@ class Model():
 
     @property
     def valid_models(self):
-        return self._validModels
+        return self._valid_models
 
     @valid_models.setter
     def valid_models(self,val):
-        self._validModels = val
+        self._valid_models = val
 
     @property
     def parameters(self):

@@ -69,7 +69,7 @@ class Encoding(ProtSAR):
         utils.create_output_dir()
     # aa_df = encoding.aai_encoding(aaindex, combo2 = False, cutoff=1, verbose=True)
 
-    def aai_encoding(self, aaindex, combo2 = False, cutoff=1, verbose=False):
+    def aai_encoding(self, combo2 = False, cutoff=1, verbose=False):
 
         """
         Encoding all protein sequences using each of the indices in the AAI1.
@@ -108,7 +108,10 @@ class Encoding(ProtSAR):
         else:
             all_features = aaindex.get_feature_codes()
 
-        print('\nEncoding using {} AAI combinations with the {} spectrum and {} window function'.format(len(all_features), self.spectrum,self.window))
+        print('\n\n#######################################################################################\n')
+        print('Encoding using {} AAI combinations with the parameters:\n\nSpectrum: {}\nWindow Function: {} \
+            \nFilter:{}\nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_features), self.spectrum,\
+            self.window, self.filter, repr(self.model), self.parameters, self.test_split))
         print('#######################################################################################\n')
 
         #cutoff index used if you only want to use a proprtion of all indices to build models with
