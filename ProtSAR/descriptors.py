@@ -56,7 +56,7 @@ class Descriptors():
     #
     # """
 
-    def __init__(self, protein_seqs, desc_dataset="", all_desc=False):
+    def __init__(self, protein_seqs, desc_dataset="descriptors.csv", all_desc=False):
 
         self.protein_seqs = protein_seqs
         #remove any gaps from protein sequences
@@ -82,6 +82,9 @@ class Descriptors():
         self.moran_autocorrelation = pd.DataFrame()
         self.geary_autocorrelation = pd.DataFrame()
         self.CTD = pd.DataFrame()
+        self.composition = pd.DataFrame()
+        self.transition = pd.DataFrame()
+        self.distribution = pd.DataFrame()
         self.conjoint_triad = pd.DataFrame()
         self.seq_order_coupling_number = pd.DataFrame()
         self.quasi_seq_order = pd.DataFrame()
@@ -133,6 +136,10 @@ class Descriptors():
         self.moran_autocorrelation = descriptor_df.iloc[:,8660: 8900]
         self.geary_autocorrelation = descriptor_df.iloc[:,8900:9140]
         self.CTD =  descriptor_df.iloc[:,9140:9287] #split into C, T and D? **check conjoint - should it be 512?
+        self.composition = descriptor_df.iloc[:,9140:9161]
+        self.transition = descriptor_df.iloc[:,9161:9182]
+        self.distribution = descriptor_df.iloc[:,9182:9287]
+
         # self.conjoint_triad = descriptor_df.iloc[:,9287:9630]
         # self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]    **this should be one?
         # self.quasi_seq_order = descriptor_df.iloc[:,9690:9790]      100
@@ -432,6 +439,9 @@ class Descriptors():
         ctd_df = pd.DataFrame(data=ctd, columns=keys)
 
         self.CTD = ctd_df
+        self.composition = ctd_df.iloc[:,:21]
+        self.transition = ctd_df.iloc[:, 21: 42]
+        self.distribution = ctd_df.iloc[:, 42: ]
 
         return ctd_df
 
@@ -709,14 +719,15 @@ class Descriptors():
                 self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
 
         # all_desc = [self.aa_composition, self.dipeptide_composition]
-        # all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
-        #                    self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
-        #                    self.geary_autocorrelation, self.CTD, self.conjoint_triad,
-        #                    self.seq_order_coupling_number, self.quasi_seq_order, self.pseudo_AAC, self.amp_pseudo_AAC]
-
         all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
                            self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
-                           self.geary_autocorrelation, self.CTD, self.conjoint_triad, self.seq_order_coupling_number]
+                           self.geary_autocorrelation, self.composition. self.transition,
+                           self.distribution, self.conjoint_triad, self.seq_order_coupling_number,
+                           self.quasi_seq_order, self.pseudo_AAC, self.amp_pseudo_AAC]
+
+        # all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
+        #                    self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
+        #                    self.geary_autocorrelation, self.CTD, self.conjoint_triad, self.seq_order_coupling_number]
 
 
         all_desc_df = pd.concat(all_desc, axis = 1)
@@ -735,8 +746,15 @@ class Descriptors():
         all_desc_df : pd.DataFrame
 
         """
-        validDesc = ['aa_composition', 'dipeptide_composition', 'tripeptide_composition', 'norm_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation',
-                       'ctd', 'conjoint_triad','seq_order_coupling_number','quasi_seq_order_descriptors','pseudo_aa_comp', 'amphipilic_pseudo_aa_comp']
+        # validDesc = ['aa_composition', 'dipeptide_composition', 'tripeptide_composition', \
+        #     'norm_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation', \
+        #      'ctd', 'conjoint_triad','seq_order_coupling_number','quasi_seq_order_descriptors',\
+        #      'pseudo_aa_comp', 'amphipilic_pseudo_aa_comp']
+        validDesc = ['aa_composition', 'dipeptide_composition', 'tripeptide_composition', \
+            'norm_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation', \
+             'ctd', 'composition', 'transition', 'distribution', 'conjoint_triad', \
+             'seq_order_coupling_number','quasi_seq_order_descriptors',\
+             'pseudo_aa_comp', 'amphipilic_pseudo_aa_comp']
 
         return validDesc
 
@@ -799,6 +817,30 @@ class Descriptors():
     @CTD.setter
     def CTD(self, val):
         self._CTD = val
+
+    @property
+    def composition(self):
+        return self._composition
+
+    @composition.setter
+    def composition(self, val):
+        self._composition = val
+
+    @property
+    def transition(self):
+        return self._transition
+
+    @transition.setter
+    def transition(self, val):
+        self._transition = val
+
+    @property
+    def distribution(self):
+        return self._distribution
+
+    @distribution.setter
+    def distribution(self, val):
+        self._distribution = val
 
     @property
     def conjoint_triad(self):

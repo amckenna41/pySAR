@@ -246,7 +246,7 @@ class Encoding(ProtSAR):
         msle_ = []
         desc_count = 1
 
-        all_descriptors = desc.all_descriptors_list(desc_combo)[:-3]
+        all_descriptors = desc.all_descriptors_list(desc_combo)
         print(all_descriptors)
         featureIndex = 1
         print('here')

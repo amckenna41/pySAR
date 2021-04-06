@@ -65,8 +65,8 @@ class ProtSAR():
         all_attrs = vars(self)
         # del all_attrs['data']
 
-        with open("sample.json", "w") as outfile:
-            json.dump(all_attrs, outfile)
+        # with open("sample.json", "w") as outfile:
+        #     json.dump(all_attrs, outfile)
         # print(', '.join("%s: %s" % item for item in all_attrs.items()))
         # a_file = open("data.pkl", "wb")
         # pickle.dump(all_attrs, a_file)
@@ -380,7 +380,7 @@ class ProtSAR():
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
             sort_keys=True, indent=4)
-            
+
     @property
     def dataset(self):
         return self._dataset
