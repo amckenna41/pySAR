@@ -39,13 +39,14 @@ class Descriptors():
     #
     # Parameters
     # ----------
-    # encoded_sequences : numpy array
-    #     protein sequences encoded via a specific AAI index feature value.
-    #     encoded_sequences has to be at least 2 dimensions, containing at least more
-    #     than 1 protein seqence. These encoded sequences are used to generate the various
-    #     protein spectra.
-    # spectrum : str
-    #     protein spectra to generate from the protein sequences:
+    # protein_sequences : numpy array
+    #     array of protein sequences e.g MTIKEMPQPKTFGELKNLPLLNTDKP.
+    # desc_dataset : str
+    #     name of descriptors file storing previously calculated descriptors from
+    #     the protein sequences. By default the class will search for a descriptors
+    #     file called "descriptors.csv" in the 'data' directory. If it finds a file
+    #     from the value put into desc_dataset then the descriptor values will be
+    #     imported rather than calculated.
     # window : str
     #     window function to apply to the output of the FFT.
     # filter: str
@@ -126,8 +127,16 @@ class Descriptors():
         try:
             descriptor_df = pd.read_csv(descriptor_file)
         except IOError:
-            print('Error opening descriptor file')
+            print('Error opening descriptor file: {}'.format(descriptor_file))
             return None
+
+        assert descriptor_df.shape == (self.num_seqs, 10030), 'Descriptors \
+            file must be of the shape ({}X10,030) such that all descriptor values can \
+            be parsed from the file'.format(self.num_seqs)
+
+        #replacing +/- infinity or NAN values with 0
+        descriptor_df.replace([np.inf, -np.inf], np.nan)
+        descriptor_df = descriptor_df.fillna(0)
 
         self.aa_composition = descriptor_df.iloc[:,: 20]
         self.dipeptide_composition = descriptor_df.iloc[:,20:420]
@@ -139,7 +148,6 @@ class Descriptors():
         self.composition = descriptor_df.iloc[:,9140:9161]
         self.transition = descriptor_df.iloc[:,9161:9182]
         self.distribution = descriptor_df.iloc[:,9182:9287]
-
         # self.conjoint_triad = descriptor_df.iloc[:,9287:9630]
         # self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]    **this should be one?
         # self.quasi_seq_order = descriptor_df.iloc[:,9690:9790]      100
@@ -763,6 +771,14 @@ class Descriptors():
         pass
 
     @property
+    def all_desc(self):
+        return self._all_desc
+
+    @all_desc.setter
+    def all_desc(self, val):
+        self._all_desc = val
+
+    @property
     def aa_composition(self):
         return self._aa_composition
 
@@ -857,7 +873,6 @@ class Descriptors():
     @seq_order_coupling_number.setter
     def seq_order_coupling_number(self, val):
         self._seq_order_coupling_number = val
-
 
     @property
     def quasi_seq_order(self):

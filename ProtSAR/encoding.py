@@ -269,15 +269,17 @@ class Encoding(ProtSAR):
         '''
         for descr in all_descriptors:
 
+            desc_ = pd.DataFrame()
+            desc_list = []
+            
             print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
             desc_count+=1
             if desc_combo == 2 or desc_combo == 3:
 
                 for de in descr:
                     desc_list.append(getattr(desc, de))
-                    # desc_ = getattr(desc, descr)
-
-                desc_ = pd.DataFrame(desc_list)
+                desc_ = pd.concat(desc_list,axis=1)
+                # desc_ = pd.DataFrame(desc_list)
             else:
                 desc_ = getattr(desc, descr)
 
@@ -405,6 +407,7 @@ class Encoding(ProtSAR):
 
                     for de in descr:
                         desc_list.append(getattr(desc, de))
+                                # desc_ = pd.concat(desc_list,axis=1)  check if this is needed here
 
                     desc_ = desc_list
 
