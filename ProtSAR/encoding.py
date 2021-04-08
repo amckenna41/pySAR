@@ -271,7 +271,7 @@ class Encoding(ProtSAR):
 
             desc_ = pd.DataFrame()
             desc_list = []
-            
+
             print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
             desc_count+=1
             if desc_combo == 2 or desc_combo == 3:
@@ -400,6 +400,9 @@ class Encoding(ProtSAR):
             X_aai = pd.DataFrame(proDSP.spectrum_encoding)
 
             for descr in all_descriptors:
+
+                desc_ = pd.DataFrame()
+                desc_list = []
 
                 print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
                 desc_count+=1

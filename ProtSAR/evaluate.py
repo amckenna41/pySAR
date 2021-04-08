@@ -18,10 +18,11 @@ class Evaluate():
         self.Y_pred = np.array(Y_pred).reshape((-1,1))
 
         #validate that predicted and observed input arrays are of the same length
-        #if input predicted and observed arrays are not of the same shape then raise error
+        #   if input predicted and observed arrays are not of the same shape then raise error
         if (self.Y_true.shape) != (self.Y_pred.shape):
             raise ValueError('Observed and predicted values must be of the same length')
 
+        #calculate all metric values for inputs
         self.r2 = self.r2_()
         self.mse = self.mse_()
         self.rmse = self.rmse_()
@@ -107,13 +108,21 @@ class Evaluate():
     def mae_(self, multi_out='uniform_average'):
 
         """
+        Calculate the Mean absolute error regression loss.
 
-
+        Parameters
+        ----------
+        multi_out: str
+            Defines aggregating of multiple output scores. Array-like value
+            defines weights used to average scores.
 
         Returns
         -------
         mae : float
-
+            If multioutput is ‘raw_values’, then MAE is returned for each output
+            separately. If multioutput is ‘uniform_average’ or an ndarray of
+            weights, then the weighted average of all output errors is returned.
+            The output is a non-negative floating point. The best value is 0.0.
 
         """
         mae = mean_absolute_error(self.Y_true, self.Y_pred, multioutput=multi_out)
@@ -123,13 +132,14 @@ class Evaluate():
     def rpd_(self):
 
         """
-
-
+        Calculates the ratio of performance to deviation (RPD). RPD is the ratio
+        between the standard deviation of a variable and the standard error of
+        prediction of that variable by a given model.
 
         Returns
         -------
         rpd : float
-
+            the RPD score for the model.
 
         """
         rpd = self.Y_true.std()/np.sqrt(self.mse_())
@@ -139,11 +149,19 @@ class Evaluate():
     def explained_var_(self, multi_out='uniform_average'):
 
         """
+        Calculates the explained variance regression score. Best possible score is 1.0,
+        lower values are worse.
+
+        Parameters
+        ----------
+        multi_out: str
+            Defines aggregating of multiple output scores. Array-like value
+            defines weights used to average scores.
 
         Returns
         -------
         explained_var : float
-
+            The explained variance or ndarray if ‘multioutput’ is ‘raw_values’.
 
         """
         explained_var = explained_variance_score(self.Y_true, self.Y_pred, multioutput=multi_out)
@@ -153,11 +171,13 @@ class Evaluate():
     def max_error(self):
 
         """
+        Calculates the maximum residual error between observed and predicted
+        values.
 
         Returns
         -------
         max_error : float
-
+            A positive floating point value (the best value is 0.0).
 
         """
         return metrics.max_error(self.Y_true, self.Y_pred)
@@ -166,7 +186,6 @@ class Evaluate():
 
         """
         Calculate Mean Poisson deviance regression loss.
-
 
         Returns
         -------
@@ -200,8 +219,10 @@ class Evaluate():
 
     def __repr__(self):
         return "Instance of Evaluate class(Y_true: {} Y_pred: {})".format(
-            self.Y_true, self.Y_pred
+            self.Y_true.shape, self.Y_pred.shape
         )
 
     def __str__(self):
-        pass
+        return "Instance of Evaluate class(Y_true: {} Y_pred: {})".format(
+            self.Y_true.shape, self.Y_pred.shape
+        )

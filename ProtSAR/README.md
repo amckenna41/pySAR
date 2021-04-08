@@ -105,6 +105,6 @@ scipy >= 1.4.1
 
 ## Directory folders:
 
-* `/PyBioMed` - stores all required feature data and dataset
+* `/data` - stores all required feature data and datasets
 * `/models` - stores model output
 * `/tests` - tests for class methods and functions

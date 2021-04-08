@@ -300,23 +300,25 @@ class Descriptors():
 
         """
         #Autocorrelation output is of shape N x 240.
-        Calculate Normalized MoreauBrotoAuto Autocorrelation () of protein sequences.
-        Norm_MoreauBroto (also known as Autocorrelation of a topoloigical structure ATS)
-        describes how a property is distributed along the topological structure of a
-        protein sequence.
-
-        AC(d) = \sum_{i=1}^{N-d} P_i P_{i + d} \quad d = 1, 2, \ldots, \textrm{nlag}
-
-        where d is called the lag of the autocorrelation; Pi and Pi+d are the properties of
-        the amino acids at position i and i+d; nlag is the maximum value of the lag.
+        Calculate Autocorrelation descriptors (Normalized MoreauBrotoAuto, moran
+        and Geary). Autocorrelation descriptors are a class of topological descriptors,
+        also known as molecular connectivity indices, that describe the level of
+        correlation between two objects (protein or peptide sequences) in terms of
+        their specific structural or physicochemical property [84], which are
+        defined based on the distribution of amino acid properties along the sequence.
+        8 amino acid properties are used for deriving the descriptors. The derivations
+        and detailed explanations of this type of descriptor is outlind in:
+        https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-8-300
+        Each autocorrelation will generate 240 features.
 
         Parameters
         ----------
         aa_encoding: dict
-            dict of amino acid and their AAI index properties used to build the
-            descriptor, defaultAutocorrelation._AAProperty is a list of the
-            most used indices used: _AAProperty = (_Hydrophobicity,_AvFlexibility
-            ,_Polarizability,_FreeEnergy,_ResidueASA,_ResidueVol,_Steric,_Mutability).
+            dict of amino acids and their AAI index properties used to build the
+            descriptor, the default Autocorrelation._AAProperty is a list of the
+            most commonly used indices for the descriptors: _AAProperty =
+            (_Hydrophobicity,_AvFlexibility,_Polarizability,_FreeEnergy,_ResidueASA,
+            _ResidueVol,_Steric,_Mutability).
 
             Default AAI used building descriptor:
             AccNo. CIDH920105 - Normalized Average Hydrophobicity Scales
@@ -338,16 +340,25 @@ class Descriptors():
         Returns
         -------
         norm_moreaubroto_autocorr_df : pd.DataFrame
-            dataframe of Norm_MoreauBroto autocorrelation for all protein sequences.
-            DataFrame will be of the shape N x X, where N is the number of protein
+            dataframe of Norm_MoreauBroto autocorrelation descriptor values.
+            Output will be of the shape N x 240, where N is the number of protein
             sequences and X is the number of features calcualted from the descriptor
             (20^3 for the 20 canonical amino acids).
+
+        moran_autocorr_df : pd.DataFrame
+            dataframe of moran autocorrelation descriptor values. Similarly, output
+            will be of the shape N x 240.
+
+        geary_autocorr_df : pd.DataFrame
+            dataframe of geary autocorrelation descriptor values. Similarly, output
+            will be of the shape N x 240.
 
         """
 
         print('\nGetting Autocorrelation Descriptors...')
         print('######################################\n')
 
+        #initialise lists used to store the autocorrelation values and keys
         norm_moreaubroto_autocorr = []
         norm_moreaubroto_autocorr_keys = []
         norm_moreaubroto_autocorr_values = []
@@ -360,7 +371,8 @@ class Descriptors():
         geary_autocorr_keys = []
         geary_autocorr_values = []
 
-        #iterate through protein sequences and calculate the Norm_MoreauBroto for each, append to list of values
+        #iterate through protein sequences and calculate all the autocorrelation
+        #  values, append to respective descriptor lists
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Autocorrelation"):
             normMoreauBroto = Autocorrelation.CalculateNormalizedMoreauBrotoAuto(seq, aa_encoding,aa_name)
             norm_moreaubroto_autocorr.append(normMoreauBroto)
@@ -375,14 +387,13 @@ class Descriptors():
           moran_autocorr_keys.append(list(moran_autocorr[0][aa_name[name]].keys()))
           geary_autocorr_keys.append(list(geary_autocorr[0][aa_name[name]].keys()))
 
-        # norm_moreaubroto_autocorr_keys = ([item for sublist in norm_moreaubroto_autocorr_keys for item in sublist])
         #flatten column names/keys into 1 1-D list
         norm_moreaubroto_autocorr_keys = utils.flatten(norm_moreaubroto_autocorr_keys)
         moran_autocorr_keys = utils.flatten(moran_autocorr_keys)
         geary_autocorr_keys = utils.flatten(geary_autocorr_keys)
 
         '''
-        Reformatting the output of the descriptor from the PyBioMed package.
+        Reformatting the output of the descriptors from the PyBioMed package.
         The PyBioMed descriptor function returns a dict of dicts of the resultant
         values. For uniformity with the rest of the descriptor calculations,
         this output is transformed such that it can be output into a dataframe.
@@ -400,12 +411,11 @@ class Descriptors():
         moran_autocorr_values = utils.flatten(moran_autocorr_values)
         geary_autocorr_values = utils.flatten(geary_autocorr_values)
 
-        # norm_moreaubroto_autocorr_values =  np.array([item for sublist in norm_moreaubroto_autocorr_values for item in sublist])
-        #reshape into N x M array where N is the number of protein sequences and M is the number of AA properties used in the correlation
+        #reshape into N x M array where N is the number of protein sequences and M
+        #   is the number of AA properties used in the correlation
         norm_moreaubroto_autocorr_values_ = np.reshape(norm_moreaubroto_autocorr_values, (len(self.protein_seqs),len(norm_moreaubroto_autocorr_keys)))
         moran_autocorr_values_ = np.reshape(moran_autocorr_values, (len(self.protein_seqs),len(moran_autocorr_keys)))
         geary_autocorr_values_ = np.reshape(geary_autocorr_values, (len(self.protein_seqs),len(geary_autocorr_keys)))
-
 
         #convert Autocorrelation array values into a dataframe
         norm_moreaubroto_autocorr_df = pd.DataFrame(data=norm_moreaubroto_autocorr_values_, columns=norm_moreaubroto_autocorr_keys)
@@ -456,12 +466,17 @@ class Descriptors():
     def get_conjoint_triad(self):
 
         """
-        Calculate Conjoint Triad features for the protein sequences.
-        Conjoint Triad is ...
+        Calculate Conjoint Triad features (CTF) for the protein sequences. CTF
+        mainly considers neighbor relationships in protein sequences by encoding
+        each protein sequence using the triad (continuous three amino acids)
+        frequency distribution extracted from a 7-letter reduced alphabet.
 
         Returns
         -------
         ct_df : pd.DataFrame
+            dataframe of conjoint triad descriptor values. Output will be of the
+            shape N x 512, where N is the number of protein sequences and 512 is
+            the number of features calculated from the descriptor.
 
         """
         print('\nGetting Conjoint Triad Descriptors...')
@@ -489,11 +504,17 @@ class Descriptors():
 
         """
         Calculate Sequence Order Coupling Number features for the protein sequences.
-        Sequence Order Coupling Number  is ...
+        Sequence Order Coupling Number computes the dissimilarity between amino acid
+        pairs. The distance between amino acid pairs is determined by d which varies
+        between 1 to nlag. For each d, it computes the sum of the dissimilarities
+        of all amino pairs.
 
         Returns
         -------
         seq_order_df : pd.DataFrame
+            dataframe of sequence order coupling numbers for the sequences. Output
+            will be of the shape  N x M where N is the number of sequences and M
+            is equal to (nlag*2).
 
         """
         print('\nGetting Sequence Order Coupling Descriptors...')
@@ -502,7 +523,7 @@ class Descriptors():
         seq_order = []
 
         #iterate through all sequences, calculate descriptor values and append to
-        #seq_order list
+        #   seq_order list
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Sequence Order Coupling Number"):
             seq_order_num = QuasiSequenceOrder.GetSequenceOrderCouplingNumber(seq)
             seq_order.append(seq_order_num)
@@ -518,11 +539,18 @@ class Descriptors():
 
         """
         Calculate Quasi Sequence Order features for the protein sequences.
-        Quasi Sequence Order  is ...
+        The quasi-sequence-order descriptors are proposed by K.C. Chou, et.al.
+        They are derived from the distance matrix between the 20 amino acids. 100
+        values are calculated per sequence, thus generating an output of N x 100
+        where N is the numnber of sequences.
 
         Returns
         -------
         quasi_seq_order_df : pd.DataFrame
+            dataframe of quasi sequence order descriptor values for the sequences.
+            Output will be of the shape of N x M where N is the number of sequences
+            and M is equal to the 100 descriptor values per sequence.
+
 
         """
         print('\nGetting Quasi Sequence Order Descriptors...')
@@ -549,11 +577,19 @@ class Descriptors():
 
         """
         Calculate pseudo Amino Acid Composition features for the protein sequences.
-        PsuedoAAComp is ...
+        Similar to the quasi-sequence order descriptor, the pseudo amino acid descriptor is
+        made up of a 50-dimensional vector in which the first 20 components reflect the
+        effect of the amino acid composition and the remaining 30 components reflect
+        the effect of sequence order. 50 values will be calculated per sequence,
+        thus generating an output of N x 50 where N is the number of sequences.
 
         Returns
         -------
         psuedo_AAComp_df : pd.DataFrame
+            dataframe of pseudo amino accid composition sequence order descriptor
+            values for the sequences. Output will be of the shape of N x M where
+            N is the number of sequences and M is equal to the 100 descriptor
+            values per sequence.
 
         """
         print('\nGetting Psuedo Amino Acid Composition Descriptors...')
@@ -580,19 +616,29 @@ class Descriptors():
 
         """
         Calculate type I pseudo-amino acid compostion features for the protein sequences.
-        APsuedo_AAComp is ...
+        Amphiphilic pseudo amino acid composition has the same form as the amino acid
+        compositon, but contains much more information that is related to the sequence
+        order of a protein and the distribution of the hydrophobic and hydrophilic
+        amino acids along its chain. 80 descriptor values will be generated, producing
+        an output of the shape N x 80 where N is the number of sequences.
 
         Returns
         -------
         amp_pseudo_AAComp_df : pd.DataFrame
+            dataframe of Amphiphilic pseudo amino acid composition sequence order
+            descriptor values for the sequences. Output will be of the shape of N x M
+            where N is the number of sequences and M is equal to the 80 descriptor
+            values per sequence.
 
         """
         print('\nGetting Amphiphilic Amino Acid Composition Descriptors...')
         print('#########################################################\n')
 
         amp_pseudo_AAComp = []
+        #get column names/keys for descriptor
         keys = list((PseudoAAC.GetAPseudoAAC(self.protein_seqs[0])).keys())
 
+        #iterate through sequences, calculating the descriptor value, append to list
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Ampiphillic Amino Acid Composition"):
             amp_psuedo=PseudoAAC.GetAPseudoAAC(seq)
             amp_pseudo_AAComp.append(list(amp_psuedo.values()))
@@ -621,7 +667,7 @@ class Descriptors():
         if descMatches!=[]:
             desc = descMatches[0]
         else:
-            raise ValueError('Input descriptor ('+ desc + ') not in available descriptors /n '+self.valid_descriptors())
+            raise ValueError('Input descriptor ('+ descriptor + ') not in available descriptors /n '+self.valid_descriptors())
 
         print('desc',desc)
 
@@ -640,16 +686,20 @@ class Descriptors():
     def all_descriptors_list(self, desc_combo=1):
 
        """
-
+       Get list of all available descriptor attributes. Using the desc_combo
+       input parameter you can get the a list of all descriptors, all combinations
+       of 2 descriptors or all combinations of 3 descriptors.
 
        Returns
        -------
        desc_encoding : pd.DataFrame
 
        """
+       #filter out class attributes that are not any of the desired descriptors
        all_descriptors = list(filter(lambda x: x.startswith('_'), list(self.__dict__.keys())))
+       all_descriptors = list(filter(lambda x: not x.startswith('_all_desc'), all_descriptors))
 
-       print('alldesc',all_descriptors)
+       #get all combinations of 2 or 3 descriptors.
        if desc_combo == 2:
            all_descriptors = list(itertools.combinations(all_descriptors, 2))
        elif desc_combo == 3:
@@ -662,38 +712,20 @@ class Descriptors():
     def get_all_descriptors(self):
 
         """
-
+        Calculate all individual descriptor values, concatenating each descriptor
+        dataframe into one storing all descriptors.
 
         Returns
         -------
         all_desc_df : pd.DataFrame
+            concatenated dataframe of all individual descriptors. Output will be
+            of the shape N x 10,030, where N is the number of sequences and
+            10,030 is the total number of descriptor values calculated.
 
         """
         print('Calculating all Descriptor values:\n')
 
-        # if not hasattr(self, 'aa_composition'):
-        #     self.aa_composition = self.get_aa_composition()
-        # if not hasattr(self, 'dipeptide_composition'):
-        #     self.dipeptide_composition = self.get_dipeptide_composition()
-        # if not hasattr(self, 'tripeptide_composition'):
-        #     self.tripeptide_composition = self.get_tripeptide_composition()
-        # if not hasattr(self, 'normalized_moreaubroto_autocorrelation') or \
-        #     not hasattr(self, 'moran_autocorrelation') or \
-        #     not hasattr(self, 'geary_autocorrelation'):
-        #     self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation, \
-        #     self.geary_autocorrelation = self.get_autocorrelation()
-        # if not hasattr(self, 'CTD'):
-        #     self.CTD = self.get_ctd()
-        # if not hasattr(self, 'conjoint_triad'):
-        #     self.conjoint_triad = self.get_conjoint_triad()
-        # if not hasattr(self, 'seq_order_coupling_number'):
-        #     self.seq_order_coupling_number = self.get_seq_order_coupling_number()
-        # if not hasattr(self, 'quasi_seq_order'):
-        #     self.quasi_seq_order = self.get_quasi_seq_order()
-        # if not hasattr(self, 'pseudo_AAC'):
-        #     self.pseudo_AAC = self.get_pseudo_AAC()
-        # if not hasattr(self, 'amp_pseudo_AAC'):
-        #     self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
+        #if descriptor attribute DF is empty then call get descriptor function
         if (getattr(self, "aa_composition").empty):
                 self.aa_composition = self.get_aa_composition()
         if (getattr(self, "dipeptide_composition").empty):
@@ -726,7 +758,7 @@ class Descriptors():
         if (getattr(self, "amp_pseudo_AAC").empty):
                 self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
 
-        # all_desc = [self.aa_composition, self.dipeptide_composition]
+        #append all calculated descriptors to list
         all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
                            self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
                            self.geary_autocorrelation, self.composition. self.transition,
@@ -737,7 +769,7 @@ class Descriptors():
         #                    self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
         #                    self.geary_autocorrelation, self.CTD, self.conjoint_triad, self.seq_order_coupling_number]
 
-
+        #concatenate indivi
         all_desc_df = pd.concat(all_desc, axis = 1)
 
         self.all_descriptors = all_desc_df
@@ -747,7 +779,7 @@ class Descriptors():
     def valid_descriptors(self):
 
         """
-
+        Get a list of all valid descriptors available in the module.
 
         Returns
         -------
@@ -758,17 +790,13 @@ class Descriptors():
         #     'norm_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation', \
         #      'ctd', 'conjoint_triad','seq_order_coupling_number','quasi_seq_order_descriptors',\
         #      'pseudo_aa_comp', 'amphipilic_pseudo_aa_comp']
-        validDesc = ['aa_composition', 'dipeptide_composition', 'tripeptide_composition', \
+        valid_desc = ['aa_composition', 'dipeptide_composition', 'tripeptide_composition', \
             'norm_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation', \
              'ctd', 'composition', 'transition', 'distribution', 'conjoint_triad', \
              'seq_order_coupling_number','quasi_seq_order_descriptors',\
              'pseudo_aa_comp', 'amphipilic_pseudo_aa_comp']
 
-        return validDesc
-
-    def descriptor_groups(self):
-
-        pass
+        return valid_desc
 
     @property
     def all_desc(self):
@@ -898,23 +926,30 @@ class Descriptors():
     def amp_pseudo_AAC(self, val):
         self._amp_pseudo_AAC = val
 
-    def desc_to_class(self,str):
+    @property
+    def all_descriptors(self):
+        return self._all_descriptors
 
-        return getattr(sys.modules[__name__], str)
+    @all_descriptors.setter
+    def all_descriptors(self, val):
+        self._all_descriptors = val
+
+    # def desc_to_class(self,str):
+    #
+    #     return getattr(sys.modules[__name__], str)
 
     def __str__(self):
-        pass
+        return "Descriptor(Num Sequences: {}, Using All Descriptors: {})".format(
+            self.num_seqs, self.all_desc
+            )
 
     def __repr__(self):
         return "Descriptor(Num Sequences: {}, Using All Descriptors: {})".format(
             self.num_seqs, self.all_desc
         )
 
-    def __doc__(self):
-        pass
-
     def __len__(self):
-        pass
+        return len(self.all_descriptors)
 
     def __shape__(self):
-        pass
+        return self.all_descriptors.shape

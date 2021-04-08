@@ -169,7 +169,7 @@ class Model():
 
         elif self.algorithm.lower() == 'knn' or \
            self.algorithm.lower() == 'kneighborsregressor':
-           
+
             model_params = set(dir(KNeighborsRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
 
@@ -254,6 +254,7 @@ class Model():
 
         """
         return self.model_fit.predict(self.X_test)
+#        return self.model_fit.predict(self.X_train)
 
     def save(self, save_folder):
         """

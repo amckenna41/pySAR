@@ -562,16 +562,13 @@ class AAIndex():
 
         return "AAIndex Features of size {} - stored in {} ".format(self.get_num_features(),self.aa_index_filename)
 
-    #returns the number of indices found in the database
     def __len__(self):
-        """      """
+        """return the number of indices found in the database"""
         return self.get_num_features()
 
     def __repr__(self):
-
         return 'Instance of {} class, Filename: {}, URL: {}'.format(self.__class__.__name__, self.aa_index_filename, self.url)
 
-    #return size of AAI1 database file
     def __sizeof__(self):
-
+        """return size of AAI1 database file"""
         return os.path.getsize(os.path.isfile(os.path.join(DATA_DIR,self.aa_index_json_filename)))

@@ -5,10 +5,12 @@
 import os
 import sys
 import unittest
-import requests
-import urllib.request
+import numpy as np
+import pandas as pd
 
 from aaindex import AAIndex
+from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+from utils import *
 
 class UtilsTest(unittest.TestCase):
 
@@ -33,6 +35,8 @@ class UtilsTest(unittest.TestCase):
 
     def test_valid_sequence(self):
 
+
+
         pass
 
     def test_remove_gaps(self):
@@ -45,10 +49,39 @@ class UtilsTest(unittest.TestCase):
 
 
     def test_flatten(self):
-        pass
+
+        test_array = np.random.rand(100,3)
+
+        flattened_array = utils.flatten(test_array)
+
+        self.assertEqual(flattened_array.shape, (300,1))
+        self.assertIsInstance(flattened_array, np.ndarray)
+        self.assertEqual(flattened_array.ndim, 1)
+
+        test_array = np.random.rand(42,720)
+
+        flattened_array = utils.flatten(test_array)
+
+        self.assertEqual(flattened_array.shape, (1,30240))
+        self.assertIsInstance(flattened_array, np.ndarray)
+        self.assertEqual(flattened_array.ndim, 1)
+
+        test_array = np.random.rand(1,2)
+
+        flattened_array = utils.flatten(test_array)
+
+        self.assertEqual(flattened_array.shape, (1,2))
+        self.assertIsInstance(flattened_array, np.ndarray)
+        self.assertEqual(flattened_array.ndim, 1)
+
 
     def test_parse_json(self):
         pass
 
     def test_create_output_dir(self):
+
+
+
+
+
         pass

@@ -1,19 +1,26 @@
 ######################################################################
 ### Setup.py - installs all the required packages and dependancies ###
 ######################################################################
-
+import pathlib
 from setuptools import setup, find_packages
 import sys
 
 if sys.version_info[0] < 3:
     sys.exit('Python 3 is the minimum version requirement')
 
-setup(name='training',
-      version='0.1',
-      description='',
+HERE = pathlib.Path(__file__).parent
+
+README = (HERE / 'README.md').read_text()
+
+setup(name='ProtSAR',
+      version='1.0.1',
+      description='Protein Sequence Activity Relationship',
+      long_description = README,
+      long_description_content_type = "text/markdown",
+      url = "https://github.com/amckenna41/ProtSAR",
       author='Adam McKenna',
       author_email='amckenna41@qub.ac.uk',
-      license='',
+      license='MIT',
       install_requires=[
           'numpy==1.16.6',
           'pandas',
@@ -23,10 +30,7 @@ setup(name='training',
           'requests',
           'matplotlib',
           'seaborn',
-          'tqdm',
-          'google.cloud',
-          'google-cloud-core==1.3.0',
-          'google-api-core==1.16.0',
+          'tqdm'
       ],
      packages=find_packages(),
      include_package_data=True,

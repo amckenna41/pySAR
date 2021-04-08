@@ -207,6 +207,7 @@ class ProtSAR():
         Y_pred = self.model.predict()
 
         eval = Evaluate(Y_test, Y_pred)
+        # eval = Evaluate(Y_train, Y_pred)
 
         print(self.aa_indices)
 
@@ -225,6 +226,7 @@ class ProtSAR():
         self.output_results(aai_dict)
 
         plot_reg(Y_test, Y_pred, eval.r2)
+        # plot_reg(Y_train, Y_pred, eval.r2)
 
         utils.save_results(aai_dict, 'aai_encoding')
 
@@ -355,9 +357,11 @@ class ProtSAR():
         print('####################################\n')
 
         print('############ Parameters ############\n')
-        print('Dataset -> {}\nActivity -> {}\nSpectrum -> {}\nWindow -> {}\nFilter -> {}\nAAIndices -> {}\nDescriptors -> {}\nAlgorithm -> {}\nParameters -> {}\nTest Split -> {}\n'
+        print('Dataset -> {}\nActivity -> {}\nSpectrum -> {}\nWindow -> {}\nFilter -> {}\nAAIndices -> {}\nDescriptors -> {}\nAlgorithm -> {}\nModel Parameters -> {}\nTest Split -> {}\n'
                         .format(self.dataset,self.activity, self.spectrum, self.window, self.filter,
-                                self.aa_indices, self.descriptors, repr(self.model), self.parameters, self.test_split))
+                                self.aa_indices, self.descriptors, repr(self.model), self.model.model.get_params(), self.test_split))
+
+# print (self.parameters if self.parameters!={} else self.model.model.get_params())
 
         print('############# Metrics #############\n')
         print('# R2: {}'.format(results['R2']))
