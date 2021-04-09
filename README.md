@@ -1,14 +1,15 @@
-# ProtSAR <a name="TOP"></a>
+# pySAR <a name="TOP"></a>
 
 ## status
 > Development Stage
 
 [![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
 
+## Add Github Workflow CI thing
 ![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)
 
-ProtSAR is a Python library for analysing the sequence activity relationship (SAR)
-between proteins. ProtSAR allows the encoding of protein sequences using indices
+pySAR is a Python library for analysing the sequence activity relationship (SAR)
+between proteins. pySAR allows the encoding of protein sequences using indices
 from the AAIndex database [] via Digital Signal Processing transformations and
 through specific physicochemical and structural protein descriptors.
 
@@ -17,8 +18,8 @@ through specific physicochemical and structural protein descriptors.
 To install, clone this repository locally:
 
 ```bash
-git clone https://github.com/amckenna41/ProtSAR.git
-cd ProtSAR
+git clone https://github.com/amckenna41/pySAR.git
+cd pySAR
 ```
 
 Install required dependencies and packages:
@@ -37,7 +38,7 @@ from proDSP import *
 from evaluate import *
 from plots import *
 from descriptors import *
-from ProtSAR import *
+from pySAR import *
 from encoding import *
 ```
 
@@ -48,13 +49,13 @@ spectrum after a window function is applied.
 
 ```python
 
-protSAR = ProtSAR(dataset="dataset.txt",seq_col="sequence", activity="activity", aa_indices=
+pySAR = PySAR(dataset="dataset.txt",seq_col="sequence", activity="activity", aa_indices=
     ["CIDH920105","PALJ810116"], window="hamming", filter="", spectrum="power", descriptors=
     ["aa_comp"] algorithm = "PlsRegression", parameters={}, test_split=0.2)
 
 ```
 Alternatively, the system also supports inputting data via JSON or YAML format, with the
-keys of the input file required to be the same as the input parameters of the ProtSAR class,
+keys of the input file required to be the same as the input parameters of the pySAR class,
 for example:
 ```json
 {
@@ -73,7 +74,7 @@ for example:
   "test_split":0.2
 }
 ```
-**when creaitn instance of ProtSAR
+**when creaitn instance of pySAR
 
 
 
@@ -92,6 +93,18 @@ foobar.singularize('phenomena') # returns 'phenomenon'
 
 ### Encoding using AAI + protein descriptors
 
+
+### Generate all protein descriptors
+
+```python
+
+  desc = Descriptor(protein_seqs = data, desc_dataset = "descriptors.csv",
+    all_desc=True)
+
+```
+where protein_seqs is the dataset of protein sequences, desc_dataset is the name
+of the ouput csv used to store the calculated descriptors of the protein sequences
+and all_desc means that the class will get and calculate all descriptors.
 
 
 ## System Requirements ##
