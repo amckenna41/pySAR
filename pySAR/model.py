@@ -301,6 +301,9 @@ class Model():
         """
         #assert input parameters are of the correct type and accepted values
         assert isinstance(parameters, dict), 'Parameters argument must be of type dict'
+
+        # if metrics not in sorted(SCORERS.keys()):
+        #     raise sklearn.exceptions.UndefinedMetricWarning('Error')
         assert metric in sorted(SCORERS.keys()), 'Scoring must be in available Sklearn Scoring Metrics:\n{}'.format(sklearn.metrics.SCORERS.keys())
         assert cv >=5 and cv <=10, 'The number of cross-validation folds must be between 5 and 10'
         for p in list(parameters.keys()):

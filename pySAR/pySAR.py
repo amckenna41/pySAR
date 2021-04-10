@@ -384,7 +384,7 @@ class PySAR():
         aaindex = AAIndex()
         aai_desc_df = pd.DataFrame(columns=['Index_Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
-        aai_encoding = self.aaindex_encoding(aaindex)
+        aai_encoding = self.get_aai_enoding(aaindex)
         aai_encoding = pd.DataFrame(aai_encoding)
         descriptor_encoding=self.desc_encoding()
 

@@ -51,6 +51,11 @@ class ModelTests(unittest.TestCase):
             #verify that input model type is a valid model for the class
             self.assertTrue(model.algorithm in model.valid_models)
 
+
+
+# sklearn.base.is_regressor(estimator)[source]¶
+# Return True if the given estimator is (probably) a regressor.
+
         #############################################
 
         # model = Model('RandomForestRegressor')

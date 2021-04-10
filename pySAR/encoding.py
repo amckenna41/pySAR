@@ -136,9 +136,9 @@ class Encoding(PySAR):
 
             #if verbose, print out the current index and the current number of indices
             #   iterated through so far, increment counter to keep track of this
-            if verbose:
-                print('\nIndex {} ###### {}/{}'.format(index , index_count, len(all_features)))
-            index_count+=1
+            # if verbose:
+            #     print('\nIndex {} ###### {}/{}'.format(index , index_count, len(all_features)))
+            # index_count+=1
 
             #if getting all
             if combo2:
@@ -160,7 +160,7 @@ class Encoding(PySAR):
 
             else:
 
-                encoded_seqs = self.aaindex_encoding(index)
+                encoded_seqs = self.get_aai_enoding(index)
                 proDSP = ProDSP(encoded_seqs)
                 proDSP.encode_seqs()
                 #append category of current AAI index
@@ -261,6 +261,12 @@ class Encoding(PySAR):
         print(all_descriptors)
         featureIndex = 1
 
+        print('\n\n#######################################################################################\n')
+        print('Encoding using {} descriptor combinations with the parameters:\n \
+            \nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_descriptors),\
+            repr(self.model), self.parameters, self.test_split))
+        print('#######################################################################################\n')
+
         '''
         1.) Get current descriptor value from all_descriptors list.
         2.) Build model using descriptor features from current descriptor.
@@ -269,7 +275,8 @@ class Encoding(PySAR):
         5.) Repeat steps 1 - 4 for all descriptors.
         6.) Output results into a final dataframe, save it and return.
         '''
-        for descr in all_descriptors:
+        # for descr in all_descriptors:
+        for descr in tqdm(all_descriptors,unit=" descriptor",position=0,desc="Descriptors",file=sys.stdout):
 
             desc_ = pd.DataFrame()
             desc_list = []
@@ -389,12 +396,12 @@ class Encoding(PySAR):
         6.) Repeat steps 1 - 5 for all indices in the AAI.
         7.) Output results into a final dataframe, save it and return.
         '''
-        for feature in (aaindex.get_feature_codes()):
-        # for feature in tqdm(aaindex.get_feature_codes(),unit=" indices",desc="AAIndex"):
+#        for feature in (aaindex.get_feature_codes()):
+        for feature in tqdm(aaindex.get_feature_codes(),unit=" indices",desc="AAIndex"):
 
-            if verbose:
-                print('\nIndex {} ###### {}/{}'.format(feature , index_count, len(aaindex.get_feature_codes())))
-            index_count+=1
+            # if verbose:
+            #     print('\nIndex {} ###### {}/{}'.format(feature , index_count, len(aaindex.get_feature_codes())))
+            # index_count+=1
 
             encoded_seqs = self.get_aai_enoding(feature) #can call this as func inherits from ProAct
             proDSP = ProDSP(encoded_seqs)
@@ -402,8 +409,8 @@ class Encoding(PySAR):
 
             X_aai = pd.DataFrame(proDSP.spectrum_encoding)
 
-            for descr in all_descriptors:
-            # for descr in tqdm(all_descriptors, leave=False,unit=" descriptor",desc="Descriptors"):
+#            for descr in all_descriptors:
+            for descr in tqdm(all_descriptors, leave=False,unit=" descriptor",desc="Descriptors"):
 
                 desc_ = pd.DataFrame()
                 desc_list = []

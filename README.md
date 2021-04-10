@@ -1,5 +1,6 @@
 # pySAR <a name="TOP"></a>
 
+| Logo |
 ## status
 > Development Stage
 
@@ -121,3 +122,7 @@ scipy >= 1.4.1
 * `/PyBioMed` - stores all required feature data and dataset
 * `/models` - stores model output
 * `/tests` - tests for class methods and functions
+
+
+
+.. |Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png
