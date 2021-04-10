@@ -112,13 +112,13 @@ class PySAR():
         self.data[self.activity].replace([np.inf,-np.inf], np.nan)
         self.data[self.activity].fillna(0,inplace=True)
 
-    def aai_encoding(self, indices):
+    def get_aai_enoding(self, indices):
 
         if indices == None or indices == "":
             if self.aa_indices == None or self.aa_indices == "":
-                raise ValueError('No AA Indices have been input, aa_indices attribute is empty')
+              raise ValueError('No AA Indices have been input, aa_indices attribute is empty')
             else:
-                indices = self.aa_indices
+              indices = self.aa_indices
 
         self.aa_indices = indices
 
@@ -149,6 +149,8 @@ class PySAR():
             # encoded_aai_reshaped = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
 
             encoded_seqs = temp_all_seqs
+
+            return encoded_seqs
 
         else:
 
@@ -181,11 +183,83 @@ class PySAR():
 
             encoded_seqs = encoded_aai_reshaped
 
+            return encoded_seqs
+
+
+    def aai_encoding(self, indices):
+
+        # if indices == None or indices == "":
+        #     if self.aa_indices == None or self.aa_indices == "":
+        #         raise ValueError('No AA Indices have been input, aa_indices attribute is empty')
+        #     else:
+        #         indices = self.aa_indices
+
+        # self.aa_indices = indices
+
+        # aaindex = AAIndex()
+
+        # encoded_indices = []
+
+        # if not isinstance(indices, list):
+
+        #     # encoded_aai = aaindex.get_feature_from_code(self.aa_indices)['values']
+
+        #     encoded_aai = aaindex.get_feature_from_code(indices)['values']
+        #     # encoded_vals = list((aa_index.get_feature_from_code(indices)['values']).values())
+
+        #     temp_seq_vals = []
+        #     temp_all_seqs = []
+
+        #     for protein in range(0, len(self.data[self.seq_col])):
+        #         for aa in self.data[self.seq_col][protein]:
+        #             temp_seq_vals.append(encoded_aai[aa])
+
+        #         temp_all_seqs.append(temp_seq_vals)
+        #         temp_seq_vals = []
+
+        #     temp_all_seqs = utils.zero_padding(temp_all_seqs)
+
+        #     temp_all_seqs = np.array(temp_all_seqs)
+        #     # encoded_aai_reshaped = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
+
+        #     encoded_seqs = temp_all_seqs
+
+        # else:
+
+        #     print('here1')
+        #     encoded_aai_reshaped = np.zeros((self.num_seqs, self.seq_len))
+
+        #     #if multiple indices used then calcualte FFT encoding for each and then concatenate after each calculation
+        #     for ind in range(0,len(indices)):
+        #         encoded_aai = aaindex.get_feature_from_code(indices[ind])['values']
+
+        #         temp_seq_vals = []
+        #         temp_all_seqs = []
+        #         #reshaping issue here caused by zero padding - all seqs were not of the same length
+        #         for protein in range(0, len(self.data[self.seq_col])):
+        #             for aa in self.data[self.seq_col][protein]:
+        #                 temp_seq_vals.append(encoded_aai[aa])
+
+        #             temp_all_seqs.append(temp_seq_vals)
+        #             temp_seq_vals = []
+
+        #         temp_all_seqs = utils.zero_padding(temp_all_seqs)
+
+        #         temp_all_seqs =np.array(temp_all_seqs)
+
+        #         #in first iteration through indices set encoded_ai_ to zeros initialised np array, else concatenate to array in previous iteration
+        #         if ind == 0:
+        #             encoded_aai_reshaped = temp_all_seqs
+        #         else:
+        #             encoded_aai_reshaped = np.concatenate((encoded_aai_reshaped,temp_all_seqs), axis=1)
+
+        #     encoded_seqs = encoded_aai_reshaped
+
 
         aai_df = pd.DataFrame(columns=['Index','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
         print('encoding using',indices)
-        # encoded_seqs = self.aaindex_encoding(indices)
+        encoded_seqs = self.get_aai_enoding(indices)
         proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum, window=self.window, filter=self.filter)
         proDSP.encode_seqs()
         print('spectral encoding', proDSP.spectrum_encoding.shape)
@@ -213,7 +287,6 @@ class PySAR():
         utils.save_results(aai_dict, 'aai_encoding')
 
         return aai_dict
-
 
     def desc_encoding(self, descriptor):
 

@@ -314,8 +314,10 @@ class DescriptorTests(unittest.TestCase):
 
         val_desc = desc.all_descriptors_list()
 
-        self.assertEqual(len(val_desc), 15)
-        self.assertIsInstance(val_desc, list)
+        self.assertEqual(len(val_desc), 15, 'Number of valid descriptors \
+            should be 15, got {}'.format(len(val_desc)))
+        self.assertIsInstance(val_desc, list, 'Valid Descriptors variable \
+            should be a list, got {}'.format(type(val_desc)))
         self.assertNotIn("all_descriptors", val_desc,
             'all_descriptors attribute should not be be returned by the all_descriptors \
             list function')

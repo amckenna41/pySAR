@@ -11,7 +11,9 @@ import itertools
 import pickle
 import yaml
 import io
-from tqdm import tqdm
+import sys
+# from tqdm import tqdm
+from tqdm.auto import tqdm
 from os import path, makedirs, remove
 from difflib import get_close_matches
 import json
@@ -21,7 +23,7 @@ from aaindex import  AAIndex
 from model import Model
 from proDSP import ProDSP
 from evaluate import Evaluate
-from pySAR import pySAR
+from pySAR import PySAR
 import utils as utils
 from descriptors import Descriptors
 from plots import plot_reg
@@ -142,8 +144,8 @@ class Encoding(PySAR):
             if combo2:
 
                 for i in index:
-                    encoded_seqs = self.aaindex_encoding(i) #can call this as func inherits from ProAct
-
+                    # encoded_seqs = self.aaindex_encoding(i) #can call this as func inherits from ProAct
+                    encoded_seqs = self.get_aai_enoding(i)
                     proDSP = ProDSP(encoded_seqs)
                     proDSP.encode_seqs()
                     aa_list.append(proDSP.spectrum_encoding)
@@ -388,18 +390,20 @@ class Encoding(PySAR):
         7.) Output results into a final dataframe, save it and return.
         '''
         for feature in (aaindex.get_feature_codes()):
+        # for feature in tqdm(aaindex.get_feature_codes(),unit=" indices",desc="AAIndex"):
 
             if verbose:
                 print('\nIndex {} ###### {}/{}'.format(feature , index_count, len(aaindex.get_feature_codes())))
             index_count+=1
 
-            encoded_seqs = self.aaindex_encoding(feature) #can call this as func inherits from ProAct
+            encoded_seqs = self.get_aai_enoding(feature) #can call this as func inherits from ProAct
             proDSP = ProDSP(encoded_seqs)
             proDSP.encode_seqs()
 
             X_aai = pd.DataFrame(proDSP.spectrum_encoding)
 
             for descr in all_descriptors:
+            # for descr in tqdm(all_descriptors, leave=False,unit=" descriptor",desc="Descriptors"):
 
                 desc_ = pd.DataFrame()
                 desc_list = []
