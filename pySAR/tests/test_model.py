@@ -13,73 +13,58 @@ import numpy as np
 class ModelTests(unittest.TestCase):
 
     def setUp(self):
-
-        #creatre model save dir
+        """
+        Create dummy data.
+        """
         self.dummy_X = np.random.ranf(size=100)
         self.dummy_Y = np.random.randint(10,size=100)
 
 
-    def test_model_types(self):
+    def test_model(self):
 
         """
         Test Case to check each model type and its associated parameters and
         attributes.
 
         """
-        test_models = ['PLSRegression','RandomForestRegressor']
 
+        test_models = ['PLSRegression','RandomForestRegressor','AdaBoostRegressor',\
+                            'BaggingRegressor','DecisionTreeRegressor','LinearRegression',\
+                            'Lasso','SVR','KNeighborsRegressor']
+
+        #iterate through all available algorithms and test them
         for test_mod in range(0,len(test_models)):
 
             model = Model(test_models[test_mod])
 
             #checking model object is of the correct sklearn model datatype
-            self.assertEqual(type(model.model).__name__, test_models[test_mod])
-            # self.assertIsInstance(model.model,sklearn.cross_decomposition.PLSRegression)
-
+            self.assertEqual(type(model.model).__name__, test_models[test_mod],
+                'Model type is not correct, wanted {}, got {} '.format(
+                    test_models[test_mod], type(model.model).__name__
+                ))
             #assert that model has not been fitted
-            self.assertFalse(model.modelFitted())
+            self.assertFalse(model.modelFitted(), 'Model should not be fitted \
+                on initialisation')
             #fit model and assert it has been fitted
             model.fit(self.dummy_X, self.dummy_Y)
-            self.assertTrue(model.modelFitted())
+            self.assertTrue(model.modelFitted(), 'Model has not been fitted')
 
             #verify that parameters input param = {} meaning the defauly params for the model are used
-            self.assertEqual(model.parameters,{})
-            #assert model/algorithm name is ==
-            self.assertEqual(model.algorithm.lower(), test_models[test_mod].lower())
+            self.assertEqual(model.parameters,{}, 'Default Parameters attribute \
+                should be an empty dict, but got {}'.format(model.parameters))
             #verify test split attribute is = 0.2, its default value
-            self.assertEqual(model.test_split, 0.2)
+            self.assertEqual(model.test_split, 0.2, 'Default test split attribute \
+                should be 0.2, but got {}'.format(model.test_split))
             #verify that input model type is a valid model for the class
-            self.assertTrue(model.algorithm in model.valid_models)
+            self.assertTrue(model.algorithm in model.valid_models, 'Input algorithm {}\
+                not in available algorithms: {}'.format(model.algorithm, model.valid_models))
+            #verify repr represenation of model object is correct
+            self.assertEqual(repr(model), test_models[test_mod], 'Repr function should \
+                return {}, but got {}'.format(test_models[test_mod], repr(model)))
+            #verify algorithm is a regression
+            self.assertTrue(sklearn.base.is_regressor(model.model), 'Model type \
+                should be a sklearn regressor.')
 
-
-
-# sklearn.base.is_regressor(estimator)[source]¶
-# Return True if the given estimator is (probably) a regressor.
-
-        #############################################
-
-        # model = Model('RandomForestRegressor')
-        # self.assertEqual(type(self.model).__name__, 'RandomForestRegressor')
-        # self.assertIsInstance(model.model,sklearn.ensemble.RandomForestRegressor)
-        #
-        # #assert that model has not been fitted
-        # self.assertFalse(model.modelFitted())
-        # #fit model and assert it has been fitted
-        # model.fit(self.dummy_X, self.dummy_Y)
-        # self.assertTrue(model.modelFitted())
-        #
-        # #verify that parameters input param = {} meaning the defauly params for the model are used
-        # self.assertEqual(model.parameters,{})
-        # #assert model/algorithm name is == 'plsregression'
-        # self.assertEqual(model.algorithm.lower(), 'plsregression')
-        # #verify test split attribute is = 0.2, its default value
-        # self.assertEqual(model.test_split, 0.2)
-        # #verify that input model type is a valid model for the class
-        # self.assertTrue(model.algorithm in model.valid_models)
-        #
-        #
-        #
-        #
         # model = Modoel('AdaBoostRegressor')
         # self.assertEqual(type(self.model).__name__, 'AdaBoostRegressor')
         #
@@ -102,15 +87,46 @@ class ModelTests(unittest.TestCase):
         # self.assertEqual(type(self.model).__name__, 'KNN')
 
     def test_model_input_closeness(self):
-
+        """
+        Test case for testing the algorithm closeness function used to get the
+        closest available algorithm to the algorithm input into the class.
+        """
         model = Model('plsreg')
         self.assertEqual(model.algorithm, "PLSRegression")
-
         self.assertEqual(repr(model), "PLSRegression")
-        #test if inputting similar like algorithm names still gives similar output
-        # e.g model = Model('plsreg') etc
 
-        pass
+        model = Model('randomfor')
+        self.assertEqual(model.algorithm, "RandomForestRegressor")
+        self.assertEqual(repr(model), "RandomForestRegressor")
+
+        model = Model('adaboo')
+        self.assertEqual(model.algorithm, "AdaBoostRegressor")
+        self.assertEqual(repr(model), "AdaBoostRegressor")
+
+        model = Model('bagg')
+        self.assertEqual(model.algorithm, "BaggingRegressor")
+        self.assertEqual(repr(model), "BaggingRegressor")
+
+        model = Model('decisiontree')
+        self.assertEqual(model.algorithm, "DecisionTreeRegressor")
+        self.assertEqual(repr(model), "DecisionTreeRegressor")
+
+        model = Model('linear')
+        self.assertEqual(model.algorithm, "LinearRegression")
+        self.assertEqual(repr(model), "LinearRegression")
+
+        with self.assertRaises(ValueError):
+            bad_model = Model('abcdefg')
+
+        with self.assertRaises(ValueError):
+            bad_model = Model('rand')
+
+        with self.assertRaises(ValueError):
+            bad_model = Model('123')
+
+        with self.assertRaises(ValueError):
+            bad_model = Model('blahblahblah')
+
     def test_model_instances():
 
 
@@ -134,12 +150,60 @@ class ModelTests(unittest.TestCase):
     # def test_download(self):
 
     def test_parameters():
+
+        pls_parameters = {"n_components":20,"algorithm":"svd", "max_iter",200}
+
+        model = Model('PlsRegression',parameters = pls_parameters)
+
+        pls_model = PLSRegression(n_components=20, algorithm="svd", max_iter=200)
+
+        self.assertEqual(model.parameters.items, pls_parameters.items)
+
+        for k, v in pls_parameters:
+
+            self.assertIn(k, list(pls_model.get_params()))
+
+
+        rf_parameters = {}
+
+        # model = Model('PlsRegression',parameters = pls_parameters)
+        #
+        # pls_model = PLSRegression(n_components=20, algorithm="svd", max_iter=200)
+        #
+        # self.assertEqual(model.parameters.items, pls_parameters.items)
+        #
+        # for k, v in pls_parameters:
+        #
+        #     self.assertIn(k, list(pls_model.get_params()))
+        #
+
+
+        bagging_parameters = {}
+
+        model = Model('PlsRegression',parameters = pls_parameters)
+
+        pls_model = PLSRegression(n_components=20, algorithm="svd", max_iter=200)
+
+        self.assertEqual(model.parameters.items, pls_parameters.items)
+
+        for k, v in pls_parameters:
+
+            self.assertIn(k, list(pls_model.get_params()))
+
         pass
 
-    def test_sizeof():
+    def test_train_test_split(self):
         pass
+
+    def test_hyperparamter_tuning(self):
+        pass
+        
 
     def tearDown(self):
+
+        del self.dummy_x
+        del self.dummy_Y
+
 
         #remove model save dir
         pass

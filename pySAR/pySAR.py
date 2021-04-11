@@ -298,7 +298,7 @@ class PySAR():
         self.descriptors = descriptor
 
         desc = descriptors.Descriptors(self.data[self.seq_col])
-        desc_df = pd.DataFrame(columns=['Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+        desc_df = pd.DataFrame(columns=['Descriptor','Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
         encoded_desc_temp = []
         encoded_desc_vals = []
@@ -382,7 +382,8 @@ class PySAR():
             raise ValueError('AAI and descriptor values both need to be present')
 
         aaindex = AAIndex()
-        aai_desc_df = pd.DataFrame(columns=['Index_Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+        # aai_desc_df = pd.DataFrame(columns=['Index_Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+        aai_desc_df = pd.DataFrame(columns=['Index','Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
         aai_encoding = self.get_aai_enoding(aaindex)
         aai_encoding = pd.DataFrame(aai_encoding)
@@ -402,7 +403,9 @@ class PySAR():
         eval = Evaluate(Y_test, Y_pred)
 
         index_desc = (str(self.aa_indices) + str(self.descriptors))
-        aai_desc_df['Index_Descriptor'] = index_desc
+        # aai_desc_df['Index_Descriptor'] = index_desc
+        aai_desc_df['Index'] = str(self.aa_indices)
+        aai_desc_df['Descriptor'] = str(self.descriptors)
         aai_desc_df['R2'] = eval.r2
         aai_desc_df['RMSE'] = eval.rmse
         aai_desc_df['MSE'] = eval.mse

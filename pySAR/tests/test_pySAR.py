@@ -11,7 +11,9 @@ from pySAR import PySAR
 class ProDSPTests(unittest.TestCase):
 
     def setUp(self):
-
+        """
+        Import the 4 test datasets used for testing the ProDSP methods
+        """
         try:
             self.test_dataset1 = pd.read_csv(os.path.join('tests','test_data','test_thermostability.txt'),sep=",", header=0)
         except:
@@ -86,7 +88,7 @@ class ProDSPTests(unittest.TestCase):
 
 #         sklearn.utils.assert_all_finite(X, *, allow_nan=False)  Throw an error if array contains NaNs or Infs.
 #
-# 
+#
 #         assert data[activity] contains no NA
 #
 #         assert proAct.data.ndim == 2

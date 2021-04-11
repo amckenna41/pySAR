@@ -63,6 +63,11 @@ class Descriptors():
         if isinstance(self.protein_seqs, str):
           self.protein_seqs = pd.Series(self.protein_seqs)
 
+        if isinstance(self.protein_seqs, pd.DataFrame) and \
+            len(self.protein_seqs.columns) > 1:
+            raise ValueError('The full dataset must not be passed in, only the \
+                columns containing the protein sequences.')
+
         #remove any gaps from protein sequences
         self.protein_seqs = utils.remove_gaps(self.protein_seqs)
         #assert that all gaps have been removed from the sequences
@@ -108,6 +113,13 @@ class Descriptors():
             if all_desc:
                 self.all_descriptors = self.get_all_descriptors()
                 self.all_descriptors.to_csv(os.path.join(DATA_DIR, 'descriptors.csv'))
+
+        #create dictionary of descriptors and their associated groups
+        keys = self.all_descriptors_list()
+        values = ["Composition"]*3 + ["Autocorrelation"]*3 + ["CTD"]*4 + ["Conjoint Triad"] + \
+            ["Quasi-Sequence-Order"]*2 + ["Composition"]*2
+
+        self.descriptor_groups = dict(zip(keys,values))
 
     def import_descriptors(self, descriptor_file):
 
@@ -163,6 +175,7 @@ class Descriptors():
         self.pseudo_AAC = descriptor_df.iloc[:,9900:9950]
         self.amp_pseudo_AAC = descriptor_df.iloc[:,9950:10030]
         self.all_descriptors = descriptor_df.iloc[:,:]
+
 
     def get_aa_composition(self):
 
@@ -865,6 +878,14 @@ class Descriptors():
 
         return valid_desc
 
+    def descriptor_group(self, desc):
+
+        # desc_group_keys = self.valid_descriptors()
+        # desc_group_vals = ['composition', 'composition', 'composition', 'autocorrelation',
+        #     'autocorrelation']
+
+
+        pass
     @property
     def all_desc(self):
         return self._all_desc

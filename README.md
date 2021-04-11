@@ -119,9 +119,12 @@ scipy >= 1.4.1
 
 ## Directory folders:
 
-* `/PyBioMed` - stores all required feature data and dataset
-* `/models` - stores model output
-* `/tests` - tests for class methods and functions
+* `/pySAR/PyBioMed` - package partially forked from https://github.com/gadsbyfly/PyBioMed, used in
+the calculation of the protein descriptors.
+* `/Resuts` - stores all calculated results from the evaluation of a variety of protein
+encoding strategies using pySAR.
+* `/pySAR/tests` - unit and integration tests for pySAR
+* `/pySAR/data` - all required data and datasets are stored in this folder.
 
 
 

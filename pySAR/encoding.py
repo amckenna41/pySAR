@@ -68,8 +68,9 @@ class Encoding(PySAR):
         print('algorithm',self.algorithm)
         print('dataset',self.dataset)
         print('model',self.model)
+
+        #create output directory to store all of the program's outputs
         utils.create_output_dir()
-    # aa_df = encoding.aai_encoding(aaindex, combo2 = False, cutoff=1, verbose=True)
 
     def aai_encoding(self, combo2 = False, cutoff=1, verbose=False):
 
@@ -243,11 +244,11 @@ class Encoding(PySAR):
         #initialise Descriptor object with protein sequences, set all_desc to get all descriptors at once
         desc = Descriptors(self.data[self.seq_col], all_desc = True)
 
-        #print(dir(desc))
-        desc_metrics_df = pd.DataFrame(columns=['Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+        desc_metrics_df = pd.DataFrame(columns=['Descriptor','Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
         desc_list = []
         descriptor = []
+        descriptor_group_ = []
         r2_ = []
         mse_ = []
         rmse_ = []
@@ -317,6 +318,7 @@ class Encoding(PySAR):
             eval = Evaluate(Y_test,Y_pred)
 
             descriptor.append(descr)
+            descriptor_group_.append(desc.descriptor_groups[descr])
             r2_.append(eval.r2)
             rmse_.append(eval.rmse)
             mse_.append(eval.mse)
@@ -326,6 +328,7 @@ class Encoding(PySAR):
 
         desc_metrics_= desc_metrics_df.copy()
         desc_metrics_['Descriptor'] = descriptor
+        desc_metrics_['Group'] = descriptor_group_
         desc_metrics_['R2'] = r2_
         desc_metrics_['RMSE'] = rmse_
         desc_metrics_['MSE'] = mse_
@@ -366,13 +369,14 @@ class Encoding(PySAR):
         """
         aaindex = AAIndex()
         desc = Descriptors(self.data[self.seq_col], all_desc = True)
-        # aaindex_metrics_df = pd.DataFrame(columns=['Index_Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
-        aaindex_metrics_df = pd.DataFrame(columns=['Index','Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+        aaindex_metrics_df = pd.DataFrame(columns=['Index','Category', \
+            'Descriptor','Descriptor Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
         index_ = []
+        index_category_ = []
         descriptor_ = []
+        descriptor_group_ = []
         desc_list = []
-        index_descriptor = []
         r2_ = []
         mse_ = []
         rmse_ = []
@@ -453,7 +457,9 @@ class Encoding(PySAR):
 
                 eval = Evaluate(Y_test,Y_pred)
                 index_.append(feature)
+                index_group_.append(aaindex.get_category(feature))
                 descriptor_.append(descr)
+                descriptor_group_.append(desc.descriptor_groups[descr])
                 r2_.append(eval.r2)
                 rmse_.append(eval.rmse)
                 mse_.append(eval.mse)
@@ -465,10 +471,9 @@ class Encoding(PySAR):
 
         aai_desc_metrics_df_= aaindex_metrics_df.copy()
         aai_desc_metrics_df_['Index'] = index_
+        aai_desc_metrics_df_['Category'] = index_category_
         aai_desc_metrics_df_['Descriptor'] = descriptor_
-        # aai_desc_metrics_df_['Index_Descriptor'] = (list(map(list, zip(aaindex_metrics_df_['Index'], aaindex_metrics_df_['Descriptor']))))
-        # aai_desc_metrics_df_['Index_Descriptor'] = (list(map(list, zip(index_, descriptor_))))
-        # aai_desc_metrics_df_.drop(['Index','Descriptor'],axis=1, inplace=True)
+        aai_desc_metrics_df_['Descriptor Group'] = descriptor_group_
         aai_desc_metrics_df_['R2'] = r2_
         aai_desc_metrics_df_['RMSE'] = rmse_
         aai_desc_metrics_df_['MSE'] = mse_
