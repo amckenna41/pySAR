@@ -129,3 +129,6 @@ encoding strategies using pySAR.
 
 
 .. |Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png
+
+TO DO:
+Add execution time to encoding process

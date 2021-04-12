@@ -151,7 +151,7 @@ class ModelTests(unittest.TestCase):
 
     def test_parameters():
 
-        pls_parameters = {"n_components":20,"algorithm":"svd", "max_iter",200}
+        pls_parameters = {"n_components":20,"algorithm":"svd", "max_iter":200}
 
         model = Model('PlsRegression',parameters = pls_parameters)
 
@@ -197,7 +197,7 @@ class ModelTests(unittest.TestCase):
 
     def test_hyperparamter_tuning(self):
         pass
-        
+
 
     def tearDown(self):
 

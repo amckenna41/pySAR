@@ -121,7 +121,7 @@ class Encoding(PySAR):
         #   cutoff index multiplied with the total number of features and the value used as the
         #       index for the for loop.
         cutoff_index = int(len(all_features) * cutoff)
-        # cutoff_index = 50
+        start = time.time() #start counter
 
         '''
         1.) Get AAI index - encode it into a protein spectra according to the spectrum
@@ -132,6 +132,7 @@ class Encoding(PySAR):
         5.) Repeat steps 1 - 4 for all indices.
         6.) Output results into a final dataframe, save it and return.
         '''
+
         # for index in all_features[:cutoff_index]:
         for index in tqdm(all_features[:cutoff_index],unit=" indices",position=0,desc="AAIndex",file=sys.stdout):
 
@@ -193,6 +194,9 @@ class Encoding(PySAR):
             rpd_.append(eval.rpd)
             mae_.append(eval.mae)
             explained_var_.append(eval.explained_var)
+
+        end = time.time()
+        elapsed = end - start
 
         #if using combinations of 2 AAI indices then transform the category_
         #   list such that the 2 categories for the 2 indices are accounted for
@@ -282,22 +286,25 @@ class Encoding(PySAR):
             desc_ = pd.DataFrame()
             desc_list = []
 
-            print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
+            # print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
             desc_count+=1
             if desc_combo == 2 or desc_combo == 3:
 
                 for de in descr:
                     desc_list.append(getattr(desc, de))
+                    descriptor_group_.append(desc.descriptor_groups[de])
+
                 desc_ = pd.concat(desc_list,axis=1)
                 # desc_ = pd.DataFrame(desc_list)
             else:
                 desc_ = getattr(desc, descr)
+                descriptor_group_.append(desc.descriptor_groups[descr])
 
             X = desc_
 
             if X.shape[0] != self.num_seqs:
               raise ValueError('Feature data doesnt have the correct number of sequences: {},\
-                      proabable error in getting descriptor values'.format(self.num_seqs))
+                      probable error in getting descriptor values'.format(self.num_seqs))
 
             Y  = self.get_activity()
 
@@ -318,13 +325,15 @@ class Encoding(PySAR):
             eval = Evaluate(Y_test,Y_pred)
 
             descriptor.append(descr)
-            descriptor_group_.append(desc.descriptor_groups[descr])
             r2_.append(eval.r2)
             rmse_.append(eval.rmse)
             mse_.append(eval.mse)
             rpd_.append(eval.rpd)
             mae_.append(eval.mae)
             explained_var_.append(eval.explained_var)
+
+       if desc_combo == 2 or desc_combo == 3:
+           descriptor_group_= [ ','.join(x) for x in zip(descriptor_group_[0::2], descriptor_group_[1::2]) ]
 
         desc_metrics_= desc_metrics_df.copy()
         desc_metrics_['Descriptor'] = descriptor
@@ -389,6 +398,12 @@ class Encoding(PySAR):
         #get list of all descriptors
         all_descriptors = desc.all_descriptors_list(desc_combo)
 
+        print('\n\n#######################################################################################\n')
+        print('Encoding using {} AAI and {} descriptor combinations with the parameters:\n \
+            \nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(aaindex.get_feature_codes()),\
+            len(all_descriptors),repr(self.model), self.parameters, self.test_split))
+        print('#######################################################################################\n')
+
         '''
         1.) Get AAI index - encode it into a protein spectra according to the spectrum
         input parameter.
@@ -419,12 +434,14 @@ class Encoding(PySAR):
                 desc_ = pd.DataFrame()
                 desc_list = []
 
-                print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
+                # print('Descriptor: {} ###### {}/{}'.format(descr , desc_count, len(all_descriptors)))
                 desc_count+=1
                 if desc_combo == 2 or desc_combo == 3:
 
                     for de in descr:
                         desc_list.append(getattr(desc, de))
+                        descriptor_group_.append(desc.descriptor_groups[de])
+
                                 # desc_ = pd.concat(desc_list,axis=1)  check if this is needed here
 
                     desc_ = desc_list
@@ -435,11 +452,10 @@ class Encoding(PySAR):
                         desc_list_concat = np.concatenate((desc_[0],desc_[1],desc_[2]),axis =1)
 
                     desc_ = desc_list_concat
-                    # print('desclist',desc_list_concat)
-                    # print((desc_list_concat.shape))
 
                 else:
                     desc_ = getattr(desc, descr)
+                    descriptor_group_.append(desc.descriptor_groups[desc_])
 
                 X = pd.DataFrame(desc_)
 
@@ -457,7 +473,7 @@ class Encoding(PySAR):
 
                 eval = Evaluate(Y_test,Y_pred)
                 index_.append(feature)
-                index_group_.append(aaindex.get_category(feature))
+                index_category_.append(aaindex.get_category(feature))
                 descriptor_.append(descr)
                 descriptor_group_.append(desc.descriptor_groups[descr])
                 r2_.append(eval.r2)
@@ -468,6 +484,9 @@ class Encoding(PySAR):
                 explained_var_.append(eval.explained_var)
 
             desc_count = 1
+
+       if desc_combo == 2 or desc_combo == 3:
+           descriptor_group_= [ ','.join(x) for x in zip(descriptor_group_[0::2], descriptor_group_[1::2]) ]
 
         aai_desc_metrics_df_= aaindex_metrics_df.copy()
         aai_desc_metrics_df_['Index'] = index_

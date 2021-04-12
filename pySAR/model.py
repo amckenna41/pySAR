@@ -12,8 +12,10 @@ from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRe
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
-from sklearn.experimental import enable_halving_search_cv
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, HalvingGridSearchCV, ParameterGrid, ParameterSampler, HalvingRandomSearchCV, train_test_split
+# from sklearn.experimental import enable_halving_search_cv
+# from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, HalvingGridSearchCV, ParameterGrid, ParameterSampler, HalvingRandomSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split
+
 from sklearn.metrics import SCORERS
 from difflib import get_close_matches
 import pandas as pd
