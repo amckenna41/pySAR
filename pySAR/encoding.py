@@ -332,8 +332,10 @@ class Encoding(PySAR):
             mae_.append(eval.mae)
             explained_var_.append(eval.explained_var)
 
-       if desc_combo == 2 or desc_combo == 3:
-           descriptor_group_= [ ','.join(x) for x in zip(descriptor_group_[0::2], descriptor_group_[1::2]) ]
+        if desc_combo == 2:
+          descriptor_group_= [ ','.join(x) for x in zip(descriptor_group_[0::2], descriptor_group_[1::2]) ]
+        elif desc_combo == 3:
+          descriptor_group_= [ ','.join(x) for x in zip(descriptor_group_[0::3], descriptor_group_[1::3],  descriptor_group_[2::3]) ]
 
         desc_metrics_= desc_metrics_df.copy()
         desc_metrics_['Descriptor'] = descriptor
@@ -455,7 +457,7 @@ class Encoding(PySAR):
 
                 else:
                     desc_ = getattr(desc, descr)
-                    descriptor_group_.append(desc.descriptor_groups[desc_])
+                    descriptor_group_.append(desc.descriptor_groups[descr])
 
                 X = pd.DataFrame(desc_)
 
@@ -475,7 +477,7 @@ class Encoding(PySAR):
                 index_.append(feature)
                 index_category_.append(aaindex.get_category(feature))
                 descriptor_.append(descr)
-                descriptor_group_.append(desc.descriptor_groups[descr])
+                # descriptor_group_.append(desc.descriptor_groups[descr])
                 r2_.append(eval.r2)
                 rmse_.append(eval.rmse)
                 mse_.append(eval.mse)
@@ -485,8 +487,10 @@ class Encoding(PySAR):
 
             desc_count = 1
 
-       if desc_combo == 2 or desc_combo == 3:
-           descriptor_group_= [ ','.join(x) for x in zip(descriptor_group_[0::2], descriptor_group_[1::2]) ]
+        if desc_combo == 2:
+          descriptor_group_= [ ','.join(x) for x in zip(descriptor_group_[0::2], descriptor_group_[1::2]) ]
+        elif desc_combo == 3:
+          descriptor_group_= [ ','.join(x) for x in zip(descriptor_group_[0::3], descriptor_group_[1::3],  descriptor_group_[2::3]) ]
 
         aai_desc_metrics_df_= aaindex_metrics_df.copy()
         aai_desc_metrics_df_['Index'] = index_
