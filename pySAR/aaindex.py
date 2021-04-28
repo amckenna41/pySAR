@@ -449,7 +449,7 @@ class AAIndex():
       """
       #stripping input of whitespace
       try:
-          index_code.strip()
+          index_code = index_code.strip()
       except:
         raise TypeError('Input parameter {} is not of correct datatype string, got {}' \
             .format(index_code, type(index_code)))

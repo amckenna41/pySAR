@@ -400,7 +400,7 @@ class PySAR():
         else:
             desc_matches = get_close_matches(descriptors,descr.valid_descriptors(),cutoff=0.4)
             descriptors = desc_matches[0]
-            if descriptors[de] == []:
+            if descriptors == []:
                 raise ValueError('No approximate descriptor found from one entered: {}'.format(descriptors))
 
         #initialise temp lists and DF to store encoded descriptor values
@@ -469,7 +469,7 @@ class PySAR():
         desc_df = pd.Series(index=['Descriptor','Group','R2', 'RMSE', 'MSE',
             'RPD', 'MAE', 'Explained Var'],dtype='object')
 
-        X = self.get_descriptor_encoding(descriptors = self.descriptors):
+        X = self.get_descriptor_encoding(descriptors = self.descriptors)
 
         #
         # #create instance of Descriptors class using data in instance variable
@@ -567,7 +567,7 @@ class PySAR():
         return desc_df
 
 
-    def aai_desc_encoding(self, indices=None,descriptors=None,spectrum='power'
+    def aai_desc_encoding(self, indices=None,descriptors=None,spectrum='power',
         window="", filter="",use_dsp=True, verbose=True):
         """
         Encode using both AAI indices and the descriptors. The two outputs from
