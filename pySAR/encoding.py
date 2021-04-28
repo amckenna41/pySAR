@@ -385,7 +385,7 @@ class Encoding(PySAR):
         return desc_metrics_df_
 
     def aai_descriptor_encoding(self, desc_combo=1, use_dsp = True, spectrum='power',
-        window='hamming', filter_="" verbose=True, cutoff_index=1):
+        window='hamming', filter_="",verbose=True, cutoff_index=1):
         """
         Encoding all protein sequences using each of the indices in the AAI as well
         as the descriptors. The sequences can be encoded using 1 AAI + 1 Descriptor,

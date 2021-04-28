@@ -49,14 +49,14 @@ class ProDSP():
         protein spectra to generate from the protein sequences.
     window : str
         window function to apply to the output of the FFT.
-    filter: str
-        filter function to apply to the output of the FFT.
+    filter_: str
+        filter_ function to apply to the output of the FFT.
 
     Methods
     -------
 
     """
-    def __init__(self, encoded_sequences, spectrum='power', window="hamming", filter=None):
+    def __init__(self, encoded_sequences, spectrum='power', window="hamming", filter_=None):
 
         self.encoded_sequences = encoded_sequences
 
@@ -69,7 +69,7 @@ class ProDSP():
 
         self.spectrum = spectrum
         self.window = window
-        self.filter = filter
+        self.filter_ = filter_
 
         #pre-processing of encoded protein sequences
         self.pre_processing()
@@ -147,7 +147,7 @@ class ProDSP():
 
         #set filter attribute according to approximate user input
         if filter_matches ==[] or filter_matches == None:
-            self.filter = ""    #no filter
+            self.filter_ = ""    #no filter
 
     def encode_seqs(self):
         """
@@ -188,8 +188,8 @@ class ProDSP():
           encoded_fft = np.zeros((self.encoded_sequences.shape[1]),dtype=complex)
 
           #apply filter
-          # if (self.filter!=""):
-          #    if (self.filter == 'savgol'):
+          # if (self.filter_!=""):
+          #    if (self.filter_ == 'savgol'):
           #       encoded_seq_copy[seq] = savgol_filter(encoded_seq_copy[seq], 17, polyorder=2, deriv=2)
 
           #apply window function to Fourier array
@@ -348,11 +348,11 @@ class ProDSP():
         self._window = val
 
     @property
-    def filter(self):
+    def filter_(self):
         return self._filter
 
-    @filter.setter
-    def filter(self, val):
+    @filter_.setter
+    def filter_(self, val):
         self._filter = val
 
 ################################################################################
