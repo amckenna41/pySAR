@@ -1,1 +1,0 @@
-{"data_json": null, "_dataset": "T50.txt", "_seq_col": "sequence", "_activity": "T50", "_window": "hamming", "_filter": "", "_spectrum": "power", "_aa_indices": "LEVM780105", "_descriptors": "", "_algorithm": "randomforest", "_parameters": {}, "_test_split": 0.2, "_num_seqs": 261, "_seq_len": 466, "model": 

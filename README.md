@@ -4,9 +4,48 @@
 ## status
 > Development Stage
 
+## To DO List:
+- [ ] Add Github Workflow CI thing
+- [ ] Add Category and Descriptor Group to pySAR results DF.
+- [ ] Condense comments in functions, remove some whitespace lines
+- [ ] Add help function
+- [ ] Mention that PyBioMed package duplicated here as it is not available via pyPI and would mean that user would have to install the full pybiomed zip
+- [ ] raise type errors instead of Value ?
+- [ ] index errors?
+##def __repr__(self):
+return '<Class Name: {}>'.format(self)
+#try except instead of assert
+- [ ] remove plot func from DSP
+- [ ] dd StanardScaler after every AAIndex encoding and before model building####
+- [ ] Change importing globals : import globals / globals.OUTPUT_DIR
+- [X] Split up autocorrelation descriptors into their own functions
+- [ ] Allow fasta file to be input to Descriptor class?
+- [ ] github workflow with Twine that automatically published to pypi
+- [ ] provide example script for running on GCP or AWS resources?
+- [ ] don't return None after raising an exception??
+- [ ] add descriptions to each methods in each class
+- [ ] remove spacing in equals in keyword args in class/function defintiion
+- [ ] setters and getters to Evaluate class? using @property
+- [ ] add python version badge to readme
+- [ ] add pypi badge to readme
+- [ ] add introduction to readme
+- [ ] add references to descriptor module
+- [ ] integrate descriptor and AAIndex when using properties from AAIndex
+- [ ] look into setup.cfg or setup.py
+- [ ] add distance matrices json to dara ? : https://github.com/MartinThoma/propy3/blob/master/propy/QuasiSequenceOrder.py
+- [ ] split up QuasiSequenceOrder descriptor into its consitent quasi-seq-order
+- [ ] check conjoint triad feature is correct... (512-D but should be 343?) Overall descriptors should be 9920, not 10030
+- [ ] add descriptor group and index category to output results DF.
+- [ ] in readme show example usage for each module/class
+- [ ] change AAI method names from get_feature etc to get_record...
+- [ ] change get_feature_names to get_feature_desc etc, i dunno
+- [ ] add AAI category to each AAI record
+- [ ] change all 'aa_index' to 'aaindex'
+- [ ] Add assertion comments to each unit test, got X wanted Y..
+- [ ] add test numbers in comments for each block of unit tests.
+<!-- #maybe split up multiple descriptor names/categorties in results DF into seperate columns -->
 [![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
 
-## Add Github Workflow CI thing
 ![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)
 
 pySAR is a Python library for analysing the sequence activity relationship (SAR)
@@ -115,6 +154,9 @@ numpy >= 1.16.6
 pandas >= 1.1.0
 scikit-learn >= 0.24
 scipy >= 1.4.1
+
+
+## Running Tests ##
 
 
 ## Directory folders:

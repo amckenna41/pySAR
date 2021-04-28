@@ -13,11 +13,10 @@ import yaml
 import csv
 from pathlib import Path
 
-from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-
+# from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+import globals
 
 def valid_sequence(sequences):
-
     """
     Function that iterates through all protein sequences and validates that
     each sequence is made up of valid canonical amino acid letters. If no
@@ -27,73 +26,91 @@ def valid_sequence(sequences):
 
     Parameters
     ----------
-    sequences: np.ndarray
-        array of protein sequences.
+    sequences: list/np.ndarray
+        list or array of protein sequences.
 
     Returns
     -------
-    None or invalid_indices : None/dict
+    None or invalid_indices : None/list
         if no invalid values found in the protein sequences, None returned. if
-        invalid values found, dict returned in the form {sequence index: invalid
-        value in sequence index}.
-
+        invalid values found, list of dicts returned in the form
+        {sequence index: invalid value in sequence index}.
     """
+    #if input is string, cast to a list so it is iterable
+    if isinstance(sequences,str):
+        sequences = [sequences]
+
+    # sequences = np.array(sequences).reshape((-1,1))
     #valid canonical amino acid letters
-    valid_amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
-    invalid_indices = {}
+    valid_amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',\
+        'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y','-']
+    invalid_indices = []
 
     #iterate through all sequences, validating that there are no invalid values
-    #   present in the sequences, if there are then append to dict
-    for seq in range(0,len(sequences)-1):
-        for aa in range(0,len(sequences[seq])):
-            if (sequences[seq][aa] not in valid_amino_acids):
-                invalid_indices['Sequence: '+str(seq)] = aa
+    #   present in the sequences, if there are then append to list of invalid indices
+    try:
+        for seq in range(0,len(sequences)):
+            for aa in range(0,len(sequences[seq])):
+                if (sequences[seq][aa] not in valid_amino_acids):
+                    invalid_indices.append({'Sequence #'+str(seq) : 'Index #'+str(aa)})
+    except:
+        print('Error parsing sequences in datasets.')
 
-    #if no invalid values found in sequences return None, else return dict of
-    #   invalid index values
-    if invalid_indices == {}:
+    #if no invalid values found in sequences return None, else return list of
+    #   dicts containing invalid index and invalid values
+    if invalid_indices == []:
         return None
     else:
         return invalid_indices
 
-def remove_gaps(protein_seqs):
-
+def remove_gaps(sequences):
     """
     Function that removes any gaps ('-') from the protein sequences in the input.
     The descriptors cannot be calculated if a '-' value is passsed into their
     respective funtions so gaps need to be removed. Removing the gaps has the same
     effect as setting the value at the index of the sequence to 0 and has no effect
-    on the descriptors calculation.
+    on the descriptors calculation. Input can be string, list of array of sequences.
 
     Parameters
     ----------
-    protein_seqs: np.ndarray
-        array of protein sequences.
+    sequences: str/list/np.ndarray
+        string of 1 protein sequence or array/list of protein sequences.
 
     Returns
     -------
     protein_seqs : np.ndarray
         returns the same inputted protein sequences but with any gaps ('-') removed.
     """
-    #execute if input is 1 protein sequence, a single string
-    # if isinstance(protein_seqs, str):
-    #
-    #     protein_seqs = protein_seqs.replace("-","")
-    #     return protein_seqs
+    #convert single string into 1 element list
 
-    #execute when multiple protein sequences input
-    for row in range(0, len(protein_seqs)):
+    is_string=False   #bool needed to ensure correct output format if input is str
+
+    if isinstance(sequences, str):
+      is_string = True
+      sequences = [sequences]     #cast str of protein seq to list
+
+    #concatenate multiple sequences into 1 iterable list
+    if isinstance(sequences, list) and \
+      len(sequences)>1:
+      # for i in range(0,len(protein_seqs)):
+      #   protein_seqs[i] = ''.join(protein_seqs[i])
+      sequences = [''.join(sequences)]
+
+    #iterate through sequences, removing any gaps ('-')
+    for row in range(0, len(sequences)):
         try:
-            # print(row)
-            protein_seqs[row] = protein_seqs[row].replace("-","")
+            sequences[row] = sequences[row].replace("-","")
         except ValueError:
-            print('Error removing gaps from sequences')
+            print('Error removing gaps from sequences at index {} '.format(row))
             return None
-    return protein_seqs
 
-#check the output type for this func
+    #if input was str then join list of sequences into one str
+    if is_string:
+       sequences = ''.join(sequences)
+
+    return sequences
+
 def flatten(array):
-
     """
     Lambda function for flattening list of lists or array of lists into one
     1 Dimensional array/list. Input must contain an array of arrays of the same
@@ -103,271 +120,121 @@ def flatten(array):
 
     Parameters
     ----------
-    array: np.ndarray / list
-        array of arrays or list of lists to be flattened
+    array : np.ndarray / list
+        array of arrays or list of lists to be flattened.
 
     Returns
     -------
-    flatten(array) : list/array
-        flattened 1 dimensional output as calculated from Lambda function.
-
+    flatten(array/list) : np.ndarray/list
+        flattened 1 dimensional list or array.
     """
+    if isinstance(array, str):
+        print('Input was a string, and cant be flattened, returning input')
+        return array
+
+    #create flatten lambda function
     flatten = lambda array: [item for sublist in array for item in sublist]
-    try:
-        return flatten(array)
-    except:
-        raise ValueError('Error flattening array of type: {} and size {}'.format(type(array),len(array)))
 
-def zero_padding(seqs):
+    #flatten array/list
+    try:
+        flattened_array = flatten(array)
+    except:
+        raise ValueError('Error flattening array of type: {} and size {} \
+            '.format(type(array),len(array)))
+
+    #if input is a numpy array then reshape to 1D numpy array else return list
+    if isinstance(array,np.ndarray):
+        return (np.array(flattened_array).reshape([-1,1]))
+    else:
+        return flattened_array
+
+def zero_padding(sequences):
     """
-    Pad seqences in seqs with 0's such that every sequence is of the same length
+    Pad seqences in sequences with 0's such that every sequence is of the same length
     of max(len(seq)).
 
     Parameters
     ----------
     seqs: np.ndarray / list
-        array or list of encoded protein sequences
+        array or list of encoded protein sequences.
 
     Returns
     -------
-    seqs: np.ndarray / list
+    sequences: np.ndarray / list
         input sequences but with every sequence in the object now zero paddded
         to be the same length.
-
     """
-    max_len = len(max(seqs,key=len))
+    #no need to zero-pad if only one sequence passed in
+    if len(sequences) == 1:
+        print('Only one element passed in as input, no need for zero-padding.')
+        return sequences
 
-    for s in range(0,len(seqs)):
-        if len(seqs[s])<max_len:
-            seqs[s]+= [0] * (max_len - len(seqs[s]))
+    #get maximum length of all sequences
+    max_len = len(max(sequences,key=len))
 
-    return seqs
+    #iterate through all sequences, padding with 0's to max_len
+    for s in range(0,len(sequences)):
+        if len(sequences[s])<max_len:
+            # sequences[s]+= [0] * (max_len - len(sequences[s]))
+            sequences[s]+= str(0) * (max_len - len(sequences[s]))
 
-def parse_json(data_json):
-
-    #To DO: Check if input file is of type json or yaml
-        assert os.path.isfile(data_json), 'Input data file not correct filepath'
-        _, file_extension = os.path.splitext(data_json)
-        print(file_extension)
-
-        if (file_extension == '.yml') or (file_extension == '.yaml'):
-            print('hello')
-            try:
-                with open(input_path) as f:
-                    # The FullLoader parameter handles the conversion from YAML
-                    # scalar values to Python the dictionary format
-                    data = yaml.load(f, Loader=yaml.FullLoader)
-            except OSError('Error opening Yaml File {}'.format(data_json)):
-                return None
-        # elif (file_extension == ".json"):
-
-        # elif (file_extension == '.json'):
-        #     with open(input_path) as f:
-        #         data = json.load(f)
-        #     dataset = data['dataset']
-        #     activity = data['activity']
-
-        # data_json = json.loads(args.input_data)
-        try:
-            with open(data_json, 'r') as js:
-                try:
-                    data_json = json.loads(js.read())
-                except ValueError('Error decoding JSON: {}'.format(data_json)):
-                    return None
-        except OSError('Error opening JSON file {} '.format(data_json)):
-            return None
-
-        try:
-            dataset = data_json['dataset']
-        except:
-            raise KeyError('')
-
-        seq_col = data_json['sequence_col']
-        activity = data_json['activity']
-        aa_indices =  data_json['aa_indices']
-
-        if aa_indices!="":
-            using_aa_features = True
-        else:
-            using_aa_features = False
-
-        window =  data_json['window']
-        filter =  data_json['filter']
-        spectrum =  data_json['spectrum']
-        descriptors =  data_json['descriptors']
-
-        if descriptors!="":
-            using_desc_features = True
-        else:
-            using_desc_features = False
-
-        algorithm =  data_json['algorithm']
-        parameters =  data_json['parameters']
-        test_split =  data_json['test_split']
-
-        return dataset, seq_col, activity, aa_indices, window, filter, \
-        spectrum, descriptors, algorithm, parameters, test_split
-
-
-def output_encoding(encoding_strat, model, output):
-
-    if not os.path.isdir(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
-
-    output_path = encoding_strat +'_' + model +'_' + CURRENT_DATETIME +'.csv'
-
-    output.to_csv(os.path.join(OUTPUT_DIR,output_path), index=False)
-
-    output_to_json((os.path.join(OUTPUT_DIR,output_path)), output.columns)
+    return sequences
 
 def create_output_dir():
-
     """
     Create output directory pointed to by global OUTPUT_DIR folder and create a
-    folder according to the OUTPUT_FOLDER global variable within this directory,
+    folder according to the OUTPUT_FOLDER global var within this directory,
     used for storing the outputs/results from current job. Each output folder will
     have a unique name as the current DateTime will be used in its naming.
 
-    Parameters
-    ----------
-
-    Returns
-    -------
-
     """
-    #if directory doesnt exist then create it
-    if not os.path.isdir(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+    #if directory doesn't exist then create it
+    if not os.path.isdir(globals.OUTPUT_DIR):
+        os.makedirs(globals.OUTPUT_DIR)
 
     #if output folder already exists then delete it
-    if os.path.isdir(OUTPUT_FOLDER):
-        shutil.rmtree(OUTPUT_FOLDER, ignore_errors=False, onerror=None)
+    if os.path.isdir(globals.OUTPUT_FOLDER):
+        shutil.rmtree(globals.OUTPUT_FOLDER, ignore_errors=False, onerror=None)
 
     #create output folder in directory
-    os.makedirs(OUTPUT_FOLDER)
+    try:
+        os.makedirs(globals.OUTPUT_FOLDER)
+    except OSError:
+        print('Error creating directory {} '.format(globals.OUTPUT_FOLDER))
+        return None
 
 def save_results(results, name):
-
     """
-    Create output directory pointed to by global OUTPUT_DIR folder and create a
-    folder according to the OUTPUT_FOLDER global variable within this directory,
-    used for storing the outputs/results from current job. Each output folder will
-    have a unique name as the current DateTime will be used in its naming.
+    Save object DataFrame/Series containing metric names and their values captured from
+    the encoding process. Save the results in this object to a CSV file named as
+    name input parameter. Function can also accept a dict of results.
 
     Parameters
     ----------
-
-    Returns
-    -------
-
+    results: dict/pd.DataFrame/pd.Series
+        object of the metrics and results from the encoding process. Ideally should
+        be a dataframe/series but function also accepts a dict of results.
+    name: str
+        name to call results file.
 
     """
+    #output results to csv if results variable is a dictionary
     if isinstance(results,dict):
 
-        with open(os.path.join(OUTPUT_FOLDER, name+'.csv'), 'w') as f:
+        with open(os.path.join(globals.OUTPUT_FOLDER, name+'.csv'), 'w') as f:
             w = csv.DictWriter(f, results.keys())
             w.writeheader()
             w.writerow(results)
 
-    elif isinstance(results, pd.DataFrame):
+    #output results to csv if results variable is a dataframe
+    elif isinstance(results, pd.DataFrame) or \
+        isinstance(results,pd.Series):
 
-        results.to_csv(os.path.join(OUTPUT_FOLDER, name+'.csv'), index=False)
+        results.to_csv(os.path.join(globals.OUTPUT_FOLDER, name+'.csv'), index=False)
 
-def output_results(args,metrics):
-
-
-    create_output_dir()
-
-    dataset = str(args.dataset)
-    dataset = os.path.splitext(os.path.basename(dataset))[0]
-    activity = str(args.activity)
-    aaindices = args.aaindices
-    aa_spectrum = str(args.aa_spectrum)
-    window = str(args.window)
-    filter = str(args.filter)
-    descriptors = args.descriptors
-    model_ = str(args.model)
-    model_params = args.model_params
-
-    df_values = [dataset, activity, aaindices, aa_spectrum, window, filter,
-                descriptors, model_, model_params] + list(metrics.values())
-    df_cols = ['Dataset','Activity','AA Indices','AA Spectrum','Window','Filter',
-                'Descriptors','Model','Model Parameters'] + list(metrics.keys())
-
-    print('len_vals', (df_values))
-    print('len_colls', (df_cols))
-
-    # output_df = pd.DataFrame([list(metrics.values())], columns = list(metrics.keys()))
-    output_df = pd.DataFrame([df_values], columns = df_cols)
-
-    # output_df.to_csv((os.path.join(OUTPUT_DIR,model_path, 'results.csv')), index=False)
-    output_df.to_csv(os.path.join(OUTPUT_FOLDER,'results.csv'), index=False)
-
-    # output_to_json((os.path.join(OUTPUT_DIR,model_path, 'results.csv')), df_cols)
-    output_to_json((os.path.join(OUTPUT_FOLDER,'results.csv')), df_cols)
-
-def output_to_json(csvfile, fields):
-
-    #get csv file name - change .csv to .json
-    csv_path = Path(csvfile).resolve()
-    csv_basename = os.path.splitext(os.path.basename(csv_path))[0]
-    json_out_name = os.path.join(os.path.dirname(csvfile),csv_basename+'.json')
-
-    print('csvfile',csvfile)
-
-    csv_out = open(csvfile, 'r')
-    json_out = open(json_out_name, 'w')
-
-    reader = csv.DictReader(csv_out, fields)
-
-    print('json_out_name',json_out_name)
-
-    for row in reader:
-        json.dump(row, json_out)
-        json_out.write('\n')
+    else:
+        raise TypeError('Results Object must be of type: dict, pd.Series or \
+            pd.DataFrame, got object of type {}'.format(type(results)))
 
 
-def output_to_yml(output):
-
-    pass
-
-# def get_top_k():
-#
-#     #output top K results from inputted results file
-#     pass
-
-
-# Function to convert a CSV to JSON
-# Takes the file paths as arguments
-# def make_json(csvFilePath, jsonFilePath):
-#
-#     # create a dictionary
-#     data = {}
-#
-#     # Open a csv reader called DictReader
-#     with open(csvFilePath, encoding='utf-8') as csvf:
-#         csvReader = csv.DictReader(csvf)
-#
-#         # Convert each row into a dictionary
-#         # and add it to data
-#         for rows in csvReader:
-#
-#             # Assuming a column named 'No' to
-#             # be the primary key
-#             key = rows['No']
-#             data[key] = rows
-#
-#     # Open a json writer, and use the json.dumps()
-#     # function to dump data
-#     with open(jsonFilePath, 'w', encoding='utf-8') as jsonf:
-#         jsonf.write(json.dumps(data, indent=4))
-#
-# # Driver Code
-#
-# # Decide the two file paths according to your
-# # computer system
-# csvFilePath = r'Names.csv'
-# jsonFilePath = r'Names.json'
-#
-# # Call the make_json function
-# make_json(csvFilePath, jsonFilePath)
+#def convert fasta_to_seq(fasta)

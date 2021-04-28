@@ -91,12 +91,37 @@ class DescriptorTests(unittest.TestCase):
 
 
     def test_descriptor_groups(self):
-        pass
-        
+        """
+        Testing the descriptor groups dictionary which stores the specific
+        group that a descriptor attribute is a member of.
+        """
+        desc = Descriptors(self.test_dataset1['sequence'], desc_dataset="")
+        print('here')
+        print(desc.descriptor_groups.keys())
+        print(desc.all_descriptors_list())
+        self.assertEqual(list(desc.descriptor_groups.keys()), desc.all_descriptors_list())
+        self.assertEqual(list(desc.descriptor_groups.values()).count("Composition"), 5)
+
+        self.assertEqual(list(desc.descriptor_groups.values()).count("Autocorrelation"), 3)
+        self.assertEqual(list(desc.descriptor_groups.values()).count("Conjoint Triad"), 1)
+        self.assertEqual(list(desc.descriptor_groups.values()).count("Quasi-Sequence-Order"), 2)
+        self.assertEqual(list(desc.descriptor_groups.values()).count("CTD"), 4)
+        self.assertEqual(len(desc.descriptor_groups.keys()), len(desc.all_descriptors_list()))
+
+        self.assertEqual(desc.descriptor_groups['_aa_composition'], "Composition")
+        self.assertEqual(desc.descriptor_groups['_dipeptide_composition'], "Composition")
+        self.assertEqual(desc.descriptor_groups['_moran_autocorrelation'], "Autocorrelation")
+        self.assertEqual(desc.descriptor_groups['_geary_autocorrelation'], "Autocorrelation")
+        self.assertEqual(desc.descriptor_groups['_composition'], "CTD")
+        self.assertEqual(desc.descriptor_groups['_distribution'], "CTD")
+        self.assertEqual(desc.descriptor_groups['_pseudo_AAC'], "Composition")
+        self.assertEqual(desc.descriptor_groups['_quasi_seq_order'], "Quasi-Sequence-Order")
+
+        self.assertIsInstance(desc.descriptor_groups, dict)
+
+
     def test_aa_composition(self):
-        """
-        Testing Amino Acid Composition protein descriptor attributes and methods.
-        """
+        """ Testing Amino Acid Composition protein descriptor attributes and methods. """
         print('Testing AA Composition Descriptor....')
 
         #run tests on all test datasets

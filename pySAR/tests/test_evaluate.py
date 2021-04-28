@@ -11,6 +11,8 @@ from evaluate import Evaluate
 class EvaluateTests(unittest.TestCase):
 
     def setUp(self):
+        """ Create dummy data to test evaluate class. """
+
         # self.a = np.random.ranf(10, size=100)
         self.a = np.random.ranf(size=100).reshape((-1,1))
         self.a_ = np.random.ranf(size=100).reshape((-1,1))
@@ -22,6 +24,7 @@ class EvaluateTests(unittest.TestCase):
         self.f = np.random.randint(20, size=10).reshape((-1,1))
 
     def test_evaluate(self):
+        """ Test Evaluate class initialisation and its attribute. """
 
         #assert that value error is raised when input parameters to evaluate
         #   class are mot of the same shape
@@ -73,7 +76,7 @@ class EvaluateTests(unittest.TestCase):
         self.assertTrue(eval.Y_pred.shape == (10,1))
 
     def test_r2(self):
-
+        """ Test case for testing the R2 score method. """
         print('Testing R2 Evaluate function...')
 
         eval = Evaluate(self.a, self.a)
@@ -97,7 +100,7 @@ class EvaluateTests(unittest.TestCase):
         self.assertIsInstance(eval.r2,float)
 
     def test_mse(self):
-
+        """ Test case for testing the MSE method. """
         print('Testing MSE Evaluate function...')
 
         eval = Evaluate(self.a, self.a)

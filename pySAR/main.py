@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     input_data = args.input_data
 
-    aaindex = AAIndex()
+    # aaindex = AAIndex()
     # encoding = Encoding(data_json=input_data)
     # encoding = Encoding(data_json=input_data)
 
@@ -36,13 +36,21 @@ if __name__ == '__main__':
 
     #Filter encoding strategy input and then create class instances accordingly
     # proAct = ProtSAR(dataset="T50.txt" ,activity="T50",aa_indices=["LEVM780106"],algorithm="randomforest")
-    pySAR = PySAR(dataset="T50.txt" ,activity="T50",aa_indices="PONJ960101",algorithm="plsreg")
-
-
+    pySAR = PySAR(dataset="T50.txt" ,activity="T50",algorithm="plsreg")
+    desc_enc = pySAR.desc_encoding("aa_composit")
+    # for i in range(0,10):
+    # aai_enc = pySAR.aai_encoding(spectrum='power', verbose=True, indices = ["LEVM780106"])
+    # aai_enc = pySAR.desc_encoding()
+    #     print(aai_enc['R2'])
+    # class PySAR():
+#
+#     def __init__(self,data_json=None,dataset="",seq_col="sequence", activity="",\
+#         aa_indices="",  descriptors="",algorithm="",parameters={}, \
+#         descriptors_csv="descriptors.csv"):
     # encoded_seqs = proAct.aaindex_encoding(proAct.aa_indices)
     # proDSP = ProDSP(encoded_seqs, spectrum=proAct.spectrum, window=proAct.window, filter=proAct.filter)
     # proDSP.encode_seqs()
-    aa_df = proAct.encode_aaindices()
+    # aa_df = proAct.encode_aaindices()
     #
 
     # print(input_data)

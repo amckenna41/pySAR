@@ -1,7 +1,6 @@
-
-#########################################################################
-###                         pySAR                                   ###
-#########################################################################
+################################################################################
+#################                     pySAR                    #################
+################################################################################
 
 import pandas as pd
 import numpy as np
@@ -22,148 +21,235 @@ from proDSP import ProDSP
 from evaluate import Evaluate
 import utils as utils
 from plots import plot_reg
-import descriptors as descriptors
-
-####Add StanardScaler after every AAIndex encoding and before model building####
+import descriptors as desc
 
 class PySAR():
 
-    def __init__(self,data_json=None,dataset="",seq_col="sequence", activity="",\
-        aa_indices="", window="hamming", filter="",spectrum="power", descriptors="", \
-        algorithm="",parameters={}, test_split=0.2):
+    """
+    The PySAR class is the main class for the pySAR software. The class allows for
+    the encoding of protein sequences via a plethora of techniques, mainly via
+    AAI Indices and or strucutrual and physiochemical protein descriptors that
+    are then used as features in the building of a predictive model created to
+    map the protein sequences to a sought-after activity value (activity attribute),
+    this is known as a sequence activity relationship (SAR). Three main encoding
+    strategies are possible in the class, namely using AAI Indices or protein
+    descriptors as well as AAI Indices + Descriptors. The class accepts strings
+    or lists of AAI Indices or descriptors and then passes these through a pipeline
+    to get the required encoding of the respective sequences. The calculated encodings
+    of the sequences are used as features in the building of the predictive model
+    that will predict the acitivty values for new unseen protein sequences. After
+    the encoding process, various metrics will be captured and stored in a local
+    output folder according to the OUTPUT_FOLDER global var as well as a regression
+    plot and the saved fitted predictive model.
 
-        self.data_json = data_json
+    Attributes
+    ----------
+    dataset : str (default = "")
+        full path to dataset or name of dataset if it is stored in DATA_DIR
+    seq_col : str (default = "sequence")
+        name of column in dataset that stores the protein sequences. By default
+        the class will look for a column called 'sequence'.
+    activity : str (default = "")
+        name of activity column in dataset.
+    algorithm : str (default = "")
+        name of regression model to use for building the predictive models, class
+        will accept full name or approximate name of model e.g "PLSReg", "plsregg" and
+        "PLSRegression" will all build a PlsRegression model.
+    parameters : dict (default = {})
+        dictionary of parameters to use for the predictive model. By default the
+        default parameters of the model will be used.
+    test_split : float (default = 0.2)
+        specifies the proportion of the dataset to use for testing. By default a
+        80:20 split will be used meaning 80% of the data will be used for training
+        and 20% for testing.
+    descriptors_csv : str (default = "descriptors.csv")
+        csv file storing the pre-calculated descriptor values for the sequences
+        in the dataset. By default the class will look for a file named
+        "descriptors.csv", and will use its contents as the descriptor features,
+        instead of having to recalculate all descriptors for the dataset.
+
+    Methods
+    -------
+    read_data():
+
+    preprocessing()
+
+    get_aai_encoding()
+
+    aai_encoding()
+
+    desc_encoding()
+
+    aai_desc_encoding()
+
+    output_results()
+
+    """
+    def __init__(self,dataset="",seq_col="sequence", activity="",algorithm="",\
+        parameters={},test_split=0.2, descriptors_csv="descriptors.csv"):
+
         self.dataset = dataset
         self.seq_col = seq_col
         self.activity = activity
-        self.window = window
-        self.filter = filter
-        self.spectrum = spectrum
-        self.aa_indices = aa_indices
-        self.descriptors = descriptors
         self.algorithm = algorithm
         self.parameters = parameters
         self.test_split = test_split
+        self.descriptors_csv = descriptors_csv
+        self.aa_indices = ""
+        self.descriptors = ""
 
-        if self.data_json!="" and self.data_json!=None:
+        #create instance of AAIndex class
+        self.aaindex = AAIndex()
 
-            self.dataset, self.seq_col, self.activity, self.aa_indices, self.window, \
-            self.filter, self.spectrum, self.descriptors, self.algorithm, \
-            self.parameters, self.test_split = utils.parse_json(data_json)
+        # if self.data_json!="" and self.data_json!=None:
+        #     #fix parameters here
+        #     self.dataset, self.seq_col, self.activity, self.aa_indices, self.window, \
+        #     self.filter, self.spectrum, self.descriptors, self.algorithm, \
+        #     self.parameters, self.test_split = utils.parse_json(data_json)
 
-        self.data = self.read_data(data_json)
+        #import and read dataset
+        self.data = self.read_data()
 
+        #pre-process dataset and protein sequences
+        self.preprocessing()                            #Reorder these??
+
+        #get number of rows and cols of dataset
         self.num_seqs = len(self.data[self.seq_col])
-        self.seq_len = len(self.data[self.seq_col][0])
+        self.seq_len = len(max(self.data[self.seq_col],key=len))
 
-        self.preprocessing()
+        #create instance of model class of type specified by algorithm
+        self.model = Model(algorithm=self.algorithm, parameters=self.parameters,
+            test_split=self.test_split)
 
-        self.model = Model(algorithm=self.algorithm, parameters=self.parameters, test_split=self.test_split)
+        self.algoritm = repr(self.model)    #updating algoritm attribute
 
+        #create output folder to store all model assets and results
         utils.create_output_dir()
 
-        all_attrs = vars(self)
-        # del all_attrs['data']
+    def read_data(self):
+        """
+        Read in dataset according to 'dataset' attributes stored in DATA_DIR.
 
-        # with open("sample.json", "w") as outfile:
-        #     json.dump(all_attrs, outfile)
-        # print(', '.join("%s: %s" % item for item in all_attrs.items()))
-        # a_file = open("data.pkl", "wb")
-        # pickle.dump(all_attrs, a_file)
-        # a_file.close()
-
-        #output parameters to dict/json/yml
-
-    def read_data(self, data_json):
+        """
 
         dataset_file = os.path.join(DATA_DIR,self.dataset)
 
-        if (os.path.isfile(dataset_file)):
-            try:
-                data = pd.read_csv(dataset_file, sep=",", header=0)
-                return data
-            except IOError as e:
-                print('Error opening dataset file: ',dataset)
-        else:
-            raise IOError('Dataset file not found in directory: {}'.format(dataset_file))
+        #read in dataset csv if found in path, if not raise error
+        if not (os.path.isfile(dataset_file)):
+            if not (os.path.isfile(self.dataset)):
+                raise OSError('Dataset filepath is not correct: {}'.format(self.dataset))
+            dataset_file = self.dataset
+
+        try:
+            data = pd.read_csv(dataset_file, sep=",", header=0)
+            return data
+        except:
+            raise IOError('Error opening dataset file: {}'.format(dataset_file))
 
     def preprocessing(self):
+        """
+        Pre-process protein sequences in dataset. Validate column names, check
+        for invalid amino acids in sequences and remove any NAN or +/- infinity values.
 
-        seqColMatches = get_close_matches(self.seq_col,self.data.columns)
+        """
+        #get closest match for sequence column name in dataset
+        seq_col_matches = get_close_matches(self.seq_col,self.data.columns, cutoff=0.4)
 
-        if seqColMatches!=[]:
-            self.seq_col = seqColMatches[0]
+        #set sequence col to the first match found, else raise error
+        if seq_col_matches!=[]:
+            self.seq_col = seq_col_matches[0]
         else:
-            raise ValueError('Sequence Column not present in dataset columns - {} /n '.format(self.data.columns))
+            raise ValueError('Sequence Column ({}) not present in dataset columns \
+                - {} /n '.format(self.seq_col, self.data.columns))
 
+        #remove any gaps found in sequences in dataset
         self.data[self.seq_col] = utils.remove_gaps(self.data[self.seq_col])
 
+        #verify no invalid amino acids found in sequences, if so then raise error
         invalid_seqs = utils.valid_sequence(self.get_seqs())
         if invalid_seqs!=None:
-            raise ValueError('Invalid Amino Acids found in protein sequence dataset: {}'.format(invalid_seqs))
+            raise ValueError('Invalid Amino Acids found in protein sequence \
+                dataset: {}'.format(invalid_seqs))
 
-        activityMatches = get_close_matches(self.activity,self.data.columns)
+        #get closest match for activity column name in dataset
+        activity_matches = get_close_matches(self.activity,self.data.columns,cutoff=0.4)
 
-        if activityMatches!=[]:
-            self.activity = activityMatches[0]
+        #set activity col to the first match found, else raise error
+        if activity_matches!=[]:
+            self.activity = activity_matches[0]
         else:
-            raise ValueError('Activity Column not present in dataset columns - {} /n '.format(list(self.data.columns)))
+            raise ValueError('Activity Column ({}) not present in dataset columns  \
+                - {} /n '.format(self.activity,list(self.data.columns)))
 
+        #remove any +/- infinity values or any Null/NAN's from activity values
         self.data[self.activity].replace([np.inf,-np.inf], np.nan)
         self.data[self.activity].fillna(0,inplace=True)
 
-    def get_aai_enoding(self, indices):
+    def get_aai_enoding(self, indices=None):
+        """
+        Get AAI index encoding values for index specified by indices for each amino
+        acid in each of the protein sequences in dataset. If multiple indices
+        specified then encode protein sequences with each index and concatenate.
 
+        Parameters
+        ----------
+        indices : str/list (default = None)
+            string or list of AAI indices.
+
+        Returns
+        -------
+        encoded_seqs : np.ndarray
+            array of the encoded protein sequences in dataset.
+        """
+        #validate AAI indices are present in the input parameter, if not raise error
         if indices == None or indices == "":
-            if self.aa_indices == None or self.aa_indices == "":
-              raise ValueError('No AA Indices have been input, aa_indices attribute is empty')
-            else:
-              indices = self.aa_indices
-
-        self.aa_indices = indices
-
-        aaindex = AAIndex()
+            raise ValueError('AAI indices input parameter cannot be None or empty')
 
         encoded_indices = []
 
+        #if single index input passed into parameter
         if not isinstance(indices, list):
 
-            # encoded_aai = aaindex.get_feature_from_code(self.aa_indices)['values']
+            #get dict of amino acid encoding values for index specified by indices
+            encoded_aai = self.aaindex.get_record_from_code(indices)['values']
 
-            encoded_aai = aaindex.get_feature_from_code(indices)['values']
-            # encoded_vals = list((aa_index.get_feature_from_code(indices)['values']).values())
-
+            #initialise temp arrays to store encoded sequences
             temp_seq_vals = []
             temp_all_seqs = []
 
+            #iterate through each protein sequence and amino acid, getting the AAI index encoding value
             for protein in range(0, len(self.data[self.seq_col])):
                 for aa in self.data[self.seq_col][protein]:
                     temp_seq_vals.append(encoded_aai[aa])
 
+                #append encoding and reset temp array
                 temp_all_seqs.append(temp_seq_vals)
                 temp_seq_vals = []
 
+            #zero pad encoding list so that sequences are all the same length
             temp_all_seqs = utils.zero_padding(temp_all_seqs)
 
+            #convert list of lists into array
             temp_all_seqs = np.array(temp_all_seqs)
-            # encoded_aai_reshaped = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
 
             encoded_seqs = temp_all_seqs
 
             return encoded_seqs
 
+        #if multiple indices passed into input parameter
         else:
 
-            print('here1')
-            encoded_aai_reshaped = np.zeros((self.num_seqs, self.seq_len))
+            #create zeros numpy array to store encoded sequence output
+            encoded_aai_ = np.zeros((self.num_seqs, self.seq_len))
 
-            #if multiple indices used then calcualte FFT encoding for each and then concatenate after each calculation
+            #if multiple indices used then calcualte AAI index encoding for each and
+            #   then concatenate after each calculation
             for ind in range(0,len(indices)):
-                encoded_aai = aaindex.get_feature_from_code(indices[ind])['values']
+                encoded_aai = self.aaindex.get_record_from_code(indices[ind])['values']
 
                 temp_seq_vals = []
                 temp_all_seqs = []
-                #reshaping issue here caused by zero padding - all seqs were not of the same length
+
                 for protein in range(0, len(self.data[self.seq_col])):
                     for aa in self.data[self.seq_col][protein]:
                         temp_seq_vals.append(encoded_aai[aa])
@@ -175,237 +261,354 @@ class PySAR():
 
                 temp_all_seqs =np.array(temp_all_seqs)
 
-                #in first iteration through indices set encoded_ai_ to zeros initialised np array, else concatenate to array in previous iteration
+                #in first iteration through indices set encoded_aai_ to zeros
+                #   initialised np array, else concatenate to array in previous iteration
                 if ind == 0:
-                    encoded_aai_reshaped = temp_all_seqs
+                    encoded_aai_ = temp_all_seqs
                 else:
-                    encoded_aai_reshaped = np.concatenate((encoded_aai_reshaped,temp_all_seqs), axis=1)
+                    encoded_aai_ = np.concatenate((encoded_aai_,temp_all_seqs), axis=1)
 
-            encoded_seqs = encoded_aai_reshaped
+            encoded_seqs = encoded_aai_
 
             return encoded_seqs
 
-
-    def aai_encoding(self, indices):
-
-        # if indices == None or indices == "":
-        #     if self.aa_indices == None or self.aa_indices == "":
-        #         raise ValueError('No AA Indices have been input, aa_indices attribute is empty')
-        #     else:
-        #         indices = self.aa_indices
-
-        # self.aa_indices = indices
-
-        # aaindex = AAIndex()
-
-        # encoded_indices = []
-
-        # if not isinstance(indices, list):
-
-        #     # encoded_aai = aaindex.get_feature_from_code(self.aa_indices)['values']
-
-        #     encoded_aai = aaindex.get_feature_from_code(indices)['values']
-        #     # encoded_vals = list((aa_index.get_feature_from_code(indices)['values']).values())
-
-        #     temp_seq_vals = []
-        #     temp_all_seqs = []
-
-        #     for protein in range(0, len(self.data[self.seq_col])):
-        #         for aa in self.data[self.seq_col][protein]:
-        #             temp_seq_vals.append(encoded_aai[aa])
-
-        #         temp_all_seqs.append(temp_seq_vals)
-        #         temp_seq_vals = []
-
-        #     temp_all_seqs = utils.zero_padding(temp_all_seqs)
-
-        #     temp_all_seqs = np.array(temp_all_seqs)
-        #     # encoded_aai_reshaped = np.reshape(temp_all_seqs, (self.get_num_seqs(), self.get_seq_len()))
-
-        #     encoded_seqs = temp_all_seqs
-
-        # else:
-
-        #     print('here1')
-        #     encoded_aai_reshaped = np.zeros((self.num_seqs, self.seq_len))
-
-        #     #if multiple indices used then calcualte FFT encoding for each and then concatenate after each calculation
-        #     for ind in range(0,len(indices)):
-        #         encoded_aai = aaindex.get_feature_from_code(indices[ind])['values']
-
-        #         temp_seq_vals = []
-        #         temp_all_seqs = []
-        #         #reshaping issue here caused by zero padding - all seqs were not of the same length
-        #         for protein in range(0, len(self.data[self.seq_col])):
-        #             for aa in self.data[self.seq_col][protein]:
-        #                 temp_seq_vals.append(encoded_aai[aa])
-
-        #             temp_all_seqs.append(temp_seq_vals)
-        #             temp_seq_vals = []
-
-        #         temp_all_seqs = utils.zero_padding(temp_all_seqs)
-
-        #         temp_all_seqs =np.array(temp_all_seqs)
-
-        #         #in first iteration through indices set encoded_ai_ to zeros initialised np array, else concatenate to array in previous iteration
-        #         if ind == 0:
-        #             encoded_aai_reshaped = temp_all_seqs
-        #         else:
-        #             encoded_aai_reshaped = np.concatenate((encoded_aai_reshaped,temp_all_seqs), axis=1)
-
-        #     encoded_seqs = encoded_aai_reshaped
-
-
-        aai_df = pd.DataFrame(columns=['Index','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
-
-        print('encoding using',indices)
-        encoded_seqs = self.get_aai_enoding(indices)
-        proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum, window=self.window, filter=self.filter)
-        proDSP.encode_seqs()
-        print('spectral encoding', proDSP.spectrum_encoding.shape)
-        X = pd.DataFrame(proDSP.spectrum_encoding)
-
-        # if len(self.aa_indices)>1:
-        #     scale=True
-        # else:
-        #     scale=False
-
-        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X, self.get_activity(), test_size = self.test_split)
-
-        self.model.fit()
-        Y_pred = self.model.predict()
-
-        eval = Evaluate(Y_test, Y_pred)
-        # eval = Evaluate(Y_train, Y_pred)
-
-        aai_dict = eval.all_metrics()
-
-        self.output_results(aai_dict)
-        plot_reg(Y_test, Y_pred, eval.r2)
-        # plot_reg(Y_train, Y_pred, eval.r2)
-
-        utils.save_results(aai_dict, 'aai_encoding')
-
-        return aai_dict
-
-    def desc_encoding(self, descriptor):
-
-        if descriptor == None or descriptor == "":
-            if self.descriptors == None or self.descriptors == "":
-                raise ValueError('No descriptors have been input, descriptors attribute is empty')
-            else:
-                descriptor = self.descriptors
-        self.descriptors = descriptor
-
-        desc = descriptors.Descriptors(self.data[self.seq_col])
-        desc_df = pd.DataFrame(columns=['Descriptor','Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
-
-        encoded_desc_temp = []
-        encoded_desc_vals = []
-
-        encoded_desc_temp = pd.DataFrame()
-
-        #if string input
-        if not isinstance(descriptor, list):
-
-            # for protein in range(0, len(self.data[self.seq_col])):
-            encoded_desc_temp = desc.get_descriptor_encoding(descriptor)
-            if encoded_desc_temp == None:
-                raise ValueError('Error')
-                return
-
-
-
-            encoded_desc = encoded_desc_temp
-            print(encoded_desc.shape)
-            print(encoded_desc)
-
-        else:
-
-            print('here')
-          # encoded_desc = desc.get_descriptor_encoding(self.descriptors)
-            for d in range(0,len(descriptor)):
-              print(descriptor[d])
-              encoded_desc_temp = desc.get_descriptor_encoding(descriptor[d])
-              if encoded_desc_temp == None:
-                raise ValueError('Error')
-                return
-
-              encoded_desc_vals.append(encoded_desc_temp)
-              encoded_desc_temp = pd.DataFrame()
-
-            encoded_desc = pd.concat(encoded_desc_vals,axis=1)
-            # encoded_desc = pd.DataFrame(np.concatenate(encoded_desc_vals))
-
-        X = encoded_desc
-        print(X.shape)
-        print(self.get_activity().shape)
-        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X, self.get_activity(), test_size = self.test_split)
-
-        self.model.fit()
-        Y_pred = self.model.predict()
-
-        eval = Evaluate(Y_test, Y_pred)
-
-        desc_dict = eval.all_metrics()
-
-        self.output_results(desc_dict)
-
-        plot_reg(Y_test, Y_pred, eval.r2)
-
-        utils.save_results(desc_dict, 'desc_encoding')
-
-        return desc_dict
-
-
-    def aai_desc_encoding(self):
-
+    def aai_encoding(self,spectrum=None, indices=None, window=None, filter=None,
+        use_dsp=True, verbose=True):
         """
-        Encode using both AAI1 indices and the descriptors. Function will parse
-        the classes input parameters to get the required AA indices and descriptors
-        to use and calculate their respective values. The two outputs from the
-        individual encoding strategies will be concatenated together and used in
-        the building of the predictve models. The resulting model assets and its
-        results will be exported to the directory pointed to by the global variable
-        OUTPUT_DIR.
+        Encode using AAI indices. If multiple indices input then calculate each
+        and concatenate them. Build predictive model from AAI feature data. The
+        resulting model assets and its results will be exported to the directory
+        pointed to by the global variable OUTPUT_DIR. If use_dsp is true then
+        pass AAI Indices through a DSP transformation specified by DSP parameters:
+        spectrum, window & filter.
 
         Parameters
         ----------
+        spectrum : str
+            type of protein spectrum to use for DSP transformation
+        indices : str/list (default = None)
+            string or list of indices from the AAI.
+        window : str
+            name of window function to apply to Fourier Transform.
+        filter : str
+            name of filter function to apply to ouput of Fourier Transform.
+        use_dsp : bool (default = True)
+            whether to transform AAI index encodings via DSP techniques and a Fourier
+            transform. If false then no protein spectra will be generated.
+        verbose : bool (default = True)
+            whether to print out results to user, if false then no results will
+            be printed.
 
         Returns
         -------
-        mse : float
-
+        aai_df : pd.Series
+            pandas series storing metrics and results of encoding.
         """
-        if (self.descriptors == None or self.descriptors == "") \
-            or (self.aa_indices == None or self.aa_indices == ""):
-            raise ValueError('AAI and descriptor values both need to be present')
+        #validate AAI indices are present in the input parameter
+        if indices == None or indices == "":
+            raise ValueError('AAI indices input parameter cannot be None or empty')
 
-        aaindex = AAIndex()
-        # aai_desc_df = pd.DataFrame(columns=['Index_Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
-        aai_desc_df = pd.DataFrame(columns=['Index','Descriptor','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+        self.aa_indices = indices
 
-        aai_encoding = self.get_aai_enoding(aaindex)
+        #if input spectrum is none or empty, raise error.
+        if use_dsp:
+            if spectrum == None or spectrum == "":
+                raise ValueError('Spectrum cannot be None or empty, got {}'.format(spectrum))
+
+        #pandas series to store all output results
+        aai_df = pd.Series(index=['Index','Category','R2', 'RMSE', 'MSE', 'RPD',
+            'MAE', 'Explained Var'],dtype='object')
+
+        #get AAI index encodings specified by indices input parameter
+        encoded_seqs = self.get_aai_enoding(indices)
+
+        #if use_dsp true then get protein spectra from AAI indices using ProDSP class
+        #   else use the AAI indices encoding's themselves as the feature data (X)
+        if use_dsp:
+            proDSP = ProDSP(encoded_seqs, spectrum=spectrum, window=window, filter=filter)
+            proDSP.encode_seqs()
+            X = pd.DataFrame(proDSP.spectrum_encoding)
+        else:
+            X = pd.DataFrame(encoded_seqs)
+
+        #get training and test dataset split
+        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X,
+            self.get_activity(), test_size = self.test_split)
+
+        #fit predictive model
+        self.model.fit()
+
+        #predict activity values for test data
+        Y_pred = self.model.predict()
+
+        #create instance of Evaluate class which will get all the evaluation metrics
+        eval = Evaluate(Y_test, Y_pred)
+
+        #get categories for all indices in self.aa_indices
+        if isinstance(self.aa_indices, list):
+            index_cat = ""
+            for i in range(0,len(self.aa_indices)):
+                index_cat += index_cat + ', '+ \
+                    self.aaindex.get_category(self.aa_indices[i])
+        else:
+            index_cat = self.aaindex.get_category(self.aa_indices)
+
+        #set results Series variables
+        aai_df['Index'] = indices
+        aai_df['Category'] = str(index_cat)
+        aai_df['R2'] = eval.r2
+        aai_df['RMSE'] = eval.rmse
+        aai_df['MSE'] = eval.mse
+        aai_df['RPD'] = eval.rpd
+        aai_df['MAE'] = eval.mae
+        aai_df['Explained Var'] = eval.explained_var
+
+        if verbose:
+            #print out results from encoding
+            self.output_results(aai_df)
+
+        #plot regression plot for predictive model
+        plot_reg(Y_test, Y_pred, eval.r2)
+
+        #save results of encoding to output folder in
+        utils.save_results(aai_df, 'aai_encoding')
+
+        #reset aa_indices instance variable
+        self.aa_indices = ""
+
+        return aai_df
+
+    def desc_encoding(self, descriptor=None, verbose=True):
+        """
+        Encode protein sequences using protein physiochemical and structural
+        descriptors and build predictive model from the descriptor feature data.
+        If multiple descriptors input then calculate each and concatenate them.
+        The resulting model assets and its results will be exported to the
+        directory pointed to by the global variable OUTPUT_DIR.
+
+        Parameters
+        ----------
+        descriptor : str/list (default = None)
+            string or list of protein descriptors
+        verbose : bool (default: True)
+            if true, then print out results to user after encoding process.
+
+        Returns
+        -------
+        desc_df : pd.Series
+            pandas series storing metrics and results of encoding.
+        """
+        #raise error if no descriptor specified in input
+        if descriptor == None or descriptor == "":
+            raise ValueError('No descriptors have been input, descriptors attribute is empty')
+            return None
+
+        self.descriptors = descriptor
+
+        #pandas series to store all output results
+        desc_df = pd.Series(index=['Descriptor','Group','R2', 'RMSE', 'MSE',
+            'RPD', 'MAE', 'Explained Var'],dtype='object')
+
+        #create instance of Descriptors class using data in instance variable
+        descr = desc.Descriptors(self.data[self.seq_col])
+
+        #get closest valid available descriptors from input descriptor parameter,
+        #   if a list of descriptors passed in as the input parameter then get
+        #       all valid descriptors in list
+        if isinstance(self.descriptors, list):
+            for de in range(0,len(self.descriptors)):
+                desc_matches = get_close_matches(self.descriptors[de],
+                    descr.valid_descriptors(),cutoff=0.4)
+                self.descriptors[de] = desc_matches[0]
+        else:
+            desc_matches = get_close_matches(self.descriptors,descr.valid_descriptors(),cutoff=0.4)
+            self.descriptors = desc_matches[0]
+
+        #initialise temp lists and DF to store encoded descriptor values
+        encoded_desc_temp = []
+        encoded_desc_vals = []
+        encoded_desc_temp = pd.DataFrame()
+
+        #if single descriptor passed in, not a list, get descriptor values for sequences
+        if not isinstance(self.descriptors, list):
+            encoded_desc_temp = descr.get_descriptor_encoding(self.descriptors)
+
+            #raise value error if descriptor is empty
+            if (encoded_desc_temp == None) or (encoded_desc_temp.empty):
+                raise ValueError('Descriptors {} cannot be empty or None'.format(self.descriptors))
+
+            encoded_desc = encoded_desc_temp
+
+        #if list of descriptors passed as input, iterate and get each descriptors' values
+        else:
+            for d in range(0,len(self.descriptors)):
+              encoded_desc_temp = descr.get_descriptor_encoding(self.descriptors[d])
+
+                #raise value error if descriptor is empty
+              if (encoded_desc_temp == None) or (encoded_desc_temp.empty):
+                  raise ValueError('Descriptors {} cannot be empty or None'.format(self.descriptors[d]))
+                    # self.descriptors[d]))
+
+              encoded_desc_vals.append(encoded_desc_temp)
+              encoded_desc_temp = pd.DataFrame()   #reset to empty dataframe
+
+            #concatenate dataframes of descriptors
+            encoded_desc = pd.concat(encoded_desc_vals,axis=1)
+
+        X = encoded_desc    #features for training
+
+        #get training and test dataset split
+        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X,
+            self.get_activity(), test_size = self.test_split)
+
+        #fit predictive model
+        self.model.fit()
+
+        #predict activity values for test data
+        Y_pred = self.model.predict()
+
+        #create instance of Evaluate class which will get all the evaluation metrics
+        eval = Evaluate(Y_test, Y_pred)
+
+        #get groups for all descriptors in self.desciptors
+        if isinstance(self.descriptors, list):
+            for i in range(0,len(self.descriptors)):
+                desc_group += desc_group + ', '+ \
+                    descr.descriptor_groups['_'+self.descriptors[i]]
+        else:
+            desc_cat = descr.descriptor_groups['_'+self.descriptors]
+
+        #set results Series variables
+        desc_df['Descriptor'] = descriptor
+        desc_df['Group'] = desc_cat
+        desc_df['R2'] = eval.r2
+        desc_df['RMSE'] = eval.rmse
+        desc_df['MSE'] = eval.mse
+        desc_df['RPD'] = eval.rpd
+        desc_df['MAE'] = eval.mae
+        desc_df['Explained Var'] = eval.explained_var
+
+        if verbose:
+            #print out results from encoding
+            self.output_results(desc_df)
+
+        #plot regression plot for predictive model
+        plot_reg(Y_test, Y_pred, eval.r2)
+
+        #save results of encoding to output folder
+        utils.save_results(desc_df, 'desc_encoding')
+
+        #reset descriptors instance variable
+        self.descriptors = ""
+
+        return desc_df
+
+
+    def aai_desc_encoding(self,spectrum, indices=None,descriptors=None,
+        window="", filter="",use_dsp=True, verbose=True):
+        """
+        Encode using both AAI indices and the descriptors. The two outputs from
+        the individual encoding strategies will be concatenated together and
+        used in the building of a predictive models. The resulting model assets
+        and its results will be exported to the directory pointed to by the global
+        variable OUTPUT_DIR. If use_dsp is true then pass AAI Indices through a
+        DSP transformation specified by parameters: spectrum, window & filter.
+
+        Parameters
+        ----------
+        spectrum : str
+            type of protein spectrum to use for DSP transformation
+        indices : str/list (default = None)
+            string or list of indices from the AAI.
+        descriptors : str/list (default = None)
+            string or list of protein descriptors.
+        window : str
+            name of window function to apply to output of Fourier Transform.
+        filter : str
+            name of filter function to apply to ouput of Fourier Transform.
+        use_dsp : bool (default = True)
+            whether to transform AAI index encodings via DSP techniques and a Fourier
+            transform. If false then no protein spectra will be generated and the
+            normal encoded AAI indices will be used.
+        verbose : bool (default = True)
+            whether to print out results to user, if false then no results will
+            be printed.
+        Returns
+        -------
+        aai_desc_df: pd.Series
+            pandas series storing metrics and results of encoding.
+        """
+
+        #validate AAI indices and Descriptors are present in the input parameters
+        #   or instance variables, return error if either is None
+        if descriptors == None or descriptors == "" or \
+            indices == None or indices == "":
+                raise ValueError('AAI Indices and Descriptor input parameters \
+                    must not be empty or None')
+                return None
+
+        self.aa_indices = indices
+        self.descriptors = descriptors
+
+        #create output results Series
+        aai_desc_df = pd.Series(index=['Index','Category','Descriptor',
+            'Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'],dtype='object')
+
+        #get AAI index encoding features
+        aai_encoding = self.get_aai_enoding(indices)
         aai_encoding = pd.DataFrame(aai_encoding)
-        descriptor_encoding=self.desc_encoding()
 
+        #if AAI indices encoding is empty, raise error
+        if (aai_encoding.empty) or (aai_encoding == None):
+            raise ValueError('AAI Indices {} cannot be empty or None'.format(indices))
+            return None
+
+        #get descriptor encoding features
+        descriptor_encoding = self.desc_encoding()
+
+        #if descriptors encoding is empty, raise error
+        if (descriptor_encoding.empty) or (descriptor_encoding == None):
+            raise ValueError('Descriptors {} cannot be empty or None'.format(descriptors))
+            return None
+
+        #concatenate AAI index and Descriptor features
         aai_desc = [aai_encoding, descriptor_encoding]
         X = pd.concat(aai_desc, axis = 1)
 
-        print('aai_encoding',aai_encoding.shape)
-        print('descriptor_encoding',descriptor_encoding.shape)
+        #get training and test dataset split
+        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X,
+            self.get_activity(), test_size = self.test_split)
 
-        X_train, X_test, Y_train, Y_test = self.model.train_test_split(X, self.get_activity(), test_size = self.test_split)
-
+        #fit predictive model
         self.model.fit()
+
+        #predict activity values for test data
         Y_pred = self.model.predict()
 
+        #create instance of Evaluate class which will get all the evaluation metrics
         eval = Evaluate(Y_test, Y_pred)
 
-        index_desc = (str(self.aa_indices) + str(self.descriptors))
-        # aai_desc_df['Index_Descriptor'] = index_desc
+        #get categories for all indices in self.aa_indices
+        if isinstance(self.aa_indices, list):
+            for i in range(0,len(self.aa_indices)):
+                index_cat += index_cat + ', '+ \
+                    self.aaindex.get_category(self.aa_indices[i])
+        else:
+            index_cat = self.aaindex.get_category(self.aa_indices)
+
+        #get groups for all descriptors in self.desciptors
+        if isinstance(self.descriptors, list):
+            for i in range(0,len(self.descriptors)):
+                desc_group += desc_group + ', '+ \
+                    self.desc.descriptor_groups[self.descriptors[i]]
+        else:
+            desc_cat = self.desc.descriptor_groups[self.descriptors]
+
+        #set output dataframe columns
         aai_desc_df['Index'] = str(self.aa_indices)
+        aai_desc_df['Category'] = str(index_cat)
         aai_desc_df['Descriptor'] = str(self.descriptors)
+        aai_desc_df['Group'] = str(desc_cat)
         aai_desc_df['R2'] = eval.r2
         aai_desc_df['RMSE'] = eval.rmse
         aai_desc_df['MSE'] = eval.mse
@@ -413,35 +616,38 @@ class PySAR():
         aai_desc_df['MAE'] = eval.mae
         aai_desc_df['Explained Var'] = eval.explained_var
 
-        aai_desc_dict = eval.all_metrics()
-
+        #plot regression plot for predictive model
         plot_reg(Y_test, Y_pred, eval.r2)
 
-        self.output_results(aai_desc_dict)
+        #print out results from encoding
+        self.output_results(aai_desc_df)
 
-        utils.save_results(aai_desc_dict, 'aai_desc_encoding')
+        #save results of encoding to output folder
+        utils.save_results(aai_desc_df, 'aai_desc_encoding')
 
+        return aai_desc_df
 
     def output_results(self, results):
-
         """
         Print out the predictive model parameters/attributes and its results.
 
         Parameters
         ----------
-        results: dict
-            dictionary of metrics and their associated values.
-
+        results : dict/pd.Series
+            dictionary or Series of metrics and their associated values.
         """
         print('\n####################################')
         print('############# Results ##############')
         print('####################################\n')
 
         print('############ Parameters ############\n')
-        print('# Dataset -> {}\n# Dataset Size -> {}\n# Sequence Length -> {}\n# Activity -> {}\n# Spectrum -> {}\n# Window -> {}\n# Filter -> {}\n# AAI Indices -> {}\n# Descriptors -> {}\n# Algorithm -> {}\n# Model Parameters -> {}\n# Test Split -> {}\n'
-                        .format(self.dataset,self.num_seqs, self.seq_len, self.activity, self.spectrum, self.window, self.filter,
-                                self.aa_indices, self.descriptors, repr(self.model), self.model.model.get_params(), self.test_split))
-
+        print('# Dataset -> {}\n# Dataset Size -> {}\n# Sequence Length -> {}\n# \
+            Activity -> {}\n# AAI Indices -> {}\n# Descriptors -> {}\n# Algorithm ->\
+                {}\n# Model Parameters -> {}\n# Test Split -> {}\n'.format(
+                self.dataset,self.num_seqs, self.seq_len, self.activity, self.aa_indices,
+                self.descriptors, repr(self.model), self.model.model.get_params(),
+                self.test_split
+                ))
         print('############# Metrics #############\n')
         print('# R2: {}'.format(results['R2']))
         print('# RMSE: {} '.format(results['RMSE']))
@@ -459,13 +665,8 @@ class PySAR():
         -------
         self.data[self.seq_col]: pd.Series
             pandas series of all protein sequences in the dataset.
-
         """
         return self.data[self.seq_col]
-    #
-    # def get_names(self):
-    #
-    #     return self.data['name']
 
     def get_activity(self):
         """
@@ -473,26 +674,28 @@ class PySAR():
 
         Returns
         -------
-        self.data[self.activity]: list
-            list of all activity values for the protein sequences
-
+        self.data[self.activity]: np.ndarray
+            array of all activity values for the protein sequences
         """
         return self.data[self.activity].values.reshape((-1,1))
 
-    def to_JSON(self):
-        """
-        Write all class attributes and parameters to a JSON file. This func
-        is called at the end of the building of the predictive model and stored
-        in the model output directory to keep a record of the specific parameters used.
+    # def to_JSON(self):
+    #     """
+    #     Write all class attributes and parameters to a JSON file. This func
+    #     is called at the end of the building of the predictive model and stored
+    #     in the model output directory to keep a record of the specific parameters used.
+    # 
+    #     Returns
+    #     -------
+    #     output_json: JSON
+    #         JSON of all encoding parameters and attributes.
+    #     """
+    #     # return json.dumps(self, default=lambda o: o.__dict__,
+    #     print(vars(self))
+    #     return json.dumps(self, default=lambda o: o._asdict(),
+    #         sort_keys=True, indent=4)
 
-        Returns
-        -------
-        output_json: JSON
-            list of all activity values for the protein sequences
-
-        """
-        return json.dumps(self, default=lambda o: o.__dict__,
-            sort_keys=True, indenst=4)
+######################          Getters & Setters          ######################
 
     @property
     def dataset(self):
@@ -517,30 +720,6 @@ class PySAR():
     @activity.setter
     def activity(self, val):
         self._activity = val
-
-    @property
-    def window(self):
-        return self._window
-
-    @window.setter
-    def window(self, val):
-        self._window = val
-
-    @property
-    def filter(self):
-        return self._filter
-
-    @filter.setter
-    def filter(self, val):
-        self._filter = val
-
-    @property
-    def spectrum(self):
-        return self._spectrum
-
-    @spectrum.setter
-    def spectrum(self, val):
-        self._spectrum = val
 
     @property
     def aa_indices(self):
@@ -598,12 +777,10 @@ class PySAR():
     def seq_len(self, val):
         self._seq_len = val
 
-    def __len__(self):
-
-        return len(self.data['name'])
+################################################################################
 
     def __str__(self):
-        pass
+        return "Instance of PySAR class, using parameters: {}".format(self.__dict__)
 
     def __repr__(self):
-        return "Instance of pySAR class, using parameters:"
+        return "<PySAR: {} >".format(self)

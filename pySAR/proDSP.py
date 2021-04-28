@@ -1,7 +1,7 @@
 
-#########################################################################
-###                         Protein DSP                               ###
-#########################################################################
+################################################################################
+#################                  Protein DSP                 #################
+################################################################################
 
 import pandas as pd
 import numpy as np
@@ -19,7 +19,7 @@ import utils as utils
 from globals import OUTPUT_FOLDER, OUTPUT_DIR
 from aaindex import AAIndex
 
-##FIX RFFT stuff!
+#complete the func descriptoon
 class ProDSP():
 
     """
@@ -30,98 +30,134 @@ class ProDSP():
     An implementation algorithm for the DFT is known as the FFT, which is used here. From the FFT
     transformations on the encoded protein sequences, various informational protein spectra
     can be generated, including the power, real, imaginary and absolute spectra.
-    Prior to the FFT, a window function can be applied to the sequences which are a mathmatical
+    Prior to the FFT, a window function can be applied to the sequences which is a mathmatical
     function that applies a weighting to each discrete time series sample in a finite set.
-    By default, the hamming function is applied; all available window functions available can be found
-    in the scipy.window documentation.
+    By default, the hamming function is applied; although the function can accept
+    the blackman, blackmanharris, bartlett, gaussian and kaiser window funcs. A
+    filter can also be applied, with the savgol filter only currently supported
+    in this class with plans to future expansion.
 
-
-    Parameters
+    #insert FFT equation
+    Attributes
     ----------
-    encoded_sequences : numpy array
+    encoded_sequences : np.ndarray
         protein sequences encoded via a specific AAI index feature value.
-        encoded_sequences has to be at least 2 dimensions, containing at least more
-        than 1 protein seqence. These encoded sequences are used to generate the various
-        protein spectra.
+        encoded_sequences can be 1 or more sequences, if 1 sequence input, it
+        will be reshaped to 2 dimensions. These encoded sequences are used to
+        generate the various protein spectra.
     spectrum : str
-        protein spectra to generate from the protein sequences:
+        protein spectra to generate from the protein sequences.
     window : str
         window function to apply to the output of the FFT.
     filter: str
         filter function to apply to the output of the FFT.
 
-    Returns
+    Methods
     -------
 
     """
-    def __init__(self, encoded_sequences, spectrum='power', window="hamming", filter=""):
+    def __init__(self, encoded_sequences, spectrum='power', window="hamming", filter=None):
 
         self.encoded_sequences = encoded_sequences
-        assert self.encoded_sequences.ndim == 2, 'Input sequences not of correct dimension 2'
+
+        #if single sequence input then try reshape it to 2 dimensions
+        if (encoded_sequences.ndim!=2):
+            try:
+                self.encoded_sequences.reshape((-1,1))
+            except:
+                raise ValueError('Error reshaping input sequences.')
+
         self.spectrum = spectrum
         self.window = window
         self.filter = filter
 
-        #do pre-processing of encoded protein sequences
+        #pre-processing of encoded protein sequences
         self.pre_processing()
 
         #transform sequences into the various informational protein spectra
         self.encode_seqs()
 
     def pre_processing(self):
+        """
+        Complete various pre-processing steps to encoded protein sequences before
+        doing any of the DSP-related functions or transformations. Zero-pad
+        the sequences, remove any +/- infinity or NAN values, get the approximate
+        protein spectra and window function parameter names.
 
+        """
+        #zero pad encoded sequences so they are all the same length
         self.encoded_sequences = utils.zero_padding(self.encoded_sequences)
         self.num_seqs = self.encoded_sequences.shape[0]
-        self.signal_len = self.encoded_sequences.shape[1]    #assumption seqs are all same len
+        self.signal_len = self.encoded_sequences.shape[1]
 
-        #replace any positive or negative infinity with NAN
+        #replace any positive or negative infinity or NAN values with 0
         self.encoded_sequences[self.encoded_sequences == -np.inf] = 0
         self.encoded_sequences[self.encoded_sequences == np.inf] = 0
         self.encoded_sequences[self.encoded_sequences == np.nan] = 0
-        # self.encoded_sequences.replace([np.inf,-np.inf], np.nan)
 
-        #replace any NAN with 0's
+        #replace any NAN's with 0's
         # self.encoded_sequences.fillna(0,inplace=True)
+        self.encoded_sequences = np.nan_to_num(self.encoded_sequences)
 
-        #remove any NA's or missing values
+        #initialise zeros array to store all protein spectra
         self.fft_power = np.zeros((self.num_seqs, self.signal_len))
         self.fft_real = np.zeros((self.num_seqs, self.signal_len))
         self.fft_imag = np.zeros((self.num_seqs, self.signal_len))
         self.fft_abs = np.zeros((self.num_seqs, self.signal_len))
 
+        #list of accepted spectra, window functions and filters
         all_spectra = ['power','absolute','real','imaginary']
         all_windows = ['hamming', 'blackman','blackmanharris','gaussian','bartlett',
                        'kaiser']
-        all_filters = []
+        all_filters = ['savgol']
 
+        #get closest correct spectra from user input, if no close match then raise error
         spectra_matches = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))[0]
 
         if spectra_matches == [] or spectra_matches == None:
             raise ValueError('Invalid input Spectrum type ({}) not available in valid \
-                spectrums: {}'.format(self.spectrum, all_spectra))
+                spectra: {}'.format(self.spectrum, all_spectra))
         else:
             self.spectra = spectra_matches
 
+        #get closest correct window function from user input
+        window_matches = (get_close_matches(self.window, all_windows, cutoff=0.4))
 
-        window_matches = (get_close_matches(self.window, all_windows, cutoff=0.4))[0]
+        #check if sym=True or sym=False
 
-        if window_matches == [] or window_matches == None:      #change this to just use no window
-            raise ValueError('Invalid window function type ({}) not available in valid \
-                windows: {}'.format(self.window, all_windows))
-        else:
-            if window_matches == 'hamming':
+        #get window function specified by window input parameter
+        if window_matches != [] and window_matches != None:
+            if window_matches[0] == 'hamming':
                 self.window = hamming(self.signal_len, sym=True)
-            elif window_matches == "blackman":
+            elif window_matches[0] == "blackman":
                 self.window = blackman(self.signal_len, sym=True)
-            elif window_matches == "blackmanharris":
+            elif window_matches[0] == "blackmanharris":
                 self.window = blackmanharris(self.signal_len, sym=True)
+            elif window_matches[0] == "bartlett":
+                self.window = bartlett(self.signal_len, sym=True)
+            elif window_matches[0] == "gaussian":
+                self.window = gaussian(self.signal_len, std=7,sym=True)
+            elif window_matches[0] == "kaiser":
+                self.window = kaiser(self.signal_len, beta=14,sym=True)
+        else:
+            self.window = 1     #window = 1 is the same as applying no window
 
+        #get closest correct filter from user input
+        filter_matches = (get_close_matches(self.window, all_filters, cutoff=0.4))
+
+        #set filter attribute according to approximate user input
+        if filter_matches ==[] or filter_matches == None:
+            self.filter = ""    #no filter
 
     def encode_seqs(self):
+        """
+        Calculate the FFT and RFFT of the protein sequences already encoded using
+        AAI indices, then use the output of the FFT to calculate the various
+        informational protein spectra including the power, absolute, real and imaginary.
 
+        """
         #create copy of protein sequences so the original instance var remains unchanged
         encoded_seq_copy = np.copy(self.encoded_sequences)
-        # print('encoded_seq_copy',encoded_seq_copy.shape)
 
         '''From numpy.rfft documentation:
         If n is even, the length of the transformed axis is (n/2)+1.
@@ -136,79 +172,50 @@ class ProDSP():
             rfft_output_size = int((self.signal_len+1)/2)
 
         #initialise zero arrays used to store output of both fft and rfft, set
-        #datatype to complex number as that is the output type of the transformation.
-        # encoded_dataset_rfft = np.zeros((self.num_seqs,rfft_output_size),dtype=complex)
-        encoded_dataset_rfft = np.zeros((rfft_output_size),dtype=complex)
+        #   datatype to complex number as that is the output type of the transformation.
+        encoded_freqs_rfft = np.zeros((self.encoded_sequences.shape))
         encoded_dataset_fft = np.zeros((self.encoded_sequences.shape),dtype=complex)
-        # print('encoded_dataset_rfft',encoded_dataset_rfft.shape)
 
-        #initialise zero arrays used to store output frequencies from fft and rfft
-        #   transformations
+        #initialise zero arrays used to store output frequencies from fft & rfft transformations
         rttf_freq_size = int((rfft_output_size)/2 + 1)
-        encoded_freqs_rfft = np.zeros((self.num_seqs,rttf_freq_size))
+        encoded_freqs_rfft = np.zeros((self.encoded_sequences.shape))
         encoded_freqs_fft = np.zeros(self.encoded_sequences.shape)
 
+        #iterate through each sequence, applying the FFT to each
         for seq in range(0,self.num_seqs):
 
-          # encoded_rfft = np.zeros((self.signal_len),dtype=complex)       #dont think I'm using this properly
-          encoded_rfft = np.zeros((rfft_output_size),dtype=complex)       #dont think I'm using this properly
+          encoded_rfft = np.zeros((self.encoded_sequences.shape[1]),dtype=complex)
           encoded_fft = np.zeros((self.encoded_sequences.shape[1]),dtype=complex)
-          # print('encoded_rfft',encoded_rfft.shape)
 
+          #apply filter
           # if (self.filter!=""):
           #    if (self.filter == 'savgol'):
           #       encoded_seq_copy[seq] = savgol_filter(encoded_seq_copy[seq], 17, polyorder=2, deriv=2)
 
-          #if window passed into class then apply window function to sequences when
-          # calculating the fft or rfft transformations for current sequence seq
+          #apply window function to Fourier array
+          encoded_rfft = rfft(encoded_seq_copy[seq] *self.window)
+          encoded_fft = fft(encoded_seq_copy[seq] *self.window)
 
-          if self.window != "":
-              w = self.window
-            # if self.window == 'blackman':
-            #     w = blackman(self.signal_len)
-            # elif self.window == 'hamming':
-            #     w = hamming(self.signal_len, sym=True)
-            # elif self.window == 'blackmanharris':
-            #     w = blackmanharris(self.signal_len)
-            # elif self.window == 'gaussian':
-            #     w = gaussian(self.signal_len, std=7)
-            # elif self.window == 'bartlett':
-            #     w = bartlett(self.signal_len)
-            # elif self.window == 'kaiser':
-            #     w = kaiser(self.signal_len, beta=14)
-
-              encoded_rfft = rfft(encoded_seq_copy[seq] *w)
-              encoded_fft = fft(encoded_seq_copy[seq] *w)
-
-          else:
-            #apply no window function and caluclate fft/rfft transformations for
-            #   current sequence seq
-            encoded_rfft = rfft(encoded_seq_copy[seq])
-            encoded_fft = fft(encoded_seq_copy[seq])
-
-          #append transformation from current sequence seq to array of all transformed
-          # seqeunces
-          # print('erfft',encoded_rfft.shape)
-          # print('encoded_erfft',encoded_dataset_rfft.shape)
-          # encoded_dataset_rfft[seq] = encoded_rfft
+          #append transformation from current sequence seq to array of all transformed seqeunces
+          encoded_dataset_rfft[seq] = encoded_rfft
           encoded_dataset_fft[seq] = encoded_fft
 
           #calcualte FFT/RFFT frequencies
-          # freqs = rfftfreq(encoded_rfft.shape[0], self.signal_len)
-          freqs_rfft = rfftfreq(encoded_rfft.size, self.signal_len)
+          # freqs_rfft = rfftfreq(encoded_rfft.shape[0], self.signal_len)
+          freqs_rfft = rfftfreq(encoded_rfft.size)
           freqs_fft = np.fft.fftfreq(encoded_fft.size)
 
           #append frequency from current sequence seq to array of all frequencies
-          # encoded_freqs_rfft[seq] = freqs_rfft
+          encoded_freqs_rfft[seq] = freqs_rfft
           encoded_freqs_fft[seq] = freqs_fft
 
-        #set FFT and RFFT sequences and frequencies instance variables
+        #set FFT and RFFT sequences and frequencies
         self.fft = encoded_dataset_fft
         self.rfft = encoded_dataset_rfft
         self.fft_freqs = encoded_freqs_fft
         self.rfft_freqs = encoded_freqs_rfft
 
-        #set spectral instance varibales, calculated from the FFT and RFFT transformations
+        #get individual spectral values, calculated from the FFT and RFFT transformations
         self.fft_abs = abs(self.fft/self.signal_len)
         self.rfft_abs = abs(self.rfft/self.signal_len)
         self.fft_power = np.abs(self.fft[0:len(self.fft)])
@@ -218,7 +225,8 @@ class ProDSP():
         self.fft_imag = self.fft.imag
         self.rfft_imag = self.rfft.imag
 
-        # self.encode_seqs()
+        #set the spectrum_encoding attribute to the spectra specified by spectra
+        #   class input parameter.
         if self.spectra == 'power':
             self.spectrum_encoding = self.fft_power
         elif self.spectra == 'real':
@@ -228,54 +236,68 @@ class ProDSP():
         elif self.spectra == 'abs':
             self.spectrum_encoding = self.fft_abs
 
+    def inverse_FFT(self, a, n):
+        """
+        Get the inverse Fourier Transform of FFT.
 
-
-    def plot_freq(self, fft_seq, fft_freqs):
-
-        #plot_freq(self.fft[0], self.freqs[0])
-        xf = fft_freqs
-        yf = fft_seq    #sequence that has already been transformed via FFT
-
-        #get positive frequencies and peak freq
-        pos_mask = np.where(xf > 0)
-        pos_freqs = xf[pos_mask]
-
-        print('in plot')
-        xf = np.concatenate((fft_freqs.real, fft_freqs.imag),axis = 1)
-        # xf = np.delete(xf, xf[:,:-2],axis =1)
-        xf = xf[:,:-2]
-        print('xf',xf.shape)
-        print(fft_freqs.real.shape)
-        print(fft_freqs.imag.shape)
-
-        plt.plot(xf, (yf))
-        plt.xlabel('Frequecies')
-        plt.ylabel('Amplitude')
-        plt.title('abc')
-        plt.grid()
-        plt.show()
-
-    def inverse_FFT(self,n):
-
-        invFFT =np.fft.ifft(n)
+        Parameters
+        ----------
+        a : np.ndarray
+            input array of 1D Fourier Transform.
+        n : int
+            length of the output
+        Returns
+        -------
+        inv_FFT: np.ndarray
+            array of inverse Fourier Transform.
+        """
+        inv_FFT =np.fft.ifft(a,n)
 
         self.invFFT = invFFT
 
         return invFFT
 
-    def consensus_freq(self):
+    def consensus_freq(self, freqs):
+        """
+        Get the Consensus frequency from Fourier Transform of protein sequences.
 
+        Parameters
+        ----------
+        freqs : np.ndarray
+            frequencies of Fourier Transform.
+        Returns
+        -------
+        CF : float
+            consus frequency found in array of frequencies
+        CFi : int
+            index of consensus frequency
+        """
         # CF = PP/N ( peak position/length of largest protein in dataset)
-        CF, CFi = (self.max_freq(self.fft_freqs))/self.num_seqs
+        CF, CFi = (self.max_freq(freqs))/self.num_seqs
 
         return CF, CFi
 
     def max_freq(self, freqs):
+        """
+        Get the maximum frequency from Fourier Transform of protein sequences.
 
-        maxF = max(freqs)
-        maxFI = np.argmax(freqs)
+        Parameters
+        ----------
+        freqs : np.ndarray
+            frequencies of Fourier Transform.
+        Returns
+        -------
+        max_F : float
+            maximum frequency found in array of frequencies
+        max_FI : int
+            index of maximum frequency
+        """
+        max_F = max(freqs)
+        max_FI = np.argmax(freqs)
 
-        return maxF, maxFI
+        return max_F, max_FI
+
+######################          Getters & Setters          ######################
 
     @property
     def fft_power(self):
@@ -333,10 +355,10 @@ class ProDSP():
     def filter(self, val):
         self._filter = val
 
-    def __str__(self):
+################################################################################
 
-        return "Instance of ProDSP class"
+    def __str__(self):
+        return "Instance of ProDSP class, using parameters: {}".format(self.__dict__.keys())
 
     def __repr__(self):
-
-        return 'Instance of {} class. Sequence Dimensions {}x{}. Spectrum {}. Window {}. Filter: {}'.format(self.__class__.__name__, self.num_seqs, self.signal_len, self.spectrum, self.window, self.filter)
+        return ('<ProDSP: {}>'.format(self))

@@ -13,20 +13,14 @@ import numpy as np
 class ModelTests(unittest.TestCase):
 
     def setUp(self):
-        """
-        Create dummy data.
-        """
+        """ Create dummy data. """
         self.dummy_X = np.random.ranf(size=100)
+        self.dummy_X_2 = np.random.ranf(size=50)
         self.dummy_Y = np.random.randint(10,size=100)
-
+        self.dummy_Y_2 = np.random.randint(20,size=50)
 
     def test_model(self):
-
-        """
-        Test Case to check each model type and its associated parameters and
-        attributes.
-
-        """
+        """ Test Case to check each model type & its associated parameters & attributes. """
 
         test_models = ['PLSRegression','RandomForestRegressor','AdaBoostRegressor',\
                             'BaggingRegressor','DecisionTreeRegressor','LinearRegression',\
@@ -45,10 +39,6 @@ class ModelTests(unittest.TestCase):
             #assert that model has not been fitted
             self.assertFalse(model.modelFitted(), 'Model should not be fitted \
                 on initialisation')
-            #fit model and assert it has been fitted
-            model.fit(self.dummy_X, self.dummy_Y)
-            self.assertTrue(model.modelFitted(), 'Model has not been fitted')
-
             #verify that parameters input param = {} meaning the defauly params for the model are used
             self.assertEqual(model.parameters,{}, 'Default Parameters attribute \
                 should be an empty dict, but got {}'.format(model.parameters))
@@ -56,14 +46,24 @@ class ModelTests(unittest.TestCase):
             self.assertEqual(model.test_split, 0.2, 'Default test split attribute \
                 should be 0.2, but got {}'.format(model.test_split))
             #verify that input model type is a valid model for the class
-            self.assertTrue(model.algorithm in model.valid_models, 'Input algorithm {}\
+            self.assertTrue(model.algorithm in [item.lower() \
+                for item in model.valid_models], 'Input algorithm {} \
                 not in available algorithms: {}'.format(model.algorithm, model.valid_models))
+
             #verify repr represenation of model object is correct
-            self.assertEqual(repr(model), test_models[test_mod], 'Repr function should \
+            self.assertEqual(repr(model).lower(), test_models[test_mod], 'Repr function should \
                 return {}, but got {}'.format(test_models[test_mod], repr(model)))
             #verify algorithm is a regression
             self.assertTrue(sklearn.base.is_regressor(model.model), 'Model type \
                 should be a sklearn regressor.')
+
+            model.train_test_split(self.dummy_X, self.dummy_Y)
+
+            #fit model and assert it has been fitted
+            model.fit()
+            self.assertTrue(model.modelFitted(), 'Model has not been fitted')
+
+
 
         # model = Modoel('AdaBoostRegressor')
         # self.assertEqual(type(self.model).__name__, 'AdaBoostRegressor')
@@ -87,34 +87,46 @@ class ModelTests(unittest.TestCase):
         # self.assertEqual(type(self.model).__name__, 'KNN')
 
     def test_model_input_closeness(self):
-        """
-        Test case for testing the algorithm closeness function used to get the
-        closest available algorithm to the algorithm input into the class.
-        """
+        """ Test case for testing the algorithm closeness function used to get the
+            closest available algorithm to the algorithm input into the class. """
+
+#1.)
         model = Model('plsreg')
-        self.assertEqual(model.algorithm, "PLSRegression")
+        self.assertEqual(model.algorithm, "plsregression")
         self.assertEqual(repr(model), "PLSRegression")
 
         model = Model('randomfor')
-        self.assertEqual(model.algorithm, "RandomForestRegressor")
+        self.assertEqual(model.algorithm, "randomforestregressor")
         self.assertEqual(repr(model), "RandomForestRegressor")
 
         model = Model('adaboo')
-        self.assertEqual(model.algorithm, "AdaBoostRegressor")
+        self.assertEqual(model.algorithm, "adaboostregressor")
         self.assertEqual(repr(model), "AdaBoostRegressor")
 
         model = Model('bagg')
-        self.assertEqual(model.algorithm, "BaggingRegressor")
+        self.assertEqual(model.algorithm, "baggingregressor")
         self.assertEqual(repr(model), "BaggingRegressor")
 
         model = Model('decisiontree')
-        self.assertEqual(model.algorithm, "DecisionTreeRegressor")
+        self.assertEqual(model.algorithm, "decisiontreeregressor")
         self.assertEqual(repr(model), "DecisionTreeRegressor")
 
         model = Model('linear')
-        self.assertEqual(model.algorithm, "LinearRegression")
+        self.assertEqual(model.algorithm, "linearregression")
         self.assertEqual(repr(model), "LinearRegression")
 
+        model = Model('lass')
+        self.assertEqual(model.algorithm, "lasso")
+        self.assertEqual(repr(model), "Lasso")
+
+        model = Model('kneighbors')
+        self.assertEqual(model.algorithm, "kneighborsregressor")
+        self.assertEqual(repr(model), "KNeighborsRegressor")
+
+        model = Model('sv')
+        self.assertEqual(model.algorithm, "svr")
+        self.assertEqual(repr(model), "SVR")
+#2.)
         with self.assertRaises(ValueError):
             bad_model = Model('abcdefg')
 
@@ -197,13 +209,13 @@ class ModelTests(unittest.TestCase):
 
     def test_hyperparamter_tuning(self):
 
-        
+
         pass
 
 
     def tearDown(self):
 
-        del self.dummy_x
+        del self.dummy_X
         del self.dummy_Y
 
 
