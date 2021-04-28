@@ -33,7 +33,9 @@ import urllib.request
 # test '-' not in aaindex.get_amino_acids func
 
 #test aaindex.get_ref_from_code('abc') has the correct dict keys, refs, notes etc.
+#test whitespace functionality
 
+aaindex.get_record('ABCDEFG        ')
 class AAIndexTests(unittest.TestCase):
 
     def setUp(self):

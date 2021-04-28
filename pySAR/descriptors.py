@@ -251,7 +251,7 @@ class Descriptors():
 
         #iterate through all sequences, calculate descriptor values and append to aa_comp list
         time.sleep(1)
-        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Amid Composition", file=sys.stdout):
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="AA Composition", file=sys.stdout):
             AAComp=AAComposition.CalculateAAComposition(seq)
             aa_comp.append(list(AAComp.values()))
 

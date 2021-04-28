@@ -458,8 +458,10 @@ class Encoding(PySAR):
             all_indices = aai_list
 
         if desc_list == None or desc_list == [] or desc_list == "":
+            desc = Descriptors(self.data[self.seq_col], all_desc = True)
             all_descriptors = desc.all_descriptors_list(desc_combo)
         else:
+            desc = Descriptors(self.data[self.seq_col])
             all_descriptors = desc_list
 
         #get list of all descriptors

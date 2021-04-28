@@ -95,8 +95,8 @@ class PySAR():
         self.parameters = parameters
         self.test_split = test_split
         self.descriptors_csv = descriptors_csv
-        self.aa_indices = ""
-        self.descriptors = ""
+        self.aa_indices = None
+        self.descriptors = None
 
         #create instance of AAIndex class
         self.aaindex = AAIndex()
@@ -378,6 +378,67 @@ class PySAR():
 
         return aai_df
 
+    def get_descriptor_encoding(self, descriptors = None):
+
+        #raise error if no descriptor specified in input
+        if descriptors == None or descriptors == "":
+            raise ValueError('No descriptors have been input.')
+
+        #create instance of Descriptors class using data in instance variable
+        descr = desc.Descriptors(self.data[self.seq_col])
+
+        #get closest valid available descriptors from input descriptor parameter,
+        #   if a list of descriptors passed in as the input parameter then get
+        #       all valid descriptors in list
+        if isinstance(descriptors, list):
+            for de in range(0,len(descriptors)):
+                desc_matches = get_close_matches(descriptors[de],
+                    descr.valid_descriptors(),cutoff=0.4)
+                descriptors[de] = desc_matches[0]
+                if descriptors[de] == []:
+                    raise ValueError('No approximate descriptor found from one entered: {}'.format(de))
+        else:
+            desc_matches = get_close_matches(descriptors,descr.valid_descriptors(),cutoff=0.4)
+            descriptors = desc_matches[0]
+            if descriptors[de] == []:
+                raise ValueError('No approximate descriptor found from one entered: {}'.format(descriptors))
+
+        #initialise temp lists and DF to store encoded descriptor values
+        encoded_desc_temp = []
+        encoded_desc_vals = []
+        encoded_desc_temp = pd.DataFrame()
+
+        #if single descriptor passed in, not a list, get descriptor values for sequences
+        if not isinstance(descriptors, list):
+            encoded_desc_temp = descr.get_descriptor_encoding(descriptors)
+
+            #raise value error if descriptor is empty
+            if (encoded_desc_temp.empty):
+                raise ValueError('Descriptors {} cannot be empty or None'.format(descriptors))
+
+            encoded_desc = encoded_desc_temp
+
+            return encoded_desc
+
+        #if list of descriptors passed as input, iterate and get each descriptors' values
+        else:
+            for d in range(0,len(descriptors)):
+              encoded_desc_temp = descr.get_descriptor_encoding(descriptors[d])
+
+                #raise value error if descriptor is empty
+              if (encoded_desc_temp.empty):
+                  raise ValueError('Descriptors {} cannot be empty or None'.format(descriptors[d]))
+                    # self.descriptors[d]))
+
+              encoded_desc_vals.append(encoded_desc_temp)
+              encoded_desc_temp = pd.DataFrame()   #reset to empty dataframe
+
+            #concatenate dataframes of descriptors
+            encoded_desc = pd.concat(encoded_desc_vals,axis=1)
+
+
+        return encoded_desc
+
     def desc_encoding(self, descriptor=None, verbose=True):
         """
         Encode protein sequences using protein physiochemical and structural
@@ -401,7 +462,6 @@ class PySAR():
         #raise error if no descriptor specified in input
         if descriptor == None or descriptor == "":
             raise ValueError('No descriptors have been input, descriptors attribute is empty')
-            return None
 
         self.descriptors = descriptor
 
@@ -409,53 +469,56 @@ class PySAR():
         desc_df = pd.Series(index=['Descriptor','Group','R2', 'RMSE', 'MSE',
             'RPD', 'MAE', 'Explained Var'],dtype='object')
 
-        #create instance of Descriptors class using data in instance variable
-        descr = desc.Descriptors(self.data[self.seq_col])
+        X = self.get_descriptor_encoding(descriptors = self.descriptors):
 
-        #get closest valid available descriptors from input descriptor parameter,
-        #   if a list of descriptors passed in as the input parameter then get
-        #       all valid descriptors in list
-        if isinstance(self.descriptors, list):
-            for de in range(0,len(self.descriptors)):
-                desc_matches = get_close_matches(self.descriptors[de],
-                    descr.valid_descriptors(),cutoff=0.4)
-                self.descriptors[de] = desc_matches[0]
-        else:
-            desc_matches = get_close_matches(self.descriptors,descr.valid_descriptors(),cutoff=0.4)
-            self.descriptors = desc_matches[0]
-
-        #initialise temp lists and DF to store encoded descriptor values
-        encoded_desc_temp = []
-        encoded_desc_vals = []
-        encoded_desc_temp = pd.DataFrame()
-
-        #if single descriptor passed in, not a list, get descriptor values for sequences
-        if not isinstance(self.descriptors, list):
-            encoded_desc_temp = descr.get_descriptor_encoding(self.descriptors)
-
-            #raise value error if descriptor is empty
-            if (encoded_desc_temp == None) or (encoded_desc_temp.empty):
-                raise ValueError('Descriptors {} cannot be empty or None'.format(self.descriptors))
-
-            encoded_desc = encoded_desc_temp
-
-        #if list of descriptors passed as input, iterate and get each descriptors' values
-        else:
-            for d in range(0,len(self.descriptors)):
-              encoded_desc_temp = descr.get_descriptor_encoding(self.descriptors[d])
-
-                #raise value error if descriptor is empty
-              if (encoded_desc_temp == None) or (encoded_desc_temp.empty):
-                  raise ValueError('Descriptors {} cannot be empty or None'.format(self.descriptors[d]))
-                    # self.descriptors[d]))
-
-              encoded_desc_vals.append(encoded_desc_temp)
-              encoded_desc_temp = pd.DataFrame()   #reset to empty dataframe
-
-            #concatenate dataframes of descriptors
-            encoded_desc = pd.concat(encoded_desc_vals,axis=1)
-
-        X = encoded_desc    #features for training
+        #
+        # #create instance of Descriptors class using data in instance variable
+        # descr = desc.Descriptors(self.data[self.seq_col])
+        #
+        # #get closest valid available descriptors from input descriptor parameter,
+        # #   if a list of descriptors passed in as the input parameter then get
+        # #       all valid descriptors in list
+        # if isinstance(self.descriptors, list):
+        #     for de in range(0,len(self.descriptors)):
+        #         desc_matches = get_close_matches(self.descriptors[de],
+        #             descr.valid_descriptors(),cutoff=0.4)
+        #         self.descriptors[de] = desc_matches[0]
+        # else:
+        #     desc_matches = get_close_matches(self.descriptors,descr.valid_descriptors(),cutoff=0.4)
+        #     self.descriptors = desc_matches[0]
+        #
+        # #initialise temp lists and DF to store encoded descriptor values
+        # encoded_desc_temp = []
+        # encoded_desc_vals = []
+        # encoded_desc_temp = pd.DataFrame()
+        #
+        # #if single descriptor passed in, not a list, get descriptor values for sequences
+        # if not isinstance(self.descriptors, list):
+        #     encoded_desc_temp = descr.get_descriptor_encoding(self.descriptors)
+        #
+        #     #raise value error if descriptor is empty
+        #     if (encoded_desc_temp.empty):
+        #         raise ValueError('Descriptors {} cannot be empty or None'.format(self.descriptors))
+        #
+        #     encoded_desc = encoded_desc_temp
+        #
+        # #if list of descriptors passed as input, iterate and get each descriptors' values
+        # else:
+        #     for d in range(0,len(self.descriptors)):
+        #       encoded_desc_temp = descr.get_descriptor_encoding(self.descriptors[d])
+        #
+        #         #raise value error if descriptor is empty
+        #       if (encoded_desc_temp.empty):
+        #           raise ValueError('Descriptors {} cannot be empty or None'.format(self.descriptors[d]))
+        #             # self.descriptors[d]))
+        #
+        #       encoded_desc_vals.append(encoded_desc_temp)
+        #       encoded_desc_temp = pd.DataFrame()   #reset to empty dataframe
+        #
+        #     #concatenate dataframes of descriptors
+        #     encoded_desc = pd.concat(encoded_desc_vals,axis=1)
+        #
+        # X = encoded_desc    #features for training
 
         #get training and test dataset split
         X_train, X_test, Y_train, Y_test = self.model.train_test_split(X,
@@ -504,7 +567,7 @@ class PySAR():
         return desc_df
 
 
-    def aai_desc_encoding(self,spectrum, indices=None,descriptors=None,
+    def aai_desc_encoding(self, indices=None,descriptors=None,spectrum='power'
         window="", filter="",use_dsp=True, verbose=True):
         """
         Encode using both AAI indices and the descriptors. The two outputs from
@@ -516,7 +579,7 @@ class PySAR():
 
         Parameters
         ----------
-        spectrum : str
+        spectrum : str (default = "power")
             type of protein spectrum to use for DSP transformation
         indices : str/list (default = None)
             string or list of indices from the AAI.
@@ -545,7 +608,6 @@ class PySAR():
             indices == None or indices == "":
                 raise ValueError('AAI Indices and Descriptor input parameters \
                     must not be empty or None')
-                return None
 
         self.aa_indices = indices
         self.descriptors = descriptors
@@ -559,15 +621,14 @@ class PySAR():
         aai_encoding = pd.DataFrame(aai_encoding)
 
         #if AAI indices encoding is empty, raise error
-        if (aai_encoding.empty) or (aai_encoding == None):
+        if (aai_encoding.empty):
             raise ValueError('AAI Indices {} cannot be empty or None'.format(indices))
-            return None
 
         #get descriptor encoding features
-        descriptor_encoding = self.desc_encoding()
+        descriptor_encoding = self.desc_encoding(descriptors)
 
         #if descriptors encoding is empty, raise error
-        if (descriptor_encoding.empty) or (descriptor_encoding == None):
+        if (descriptor_encoding.empty):
             raise ValueError('Descriptors {} cannot be empty or None'.format(descriptors))
             return None
 
@@ -636,26 +697,26 @@ class PySAR():
         results : dict/pd.Series
             dictionary or Series of metrics and their associated values.
         """
-        print('\n####################################')
-        print('############# Results ##############')
-        print('####################################\n')
+        print('\n#############################################################')
+        print('######################## Results ############################\n')
+        print('#############################################################\n')
 
-        print('############ Parameters ############\n')
-        print('# Dataset -> {}\n# Dataset Size -> {}\n# Sequence Length -> {}\n# \
-            Activity -> {}\n# AAI Indices -> {}\n# Descriptors -> {}\n# Algorithm ->\
-                {}\n# Model Parameters -> {}\n# Test Split -> {}\n'.format(
+        print('####################### Parameters ##########################\n')
+        print('# Dataset -> {}\n# Dataset Size -> {}\n# Sequence Length -> {} \
+            \n#Activity -> {}\n# AAI Indices -> {}\n# Descriptors -> {}\n# Algorithm -> {}\
+                \n# Model Parameters -> {}\n# Test Split -> {}\n'.format(
                 self.dataset,self.num_seqs, self.seq_len, self.activity, self.aa_indices,
                 self.descriptors, repr(self.model), self.model.model.get_params(),
                 self.test_split
                 ))
-        print('############# Metrics #############\n')
+        print('######################## Metrics ############################\n')
         print('# R2: {}'.format(results['R2']))
         print('# RMSE: {} '.format(results['RMSE']))
         print('# MSE: {} '.format(results['MSE']))
         print('# MAE: {}'.format(results['MAE']))
         print('# RPD {}'.format(results['RPD']))
         print('# Variance {}\n'.format(results['Explained Var']))
-        print('###################################')
+        print('#############################################################\n')
 
     def get_seqs(self):
         """
