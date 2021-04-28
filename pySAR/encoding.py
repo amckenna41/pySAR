@@ -29,8 +29,10 @@ import utils as utils
 from descriptors import Descriptors
 from plots import plot_reg
 
-class Encoding(PySAR):
+#update comments/docstring of aai_encoding func
+#update comments/docstring of aai_desc_encoding func
 
+class Encoding(PySAR):
     """
     The use-case of this class is when you have a dataset of protein sequences with
     a sought-after protein activity value and you want to measure this activity
@@ -68,21 +70,20 @@ class Encoding(PySAR):
         with the protein descriptors from the descriptors module
     """
 
-    def __init__(self, data_json=None,dataset="",seq_col="sequence", activity="",
-        window="hamming", filter=None, spectrum="",algorithm="", parameters={},
-            test_split=0.2,descriptors_csv="descriptors.csv"):
+    def __init__(self, dataset="",seq_col="sequence", activity="", \
+            algorithm="", parameters={}, test_split=0.2,descriptors_csv="descriptors.csv"):
 
-        super().__init__(data_json=data_json,dataset=dataset,seq_col=seq_col,
-                activity=activity, window=window, filter=filter,spectrum=spectrum,
-                algorithm=algorithm, parameters=parameters, test_split=test_split,
-                descriptors_csv=descriptors_csv)
+        super().__init__(dataset=dataset,seq_col=seq_col, \
+                activity=activity, algorithm=algorithm, parameters=parameters,
+                test_split=test_split, descriptors_csv=descriptors_csv)
 
         # self.data = self.read_data(data_json)
 
         #create output directory to store all of the program's outputs
         utils.create_output_dir()
 
-    def aai_encoding(self, use_dsp=True, verbose=True, cutoff_index=1):
+    def aai_encoding(self, use_dsp=True, spectrum='power',window='hamming',
+        filter_="", verbose=True, cutoff_index=1):
         """
         Encoding all protein sequences using each of the available indices in the
         AAI. The protein spectra of the AAI indices will be generated if use_dsp is true,
@@ -131,18 +132,18 @@ class Encoding(PySAR):
         index_count = 1        #counters to keep track of current index
 
         #get list of all indices in the AAI
-        all_indices = aaindex.get_feature_codes()
+        all_indices = self.aaindex.get_record_codes()
 
         print('\n\n#######################################################################################\n')
         print('Encoding using {} AAI combinations with the parameters:\n\nSpectrum: {}\nWindow Function: {} \
-            \nFilter:{}\nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_indices), self.spectrum,\
-            self.window, self.filter, repr(self.model), self.parameters, self.test_split))
+            \nFilter:{}\nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_indices), spectrum,\
+            window, filter_, repr(self.model), self.parameters, self.test_split))
         print('#######################################################################################\n')
 
         #cutoff index used if you only want to use a proprtion of all indices to build models with
         #   cutoff index multiplied with the total number of features and the value used as the
         #       index for the for loop, default=1 meaning all indices used
-        cutoff_index = int(len(all_indices) * cutoff)
+        cutoff_index = int(len(all_indices) * cutoff_index)
         start = time.time() #start counter
 
         '''
@@ -166,8 +167,8 @@ class Encoding(PySAR):
 
             #generate protein spectra from proDSP class if use_dsp is true
             if use_dsp:
-                proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum,
-                    window=self.window, filter=self.filter)
+                proDSP = ProDSP(encoded_seqs, spectrum=spectrum,
+                    window=window, filter_=filter_)
                 proDSP.encode_seqs()
                 X = pd.DataFrame(proDSP.spectrum_encoding)
             else:
@@ -190,7 +191,7 @@ class Encoding(PySAR):
 
             #append values/results from current AAI encoding iteration to lists
             index_.append(index)
-            category_.append(aaindex.get_category(index))
+            category_.append(self.aaindex.get_category(index))
             r2_.append(eval.r2)
             rmse_.append(eval.rmse)
             mse_.append(eval.mse)
@@ -383,7 +384,8 @@ class Encoding(PySAR):
 
         return desc_metrics_df_
 
-    def aai_descriptor_encoding(self, desc_combo=1, verbose=True, use_dsp=True):
+    def aai_descriptor_encoding(self, desc_combo=1, use_dsp = True, spectrum='power',
+        window='hamming', filter_="" verbose=True, cutoff_index=1):
         """
         Encoding all protein sequences using each of the indices in the AAI as well
         as the descriptors. The sequences can be encoded using 1 AAI + 1 Descriptor,
@@ -444,8 +446,8 @@ class Encoding(PySAR):
         print('\n\n##############################################################\n')
         print('Encoding using {} AAI and {} descriptor combinations with the parameters:\n \
             Window: {}\nFilter: {}\nSpectrum: {}\nAlgorithm: {}\nParameters: {}\n \
-            Test Split: {}\n'.format(len(aaindex.get_feature_codes()), len(all_descriptors),
-                repr(self.model), self.parameters, self.test_split))
+            Test Split: {}\n'.format(len(self.aaindex.get_record_codes()), len(all_descriptors),
+                window, filter_, spectrum, repr(self.model), self.parameters, self.test_split))
         print('##################################################################\n')
 
         start = time.time() #start counter
@@ -461,15 +463,15 @@ class Encoding(PySAR):
         6.) Repeat steps 1 - 5 for all indices in the AAI.
         7.) Output results into a final dataframe, save it and return.
         '''
-        for index in tqdm(aaindex.get_feature_codes(),unit=" indices",desc="AAIndex"):
+        for index in tqdm(self.aaindex.get_record_codes(),unit=" indices",desc="AAIndex"):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_enoding(index)
 
             #generate protein spectra from proDSP class if use_dsp is true
             if use_dsp:
-                proDSP = ProDSP(encoded_seqs, spectrum=self.spectrum,
-                    window=self.window, filter=self.filter)
+                proDSP = ProDSP(encoded_seqs, spectrum=spectrum,
+                    window=window, filter_=filter_)
                 proDSP.encode_seqs()
                 X_aai = pd.DataFrame(proDSP.spectrum_encoding)
             else:
@@ -534,7 +536,7 @@ class Encoding(PySAR):
 
                 #append values/results from current encoding iteration to lists
                 index_.append(index)
-                index_category_.append(aaindex.get_category(index))
+                index_category_.append(self.aaindex.get_category(index))
                 descriptor_.append(descr)
                 # descriptor_group_.append(desc.descriptor_groups[descr])
                 r2_.append(eval.r2)
@@ -591,10 +593,10 @@ class Encoding(PySAR):
 
     def __str__(self):
         return "Instance of Encoding Class with attribute values: \
-                \nDataset: {}\n, Activity: {}\n, Window: {}\n, Filter: {}\n, \
-                Spectrum: {}\n Algorithm: {}\n Parameters: {}\n Test Split: {}\n" \
-                .format(self.dataset, self.activity, self.window, self.filter,\
-                self.spectrum,self.algorithm, self.parameters, self.test_split
+                \nDataset: {}\n, Activity: {}\n,Algorithm: {}\n Parameters: {}\n\
+                Test Split: {}\n".format(
+                    self.dataset, self.activity,self.algorithm,\
+                    self.parameters, self.test_split
         )
 
     def __repr__(self):

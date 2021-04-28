@@ -23,6 +23,10 @@ from difflib import get_close_matches
 
 from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
 
+#look into and remove ('-') from get_encoding & get_amino_acids functions.
+#fix     def get_record_from_name(self, name): <- not returning anything
+#parse_aaindex_to_json <- if aaindex1.json exists then leave function
+
 class AAIndex():
     """
     Python parser for AAindex1: Amino Acid Index Database
@@ -339,7 +343,7 @@ class AAIndex():
                 except requests.exceptions.RequestException:
                     print('Error downloading or exporting AAIndex from the url {}'.format(self.url))
             else:
-                print('AAIndex1 already in dir: {} \n'.format(save_dir))
+                pass
         except:
             raise OSError('Save Directory does not exist: {}\n'.format(save_dir))
 
@@ -369,8 +373,8 @@ class AAIndex():
       onehot_encoded : np.ndarray
         one hot encoded array of the 20 canonical amino acids.
       """
-      self.get_amino_acids()
-      values = np.array(self.get_amino_acids())
+      all_amino_acids = self.get_amino_acids()
+      values = np.array(all_amino_acids.remove('-'))    #remove gap from amino acids list
 
       #Encode amino acids with value between 0 and n_classes-1.
       label_encoder = LabelEncoder()

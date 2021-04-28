@@ -28,6 +28,12 @@ import urllib.request
     #
     #   return values
 
+
+#test get_amino_acids_encoding() <- test output shape, type, 21 x 21.
+# test '-' not in aaindex.get_amino_acids func
+
+#test aaindex.get_ref_from_code('abc') has the correct dict keys, refs, notes etc.
+
 class AAIndexTests(unittest.TestCase):
 
     def setUp(self):
@@ -260,6 +266,8 @@ class AAIndexTests(unittest.TestCase):
         name3 = names[368]
         name4 = names[560]
 
+        self.assertEqual(len(names), self.aaindex.get_num_records(), 'Total number \
+            of names in the AAI database should equal the number of records')
         self.assertEqual(name1, 'Frequency of the 3rd residue in turn (Chou-Fasman, 1978b)',
             'Incorrect index name returned, got {} instead of {}'.format(name1,
                 'Frequency of the 3rd residue in turn (Chou-Fasman, 1978b)'))

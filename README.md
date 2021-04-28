@@ -93,27 +93,7 @@ pySAR = PySAR(dataset="dataset.txt",seq_col="sequence", activity="activity", aa_
     ["CIDH920105","PALJ810116"], window="hamming", filter="", spectrum="power", descriptors=
     ["aa_comp"] algorithm = "PlsRegression", parameters={}, test_split=0.2)
 
-```
-Alternatively, the system also supports inputting data via JSON or YAML format, with the
-keys of the input file required to be the same as the input parameters of the pySAR class,
-for example:
-```json
-{
-  "dataset": "T50.txt",
-  "activity": "T50",
-  "sequence_col": "sequence",
-  "aa_indices": "ARGP820101",
-  "window": "hamming",
-  "filter": "",
-  "spectrum": "power",
-  "descriptors":[
-    "aa_compos"
-  ],
-  "algorithm":"Plsreg",
-  "parameters":{},
-  "test_split":0.2
-}
-```
+
 **when creaitn instance of pySAR
 
 
@@ -157,7 +137,12 @@ scipy >= 1.4.1
 
 
 ## Running Tests ##
+To run tests, from the main pySAR folder run:
+```
+python -m unittest tests.MODULE_NAME -v
 
+```
+MODULE_NAME ->
 
 ## Directory folders:
 
@@ -169,8 +154,10 @@ encoding strategies using pySAR.
 * `/pySAR/data` - all required data and datasets are stored in this folder.
 
 
+# Contact
+
+If you have any questions or comments, please contact: amckenna41@qub.ac.uk @
+
+[Back to top](#TOP)
 
 .. |Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png
-
-TO DO:
-Add execution time to encoding process

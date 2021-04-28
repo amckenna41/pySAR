@@ -75,7 +75,7 @@ class Model():
             self.algorithm = model_matches[0]
         else:
             raise ValueError('Input algorithm {} not found in available valid \
-                models {}.').format(self.algorithm, self.valid_models)
+                models {}.'.format(self.algorithm, self.valid_models))
 
         #create instance of algorithm object
         self.model = self.get_model()
