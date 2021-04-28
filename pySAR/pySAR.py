@@ -230,7 +230,7 @@ class PySAR():
             temp_all_seqs = utils.zero_padding(temp_all_seqs)
 
             #convert list of lists into array
-            temp_all_seqs = np.array(temp_all_seqs)
+            temp_all_seqs = np.array(temp_all_seqs, dtype="float32")
 
             encoded_seqs = temp_all_seqs
 
@@ -684,7 +684,7 @@ class PySAR():
     #     Write all class attributes and parameters to a JSON file. This func
     #     is called at the end of the building of the predictive model and stored
     #     in the model output directory to keep a record of the specific parameters used.
-    # 
+    #
     #     Returns
     #     -------
     #     output_json: JSON

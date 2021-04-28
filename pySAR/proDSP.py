@@ -173,7 +173,7 @@ class ProDSP():
 
         #initialise zero arrays used to store output of both fft and rfft, set
         #   datatype to complex number as that is the output type of the transformation.
-        encoded_freqs_rfft = np.zeros((self.encoded_sequences.shape))
+        encoded_dataset_rfft = np.zeros((self.encoded_sequences.shape),dtype=complex)
         encoded_dataset_fft = np.zeros((self.encoded_sequences.shape),dtype=complex)
 
         #initialise zero arrays used to store output frequencies from fft & rfft transformations

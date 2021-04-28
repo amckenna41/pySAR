@@ -31,6 +31,8 @@ from plots import plot_reg
 
 #update comments/docstring of aai_encoding func
 #update comments/docstring of aai_desc_encoding func
+#functuonality where user can input what descriptors / aa_indices they want to encode with??
+#update comnments for input params of all 3 encodings - now accepted user defined indices & desc!
 
 class Encoding(PySAR):
     """
@@ -82,7 +84,7 @@ class Encoding(PySAR):
         #create output directory to store all of the program's outputs
         utils.create_output_dir()
 
-    def aai_encoding(self, use_dsp=True, spectrum='power',window='hamming',
+    def aai_encoding(self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',
         filter_="", verbose=True, cutoff_index=1):
         """
         Encoding all protein sequences using each of the available indices in the
@@ -131,8 +133,13 @@ class Encoding(PySAR):
         explained_var_ = []
         index_count = 1        #counters to keep track of current index
 
+        if aai_list == None or aai_list == [] or aai_list == "":
+            all_indices = self.aaindex.get_record_codes()
+        else:
+            all_indices = aai_list
+
         #get list of all indices in the AAI
-        all_indices = self.aaindex.get_record_codes()
+        # all_indices = self.aaindex.get_record_codes()
 
         print('\n\n#######################################################################################\n')
         print('Encoding using {} AAI combinations with the parameters:\n\nSpectrum: {}\nWindow Function: {} \
@@ -201,7 +208,7 @@ class Encoding(PySAR):
 
         end = time.time()
         elapsed = end - start
-        print('\n\n##############################################################\n')
+        print('\n\n##############################################################')
         print('Elapsed Time for AAI + Descriptor Encoding: {0:.3f} seconds'.format(elapsed))
 
         #set columns in the output dataframe to each of the values/metrics lists
@@ -223,7 +230,7 @@ class Encoding(PySAR):
 
         return aaindex_metrics_
 
-    def descriptor_encoding(self, desc_combo=1, verbose=True):
+    def descriptor_encoding(self, desc_list=None, desc_combo=1, verbose=True):
         """
         Encoding all protein sequences using each of the available physicochemical
         and structural descriptors. The sequences can be encoded using combinations
@@ -269,8 +276,13 @@ class Encoding(PySAR):
         msle_ = []
         desc_count = 1  #counters to keep track of current index & descriptor
 
+        if desc_list == None or desc_list == [] or desc_list == "":
+            all_descriptors = desc.all_descriptors_list(desc_combo)
+        else:
+            all_descriptors = desc_list
+
         #get list of all descriptors
-        all_descriptors = desc.all_descriptors_list(desc_combo)
+        # all_descriptors = desc.all_descriptors_list(desc_combo)
 
         print('\n\n##############################################################\n')
         print('Encoding using {} descriptor combinations with the parameters:\n \
@@ -345,7 +357,7 @@ class Encoding(PySAR):
 
         end = time.time()
         elapsed = end - start
-        print('\n\n##############################################################\n')
+        print('\n\n##############################################################')
         print('Elapsed Time for Descriptor Encoding: {0:.3f} seconds'.format(elapsed))
 
         #if using combinations of 2 or 3 descriptors, group every 2 or 3 descriptor
@@ -384,8 +396,8 @@ class Encoding(PySAR):
 
         return desc_metrics_df_
 
-    def aai_descriptor_encoding(self, desc_combo=1, use_dsp = True, spectrum='power',
-        window='hamming', filter_="",verbose=True, cutoff_index=1):
+    def aai_descriptor_encoding(self, aai_list=None, desc_list=None, desc_combo=1,
+        use_dsp = True, spectrum='power', window='hamming', filter_="",verbose=True, cutoff_index=1):
         """
         Encoding all protein sequences using each of the indices in the AAI as well
         as the descriptors. The sequences can be encoded using 1 AAI + 1 Descriptor,
@@ -440,8 +452,18 @@ class Encoding(PySAR):
         index_count = 1     #counters to keep track of current index & descriptor
         desc_count = 1
 
+        if aai_list == None or aai_list == [] or aai_list == "":
+            all_indices = self.aaindex.get_record_codes()
+        else:
+            all_indices = aai_list
+
+        if desc_list == None or desc_list == [] or desc_list == "":
+            all_descriptors = desc.all_descriptors_list(desc_combo)
+        else:
+            all_descriptors = desc_list
+
         #get list of all descriptors
-        all_descriptors = desc.all_descriptors_list(desc_combo)
+        # all_descriptors = desc.all_descriptors_list(desc_combo)
 
         print('\n\n##############################################################\n')
         print('Encoding using {} AAI and {} descriptor combinations with the parameters:\n \
@@ -463,7 +485,7 @@ class Encoding(PySAR):
         6.) Repeat steps 1 - 5 for all indices in the AAI.
         7.) Output results into a final dataframe, save it and return.
         '''
-        for index in tqdm(self.aaindex.get_record_codes(),unit=" indices",desc="AAIndex"):
+        for index in tqdm(all_indices,unit=" indices",desc="AAIndex"):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_enoding(index)
@@ -550,7 +572,7 @@ class Encoding(PySAR):
 
         end = time.time()
         elapsed = end - start
-        print('\n\n##############################################################\n')
+        print('\n\n##############################################################')
         print('Elapsed Time for AAI + Descriptor Encoding: {0:.3f} seconds'.format(elapsed))
 
         #if using combinations of 2 or 3 descriptors, group every 2 or 3 descriptor

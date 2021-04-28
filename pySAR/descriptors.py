@@ -145,8 +145,8 @@ class Descriptors():
         self.conjoint_triad = pd.DataFrame()
         self.seq_order_coupling_number = pd.DataFrame()
         self.quasi_seq_order = pd.DataFrame()
-        self.pseudo_AAC = pd.DataFrame()
-        self.amp_pseudo_AAC = pd.DataFrame()
+        self.pseudo_aa_composition = pd.DataFrame()
+        self.amphipilic_pseudo_aa_composition = pd.DataFrame()
         self.all_descriptors = pd.DataFrame()
 
         #try importing descriptors csv with pre-calculated descriptor values,
@@ -396,7 +396,7 @@ class Descriptors():
             per property - using 8 properties.)
         """
         print('\nGetting Normalized Moreaubroto Autocorrelation Descriptors...')
-        print('######################################\n')
+        print('#############################################################\n')
 
         #initialise lists used to store the autocorrelation values and keys
         norm_moreaubroto_autocorr = []
@@ -404,7 +404,7 @@ class Descriptors():
         norm_moreaubroto_autocorr_values = []
 
         #iterate through protein sequences and calculate NMBAuto values, append to list
-        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Autocorrelation", file=sys.stdout):
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="NMBAuto", file=sys.stdout):
             norm_moreau_broto = Autocorrelation.CalculateNormalizedMoreauBrotoAuto(seq, aa_encoding,aa_name)
             norm_moreaubroto_autocorr.append(norm_moreau_broto)
 
@@ -466,7 +466,7 @@ class Descriptors():
             per property - using 8 properties.)
         """
         print('\nGetting Moran Autocorrelation Descriptors...')
-        print('######################################\n')
+        print('############################################\n')
 
         #initialise lists used to store the MAuto values and keys
         moran_autocorr = []
@@ -474,7 +474,7 @@ class Descriptors():
         moran_autocorr_values = []
 
         #iterate through protein sequences and calculate MAuto values, append to list
-        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Autocorrelation", file=sys.stdout):
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="MAuto", file=sys.stdout):
             moranautocorr = Autocorrelation.CalculateMoranAuto(seq, aa_encoding,aa_name)
             moran_autocorr.append(moranautocorr)
 
@@ -535,7 +535,7 @@ class Descriptors():
             per property - using 8 properties.)
         """
         print('\nGetting Geary Autocorrelation Descriptors...')
-        print('######################################\n')
+        print('############################################\n')
 
         #initialise lists used to store the autocorrelation values and keys
         geary_autocorr = []
@@ -543,7 +543,7 @@ class Descriptors():
         geary_autocorr_values = []
 
         #iterate through protein sequences and calculate GAuto values, append to list
-        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Autocorrelation", file=sys.stdout):
+        for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="GAuto", file=sys.stdout):
             gearyautocorr = Autocorrelation.CalculateGearyAuto(seq, aa_encoding,aa_name)
             geary_autocorr.append(gearyautocorr)
 
@@ -643,7 +643,7 @@ class Descriptors():
             343 is the number of features calcualted from the descriptor.
         """
         print('\nGetting Conjoint Triad Descriptors...')
-        print('##################################\n')
+        print('#####################################\n')
 
         ct = []
 
@@ -659,7 +659,7 @@ class Descriptors():
             ct.append(list(con_Tri.values()))
 
         #get feature/column names for CTriad descriptor
-        keys = con_Tri[0].keys()
+        keys = list(con_Tri.keys())
 
         # #iterate through sequences, calculating the descriptor values using PyBioMed Package
         # for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,
@@ -699,7 +699,7 @@ class Descriptors():
             X is the number of features calcualted from the descriptor.
         """
         print('\nGetting Sequence Order Coupling Descriptors...')
-        print('#############################################\n')
+        print('##############################################\n')
 
         seq_order = []
 
@@ -743,7 +743,7 @@ class Descriptors():
         print('###########################################\n')
 
         #if maxlag greater than length of protein, set to default value of 30
-        if (maxlag >= self.protein_seqs[0]):
+        if (maxlag >= len(self.protein_seqs[0])):
             maxlag=30
 
         quasi_seq_order = []
@@ -803,7 +803,7 @@ class Descriptors():
         print('####################################################\n')
 
         #if lambda not a non-negative int then set to default value of 30
-        if not (lamba_>=0):
+        if not (lambda_>=0):
             lambda_ = 30
 
         #if weight not b/w 0.05 and 0.7 then set to default value of 0.05
@@ -855,7 +855,7 @@ class Descriptors():
         print('#########################################################\n')
 
         #if lambda not a non-negative int then set to default value of 30
-        if not (lamba_>=0):
+        if not (lambda_>=0):
             lambda_ = 30
 
         #if weight not b/w 0.05 and 0.7 then set to default value of 0.05
@@ -1052,10 +1052,10 @@ class Descriptors():
         if (getattr(self, "quasi_seq_order").empty):
                 self.quasi_seq_order = self.get_quasi_seq_order()
 
-        if (getattr(self, "pseudo_AAC").empty):
+        if (getattr(self, "pseudo_aa_composition").empty):
                 self.pseudo_AAC = self.get_pseudo_AAC()
 
-        if (getattr(self, "amp_pseudo_AAC").empty):
+        if (getattr(self, "amphipilic_pseudo_aa_composition").empty):
                 self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
 
         #append all calculated descriptors to list
@@ -1087,7 +1087,7 @@ class Descriptors():
         'norm_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation', \
         'ctd', 'composition', 'transition', 'distribution', 'conjoint_triad', \
         'seq_order_coupling_number','quasi_seq_order_descriptors',\
-        'pseudo_aa_comp', 'amphipilic_pseudo_aa_comp'
+        'pseudo_aa_composition', 'amphipilic_pseudo_aa_composition'
 
         ]
         return valid_desc
