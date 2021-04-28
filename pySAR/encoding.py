@@ -264,7 +264,6 @@ class Encoding(PySAR):
             'MSE', 'RPD', 'MAE', 'Explained Var'])
 
         #lists to store results for each predictive model
-        desc_list = []
         descriptor = []
         descriptor_group_ = []
         r2_ = []
@@ -303,22 +302,22 @@ class Encoding(PySAR):
         for descr in tqdm(all_descriptors,unit=" descriptor",position=0,desc="Descriptors",file=sys.stdout):
 
             desc_ = pd.DataFrame()           #reset descriptor DF and list
-            desc_list = []
+            descriptor_list = []
             desc_count+=1          #counter to keep track of current descriptor
 
             #if using 2 or 3 descriptors, append each descriptor & its category to list
             if desc_combo == 2 or desc_combo == 3:
                 for de in descr:
 
-                    desc_list.append(getattr(desc, de))
-                    descriptor_group_.append(desc.descriptor_groups[de])
+                    descriptor_list.append(getattr(desc, de))
+                    descriptor_group_.append(desc.descriptor_groups['_'+de])
 
-                desc_ = pd.concat(desc_list,axis=1) #concatenate descriptors
-                # desc_ = desc_list
-                # desc_ = pd.DataFrame(desc_list)
+                desc_ = pd.concat(descriptor_list,axis=1) #concatenate descriptors
+                # desc_ = descriptor_list
+                # desc_ = pd.DataFrame(descriptor_list)
             else:
                 desc_ = getattr(desc, descr)
-                descriptor_group_.append(desc.descriptor_groups[descr])
+                descriptor_group_.append(desc.descriptor_groups['_'+descr])
 
             X = desc_
 
@@ -429,10 +428,6 @@ class Encoding(PySAR):
             dataframe of calculated metric values from generated predictive models
             encoded using AAI indices + descriptors encoding strategy.
         """
-        #create instance of Descriptors class, all_desc = True so all descriptor
-        #   values will be calculated and or imported from descriptors csv
-        desc = Descriptors(self.data[self.seq_col], all_desc = True)
-
         #create dataframe to store output results from models
         aai_desc_metrics_df = pd.DataFrame(columns=['Index','Category', 'Descriptor'\
             'Descriptor Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
@@ -442,7 +437,6 @@ class Encoding(PySAR):
         index_category_ = []
         descriptor_ = []
         descriptor_group_ = []
-        desc_list = []
         r2_ = []
         mse_ = []
         rmse_ = []
@@ -457,12 +451,14 @@ class Encoding(PySAR):
         else:
             all_indices = aai_list
 
+        #create instance of Descriptors class, all_desc = True so all descriptor
+        #   values will be calculated and or imported from descriptors csv
         if desc_list == None or desc_list == [] or desc_list == "":
             desc = Descriptors(self.data[self.seq_col], all_desc = True)
             all_descriptors = desc.all_descriptors_list(desc_combo)
         else:
             desc = Descriptors(self.data[self.seq_col])
-            all_descriptors = desc_list
+            all_descriptors = list(itertools.combinations(desc_list, desc_combo))
 
         #get list of all descriptors
         # all_descriptors = desc.all_descriptors_list(desc_combo)
@@ -505,31 +501,33 @@ class Encoding(PySAR):
 
                 #reset descriptor DF and list
                 desc_ = pd.DataFrame()
-                desc_list = []
+                descriptor_list = []
                 desc_count+=1   #counter to keep track of current descriptor
 
                 #if using 2 or 3 descriptors, append each descriptor & its category to list
                 if desc_combo == 2 or desc_combo == 3:
                     for de in descr:
 
-                        desc_list.append(getattr(desc, de)) #get descriptor attribute
-                        descriptor_group_.append(desc.descriptor_groups[de])
+                        # descriptor_list.append(getattr(desc, de)) #get descriptor attribute
+                        descriptor_list.append(desc.get_descriptor_encoding(de)) #get descriptor attribute
+                        descriptor_group_.append(desc.descriptor_groups['_'+de])
 
-                                # desc_ = pd.concat(desc_list,axis=1)  check if this is needed here
-                    desc_ = desc_list
+                                # desc_ = pd.concat(descriptor_list,axis=1)  check if this is needed here
+                    desc_ = descriptor_list
 
                     #concatenate each descriptor dataframe into one
                     if desc_combo == 2:
-                        desc_list_concat = np.concatenate((desc_[0],desc_[1]),axis = 1)
+                        descriptor_list_concat = np.concatenate((desc_[0],desc_[1]),axis = 1)
                     elif desc_combo == 3:
-                        desc_list_concat = np.concatenate((desc_[0],desc_[1],desc_[2]),axis = 1)
+                        descriptor_list_concat = np.concatenate((desc_[0],desc_[1],desc_[2]),axis = 1)
 
-                    desc_ = desc_list_concat
+                    desc_ = descriptor_list_concat
 
                 #if only using 1 descriptor
                 else:
-                    desc_ = getattr(desc, descr) #get descriptor attribute
-                    descriptor_group_.append(desc.descriptor_groups[descr])
+                    # desc_ = getattr(desc, descr) #get descriptor attribute
+                    desc_ = desc.get_descriptor_encoding(descr)
+                    descriptor_group_.append(desc.descriptor_groups['_'+descr])
 
                 X = pd.DataFrame(desc_)
 

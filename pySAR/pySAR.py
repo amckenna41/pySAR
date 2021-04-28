@@ -625,7 +625,8 @@ class PySAR():
             raise ValueError('AAI Indices {} cannot be empty or None'.format(indices))
 
         #get descriptor encoding features
-        descriptor_encoding = self.desc_encoding(descriptors)
+        # descriptor_encoding = self.desc_encoding(descriptors)
+        descriptor_encoding = self.get_descriptor_encoding(descriptors)
 
         #if descriptors encoding is empty, raise error
         if (descriptor_encoding.empty):

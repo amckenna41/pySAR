@@ -138,7 +138,7 @@ class Descriptors():
         self.normalized_moreaubroto_autocorrelation = pd.DataFrame()
         self.moran_autocorrelation = pd.DataFrame()
         self.geary_autocorrelation = pd.DataFrame()
-        self.CTD = pd.DataFrame()
+        self.ctd = pd.DataFrame()
         self.composition = pd.DataFrame()
         self.transition = pd.DataFrame()
         self.distribution = pd.DataFrame()
@@ -210,7 +210,7 @@ class Descriptors():
         self.normalized_moreaubroto_autocorrelation = descriptor_df.iloc[:,8420:8660]
         self.moran_autocorrelation = descriptor_df.iloc[:,8660: 8900]
         self.geary_autocorrelation = descriptor_df.iloc[:,8900:9140]
-        self.CTD =  descriptor_df.iloc[:,9140:9287]
+        self.ctd =  descriptor_df.iloc[:,9140:9287]
         self.composition = descriptor_df.iloc[:,9140:9161]
         self.transition = descriptor_df.iloc[:,9161:9182]
         self.distribution = descriptor_df.iloc[:,9182:9287]
@@ -619,7 +619,7 @@ class Descriptors():
         #convert calculated ctd values into dataframe
         ctd_df = pd.DataFrame(data=ctd, columns=keys)
 
-        self.CTD = ctd_df                   #set descriptor attributes
+        self.ctd = ctd_df                   #set descriptor attributes
         self.composition = ctd_df.iloc[:,:21]
         self.transition = ctd_df.iloc[:, 21: 42]
         self.distribution = ctd_df.iloc[:, 42: ]
@@ -934,10 +934,10 @@ class Descriptors():
             if (getattr(self, desc).empty):
               self.get_geary_autocorrelation()
             desc_encoding = self.geary_autocorrelation
-        elif desc == 'CTD':
+        elif desc == 'ctd':
             if (getattr(self, desc).empty):
               self.get_ctd()
-            desc_encoding = self.CTD
+            desc_encoding = self.ctd
         elif desc == 'composition':
             if (getattr(self, desc).empty):
               self.get_ctd()
@@ -1040,8 +1040,8 @@ class Descriptors():
         if (getattr(self, "geary_autocorrelation").empty):
             self.geary_autocorrelation = self.get_geary_autocorrelation()
 
-        if (getattr(self, "CTD").empty):
-                self.CTD = self.get_ctd()
+        if (getattr(self, "ctd").empty):
+                self.ctd = self.get_ctd()
 
         if (getattr(self, "conjoint_triad").empty):
                 self.conjoint_triad = self.get_conjoint_triad()
@@ -1084,7 +1084,7 @@ class Descriptors():
         valid_desc = [
 
         'aa_composition', 'dipeptide_composition', 'tripeptide_composition', \
-        'norm_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation', \
+        'normalized_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation', \
         'ctd', 'composition', 'transition', 'distribution', 'conjoint_triad', \
         'seq_order_coupling_number','quasi_seq_order_descriptors',\
         'pseudo_aa_composition', 'amphipilic_pseudo_aa_composition'
@@ -1151,12 +1151,12 @@ class Descriptors():
         self._geary_autocorrelation = val
 
     @property
-    def CTD(self):
+    def ctd(self):
         return self._CTD
 
-    @CTD.setter
-    def CTD(self, val):
-        self._CTD = val
+    @ctd.setter
+    def ctd(self, val):
+        self._ctd = val
 
     @property
     def composition(self):
@@ -1240,7 +1240,7 @@ class Descriptors():
         del self._normalized_moreaubroto_autocorrelation
         del self._moran_autocorrelation
         del self._geary_autocorrelation
-        del self._CTD
+        del self._ctd
         del self._transition
         del self._composition
         del self._distribution
