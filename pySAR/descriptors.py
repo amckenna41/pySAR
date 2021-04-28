@@ -1152,7 +1152,7 @@ class Descriptors():
 
     @property
     def ctd(self):
-        return self._CTD
+        return self._ctd
 
     @ctd.setter
     def ctd(self, val):

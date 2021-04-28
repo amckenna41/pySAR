@@ -63,7 +63,8 @@ class Encoding(PySAR):
 
     Methods
     -------
-    aai_encoding(use_dsp=True, verbose=True, cutoff_index=1):
+    aai_encoding(self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',
+    filter_="", verbose=True)
         encoding protein sequences using indices from the AAI
     descriptor_encoding(desc_combo=1, verbose=True):
         encoding protein sequences using protein descriptors from descrtipors module
@@ -85,7 +86,7 @@ class Encoding(PySAR):
         utils.create_output_dir()
 
     def aai_encoding(self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',
-        filter_="", verbose=True, cutoff_index=1):
+        filter_="", verbose=True):
         """
         Encoding all protein sequences using each of the available indices in the
         AAI. The protein spectra of the AAI indices will be generated if use_dsp is true,
@@ -105,10 +106,15 @@ class Encoding(PySAR):
         verbose : bool (default = True)
             if true, the progress of the encoding will be output, else output will
             only occur when the encoding has finished.
-        cutoff_index : float (default = 1)
-            set the proportion of AAindex indices to use for the encoding process.
-            Default=1 means all AAI indices will be used, 0.5 means 50% of indices used etc.
-            This parameter primarily just used for speeding up testing the functions etc.
+        aai_list : list (default = None)
+            list of aai indices to use for encoding the predictive models, by default
+            all AAI indices will be used.
+        spectrum : str (default = 'power')
+            protein spectra to generate from the FFT of the protein sequences.
+        window : str (default = 'hamming')
+            window function to apply to ouput of FFT on the protein sequences.
+        filter : str (default = "")
+            filter function to apply to ouput of FFT on the protein sequences.
 
         Returns
         -------
@@ -133,25 +139,17 @@ class Encoding(PySAR):
         explained_var_ = []
         index_count = 1        #counters to keep track of current index
 
+        #if no indices passed into aai_list then use all indices by default
         if aai_list == None or aai_list == [] or aai_list == "":
             all_indices = self.aaindex.get_record_codes()
         else:
             all_indices = aai_list
-
-        #get list of all indices in the AAI
-        # all_indices = self.aaindex.get_record_codes()
 
         print('\n\n#######################################################################################\n')
         print('Encoding using {} AAI combinations with the parameters:\n\nSpectrum: {}\nWindow Function: {} \
             \nFilter:{}\nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_indices), spectrum,\
             window, filter_, repr(self.model), self.parameters, self.test_split))
         print('#######################################################################################\n')
-
-        #cutoff index used if you only want to use a proprtion of all indices to build models with
-        #   cutoff index multiplied with the total number of features and the value used as the
-        #       index for the for loop, default=1 meaning all indices used
-        cutoff_index = int(len(all_indices) * cutoff_index)
-        start = time.time() #start counter
 
         '''
         1.) Get AAI index encoding of protein sequences, if using DSP (use_dsp = True),
@@ -166,7 +164,7 @@ class Encoding(PySAR):
 
         #using tqdm package to create a progress bar showing encoding progress
         #file=sys.stdout to stop error where iterations were printing out of order
-        for index in tqdm(all_indices[:cutoff_index],unit=" indices",position=0,
+        for index in tqdm(all_indices,unit=" indices",position=0,
             desc="AAIndex",file=sys.stdout):
 
             #get AAI indices encoding for sequences according to index var
@@ -246,9 +244,11 @@ class Encoding(PySAR):
         ----------
         desc_combo : int (default = 1)
             combination of descriptors to use.
+        decs_list : list (default = None)
+            list of descriptors to use for encoding, by default all available descriptors
+            in the descriptors module will be used for the encoding.
         verbose : bool (default = True)
-            if true, progress of the encoding will be output else no output will
-            be output until encoding has finished, true is recccomended.
+            **refer to aai_encoding(...) docstring.
 
         Returns
         -------
@@ -257,7 +257,7 @@ class Encoding(PySAR):
             encoded using all descriptors for the descriptors encoding strategy.
         """
         #initialise Descriptor object with protein sequences, set all_desc to calculate all descriptors
-        desc = Descriptors(self.data[self.seq_col], all_desc = True)
+        # desc = Descriptors(self.data[self.seq_col], all_desc = True)
 
         #create dataframe to store output results from models
         desc_metrics_df = pd.DataFrame(columns=['Descriptor','Group','R2', 'RMSE',
@@ -275,13 +275,26 @@ class Encoding(PySAR):
         msle_ = []
         desc_count = 1  #counters to keep track of current index & descriptor
 
+        #if no descriptors passed into desc_list then use all descriptors by default
+        # **updarte this to the same as aai_descriptor_encoding
+        # if desc_list == None or desc_list == [] or desc_list == "":
+        #     all_descriptors = desc.all_descriptors_list(desc_combo)
+        # else:
+        #     all_descriptors = desc_list
+
+        #if no descriptors passed into desc_list then use all descriptors by default,
+        #   get list of  all descriptors according to desc_combo value
         if desc_list == None or desc_list == [] or desc_list == "":
+            desc = Descriptors(self.data[self.seq_col], all_desc = True)
             all_descriptors = desc.all_descriptors_list(desc_combo)
         else:
-            all_descriptors = desc_list
-
-        #get list of all descriptors
-        # all_descriptors = desc.all_descriptors_list(desc_combo)
+            desc = Descriptors(self.data[self.seq_col])
+            if desc_combo == 2:
+                all_descriptors = list(itertools.combinations(desc_list, 2))
+            elif desc_combo == 3:
+                all_descriptors = list(itertools.combinations(desc_list, 3))
+            else:
+                all_descriptors = desc_list     #using default combination of descriptors
 
         print('\n\n##############################################################\n')
         print('Encoding using {} descriptor combinations with the parameters:\n \
@@ -395,8 +408,9 @@ class Encoding(PySAR):
 
         return desc_metrics_df_
 
+!*! error with SOCNum calculation
     def aai_descriptor_encoding(self, aai_list=None, desc_list=None, desc_combo=1,
-        use_dsp = True, spectrum='power', window='hamming', filter_="",verbose=True, cutoff_index=1):
+        use_dsp = True, spectrum='power', window='hamming', filter_="",verbose=True):
         """
         Encoding all protein sequences using each of the indices in the AAI as well
         as the descriptors. The sequences can be encoded using 1 AAI + 1 Descriptor,
@@ -413,15 +427,23 @@ class Encoding(PySAR):
 
         Parameters
         ----------
+        aai_list : list (default = None)
+            **refer to aai_encoding(...) docstring.
+        desc_list : list (default = None)
+            **refer to desc_encoding(...) docstring.
         desc_combo : int (default = 1)
-            combination of descriptors to use with the AAI indices.
-        verbose : bool (default = True)
-            if true, progress of the encoding will be output else no output will
-            be output until encoding has finished, true is recccomended.
+            **refer to desc_encoding(...) docstring.
         use_dsp : bool (default = True)
-            if true then pass AAI indices encoding through the DSP pipeline to
-            create protein spectra, dictated by instance attributes: spectrum,
-            window and filter. If false then AAI indices encoding used as feature data.
+            **refer to aai_encoding(...) docstring.
+        spectrum : str (default = 'power')
+            **refer to aai_encoding(...) docstring.
+        window : str (default = 'hamming')
+            **refer to aai_encoding(...) docstring.
+        filter : str (default = "")
+            **refer to aai_encoding(...) docstring.
+        verbose : bool (default = True)
+            **refer to aai_encoding(...) docstring.
+
         Returns
         -------
         aai_desc_metrics_df_ : pd.DataFrame
@@ -446,22 +468,25 @@ class Encoding(PySAR):
         index_count = 1     #counters to keep track of current index & descriptor
         desc_count = 1
 
+        #if no indices passed into aai_list then use all indices by default
         if aai_list == None or aai_list == [] or aai_list == "":
             all_indices = self.aaindex.get_record_codes()
         else:
             all_indices = aai_list
 
-        #create instance of Descriptors class, all_desc = True so all descriptor
-        #   values will be calculated and or imported from descriptors csv
+        #if no descriptors passed into desc_list then use all descriptors by default,
+        #   get list of  all descriptors according to desc_combo value
         if desc_list == None or desc_list == [] or desc_list == "":
             desc = Descriptors(self.data[self.seq_col], all_desc = True)
             all_descriptors = desc.all_descriptors_list(desc_combo)
         else:
             desc = Descriptors(self.data[self.seq_col])
-            all_descriptors = list(itertools.combinations(desc_list, desc_combo))
-
-        #get list of all descriptors
-        # all_descriptors = desc.all_descriptors_list(desc_combo)
+            if desc_combo == 2:
+                all_descriptors = list(itertools.combinations(desc_list, 2))
+            elif desc_combo == 3:
+                all_descriptors = list(itertools.combinations(desc_list, 3))
+            else:
+                all_descriptors = desc_list
 
         print('\n\n##############################################################\n')
         print('Encoding using {} AAI and {} descriptor combinations with the parameters:\n \

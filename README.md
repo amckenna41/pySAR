@@ -43,6 +43,7 @@ return '<Class Name: {}>'.format(self)
 - [ ] change all 'aa_index' to 'aaindex'
 - [ ] Add assertion comments to each unit test, got X wanted Y..
 - [ ] add test numbers in comments for each block of unit tests.
+- [ ] Go through each parameters list and refer to its previous reference rather than repeating it.
 <!-- #maybe split up multiple descriptor names/categorties in results DF into seperate columns -->
 [![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
 

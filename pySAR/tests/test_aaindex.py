@@ -79,13 +79,17 @@ class AAIndexTests(unittest.TestCase):
         """
         print('Testing AAIndex URLs...')
 
-        AA_INDEX1_URL = "https://www.genome.jp/ftp/db/community/aaindex/aaindex1"
+        AA_INDEX1_URL_FTP = "https://www.genome.jp/ftp/db/community/aaindex/aaindex1"
+        AA_INDEX1_URL_HTTPS = "https://www.genome.jp/ftp/db/community/aaindex/aaindex1"
         AA_INDEX2_URL = "https://www.genome.jp/ftp/db/community/aaindex/aaindex2"
         AA_INDEX3_URL = "https://www.genome.jp/ftp/db/community/aaindex/aaindex3"
         wrong_AA_INDEX_URL = "https://www.genome.jp/ftp/BLAH/BLAH/BLAH/BLAH"
 
         #test URL endpoints for AAINDEX are active and give a 200 status code
         r = requests.get(AA_INDEX1_URL, allow_redirects = True)
+        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200')
+
+        r = requests.get(AA_INDEX1_URL_HTTPS, allow_redirects = True)
         self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200')
 
         r = requests.get(AA_INDEX2_URL, allow_redirects = True)
@@ -167,23 +171,68 @@ class AAIndexTests(unittest.TestCase):
             'M': 2.3, 'D': -4.4, 'F': 2.6, 'C': 4.4, 'P': -1.8, 'Q': 1.2,
             'S': -1.7, 'E': -5.0, 'T': 1.3, 'G': -4.2, 'W': -1.0, 'H': -2.5,
             'Y': 4.0, 'I': 6.7, 'V': 6.8, '-': 0}
-
+#1.)
         #get amino acid values for inputted feature/index codes
-        feature_vals = self.aaindex.get_record_from_code(feature1)['values']
-        self.assertEqual(feature_vals, feature1_vals, 'Amino acid values gotten \
+        record = self.aaindex.get_record_from_code(feature1)
+        self.assertEqual(feature1_vals, record['values'], 'Amino acid values gotten \
             from AAI do not match the desired values.')
 
-        feature_vals = self.aaindex.get_record_from_code(feature2)['values']
-        self.assertEqual(feature_vals, feature2_vals, 'Amino acid values gotten \
+        self.assertIn('description', list(record.keys()))
+        self.assertIn('refs', list(record.keys()))
+        self.assertIn('notes', list(record.keys()))
+        self.assertIn('values', list(record.keys()))
+
+#2.)
+        record = self.aaindex.get_record_from_code(feature2)
+        self.assertEqual(feature2_vals, record['values'], 'Amino acid values gotten \
             from AAI do not match the desired values.')
 
-        feature_vals = self.aaindex.get_record_from_code(feature3)['values']
-        self.assertEqual(feature_vals, feature3_vals, 'Amino acid values gotten \
+        self.assertIn('description', list(record.keys()))
+        self.assertIn('refs', list(record.keys()))
+        self.assertIn('notes', list(record.keys()))
+        self.assertIn('values', list(record.keys()))
+
+#3.)
+        record = self.aaindex.get_record_from_code(feature3)
+        self.assertEqual(feature3_vals, record['values'], 'Amino acid values gotten \
             from AAI do not match the desired values.')
 
-        feature_vals = self.aaindex.get_record_from_code(feature4)['values']
-        self.assertEqual(feature_vals, feature4_vals, 'Amino acid values gotten \
+        self.assertIn('description', list(record.keys()))
+        self.assertIn('refs', list(record.keys()))
+        self.assertIn('notes', list(record.keys()))
+        self.assertIn('values', list(record.keys()))
+
+
+#4.)
+        record = self.aaindex.get_record_from_code(feature4)
+        self.assertIn('description', list(record.keys()))
+        self.assertIn('refs', list(record.keys()))
+        self.assertIn('notes', list(record.keys()))
+        self.assertIn('values', list(record.keys()))
+        self.assertEqual(feature4_vals, record['values'], 'Amino acid values gotten \
             from AAI do not match the desired values.')
+        self.assertEqual(record['description'], 'Information measure for extended (Robson-Suzuki, 1976)')
+        self.assertEqual(record['notes'],'')
+        self.assertEqual(record['refs'],"Robson, B. and Suzuki, E. 'Conformational properties of amino acid \
+            residues in globular proteins' J. Mol. Biol. 107, 327-356 (1976); Kawashima, S. and Kanehisa, M.                     \
+            'AAindex: amino acid index database.'  Nucleic Acids Res. 28, 374 (2000).")
+
+
+
+#5.)
+        #testing value error raised when errenous indices put into function
+        feature5 = "ABCDEFGH"
+        feature6 = "123456"
+        feature7 = "blahblahblah"
+
+        with self.assertRaises(ValueError):
+            feature_vals = self.aaindex.get_record_from_code(feature5)['values']
+
+        with self.assertRaises(ValueError):
+            feature_vals = self.aaindex.get_record_from_code(feature6)['values']
+
+        with self.assertRaises(ValueError):
+            feature_vals = self.aaindex.get_record_from_code(feature7)['values']
 
     def test_feature_codes(self):
         """
@@ -199,7 +248,7 @@ class AAIndexTests(unittest.TestCase):
         feature2 = 'PONP800107'
         feature3 = 'OOBM770102'
         feature4 = 'NADH010101'
-
+#1.)
         #testing index codes are in the AAI1
         self.assertIn(feature1, self.aaindex.get_record_codes(), 'Index {} \
             not found in list of available indices.'.format(feature1))
@@ -216,6 +265,7 @@ class AAIndexTests(unittest.TestCase):
         feature7 = 'ABC123456'
         feature8 = 'ABC1234567'
 
+#2.)
         #testing errenous index codes are not in the AAI1
         self.assertNotIn(feature5, self.aaindex.get_record_codes(), 'Index {} \
             erroneously found in list of available indices.'.format(feature5))
@@ -305,6 +355,10 @@ class AAIndexTests(unittest.TestCase):
         self.assertIn("hydrophobicity of amino acid composition of mitochondrial proteins", ref3)
         self.assertTrue(ref4.endswith('Nucleic Acids Res. 28, 374 (2000).'))
 
+    def test_aaindex_encoding(self):
+        """ Testing amino acids one-hot encoding. """
+
+        pass
 
 if __name__ == '__main__':
     #run all unit tests
