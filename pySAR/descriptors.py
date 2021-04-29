@@ -159,7 +159,7 @@ class Descriptors():
             #   in their respective attributes
             if all_desc:
                 self.all_descriptors = self.get_all_descriptors()
-                self.all_descriptors.to_csv(os.path.join(DATA_DIR, 'descriptors.csv'))
+                self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.desc_dataset),index=0)
                 #^save all descriptor values for next time^
 
         #create dictionary of descriptors and their associated groups
@@ -214,13 +214,11 @@ class Descriptors():
         self.composition = descriptor_df.iloc[:,9140:9161]
         self.transition = descriptor_df.iloc[:,9161:9182]
         self.distribution = descriptor_df.iloc[:,9182:9287]
-
-
-        # self.conjoint_triad = descriptor_df.iloc[:,9287:9799]       <---not correct
-        self.seq_order_coupling_number = descriptor_df.iloc[:,9799:9800]
-        self.quasi_seq_order = descriptor_df.iloc[:,9800:9900]
-        self.pseudo_AAC = descriptor_df.iloc[:,9900:9950]
-        self.amp_pseudo_AAC = descriptor_df.iloc[:,9950:10030]
+        self.conjoint_triad = descriptor_df.iloc[:,9287:9630]
+        self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]
+        self.quasi_seq_order = descriptor_df.iloc[:,9690:9790]
+        self.pseudo_AAC = descriptor_df.iloc[:,9790:9840]
+        self.amp_pseudo_AAC = descriptor_df.iloc[:,9840:9920]
         self.all_descriptors = descriptor_df.iloc[:,:]
 
     def get_aa_composition(self):

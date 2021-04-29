@@ -44,6 +44,7 @@ return '<Class Name: {}>'.format(self)
 - [ ] Add assertion comments to each unit test, got X wanted Y..
 - [ ] add test numbers in comments for each block of unit tests.
 - [ ] Go through each parameters list and refer to its previous reference rather than repeating it.
+- [ ] add cutoff index/value again just for testing
 <!-- #maybe split up multiple descriptor names/categorties in results DF into seperate columns -->
 [![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
 
@@ -99,28 +100,50 @@ pySAR = PySAR(dataset="dataset.txt",seq_col="sequence", activity="activity", aa_
 
 
 
-### Encoding using AAIndex indices
+### Encoding using all 566 AAIndex indices
 ```python
 
-aa_encoding = encoding.aai_encoding(aaindex,verbose=True)
+#
+encoding = Encoding(dataset="dataset.txt", activity="activity_col",
+  algorithm="RandomForest", parameters={"":"","":"", })
 
-foobar.pluralize('word') # returns 'words'
-foobar.pluralize('goose') # returns 'geese'
-foobar.singularize('phenomena') # returns 'phenomenon'
+aai_encoding = encoding.aai_encoding(use_dsp=True, spectrum='power', window='hamming', verbose=True)
+
+
+
+```
+### Encoding using list of 4 AAIndex indices, with no DSP functionalities
+```python
+
+encoding = Encoding(dataset="dataset.txt", activity="activity_col",
+  algorithm="PLSRegression", parameters={"":"","":"", })
+
+aai_encoding = encoding.aai_encoding(use_dsp=False, aai_list=["PONP800102","RICJ880102","ROBB760107","KARS160113"], verbose=True)
+
+
 ```
 
 ### Encoding using protein descriptors
+```python
+
+encoding = Encoding(dataset="dataset.txt", activity="activity_col",
+  algorithm="RandomForest", parameters={"":"","":"", }, descriptors_csv="descriptors.csv")
+
+desc_encoding = encoding.desc_encoding(desc_combo = 2, verbose = True)
+def descriptor_encoding(self, desc_list=None, desc_combo=1, verbose=True):
 
 
+```
 ### Encoding using AAI + protein descriptors
+```python
 
-
+```
 ### Generate all protein descriptors
 
 ```python
 
   desc = Descriptor(protein_seqs = data, desc_dataset = "descriptors.csv",
-    all_desc=True)
+      all_desc=True)
 
 ```
 where protein_seqs is the dataset of protein sequences, desc_dataset is the name

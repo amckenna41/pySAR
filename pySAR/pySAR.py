@@ -259,7 +259,7 @@ class PySAR():
 
                 temp_all_seqs = utils.zero_padding(temp_all_seqs)
 
-                temp_all_seqs =np.array(temp_all_seqs)
+                temp_all_seqs =np.array(temp_all_seqs, dtype="float32")
 
                 #in first iteration through indices set encoded_aai_ to zeros
                 #   initialised np array, else concatenate to array in previous iteration
@@ -272,7 +272,7 @@ class PySAR():
 
             return encoded_seqs
 
-    def aai_encoding(self,spectrum=None, indices=None, window=None, filter=None,
+    def encode_aai(self,spectrum=None, indices=None, window=None, filter_=None,
         use_dsp=True, verbose=True):
         """
         Encode using AAI indices. If multiple indices input then calculate each
@@ -290,7 +290,7 @@ class PySAR():
             string or list of indices from the AAI.
         window : str
             name of window function to apply to Fourier Transform.
-        filter : str
+        filter_ : str
             name of filter function to apply to ouput of Fourier Transform.
         use_dsp : bool (default = True)
             whether to transform AAI index encodings via DSP techniques and a Fourier
@@ -325,7 +325,7 @@ class PySAR():
         #if use_dsp true then get protein spectra from AAI indices using ProDSP class
         #   else use the AAI indices encoding's themselves as the feature data (X)
         if use_dsp:
-            proDSP = ProDSP(encoded_seqs, spectrum=spectrum, window=window, filter=filter)
+            proDSP = ProDSP(encoded_seqs, spectrum=spectrum, window=window, filter_=filter_)
             proDSP.encode_seqs()
             X = pd.DataFrame(proDSP.spectrum_encoding)
         else:
@@ -439,7 +439,7 @@ class PySAR():
 
         return encoded_desc
 
-    def desc_encoding(self, descriptor=None, verbose=True):
+    def encode_desc(self, descriptor=None, verbose=True):
         """
         Encode protein sequences using protein physiochemical and structural
         descriptors and build predictive model from the descriptor feature data.
@@ -567,8 +567,8 @@ class PySAR():
         return desc_df
 
 
-    def aai_desc_encoding(self, indices=None,descriptors=None,spectrum='power',
-        window="", filter="",use_dsp=True, verbose=True):
+    def encode_aai_desc(self, indices=None,descriptors=None,spectrum='power',
+        window="", filter_=None,use_dsp=True, verbose=True):
         """
         Encode using both AAI indices and the descriptors. The two outputs from
         the individual encoding strategies will be concatenated together and
@@ -587,7 +587,7 @@ class PySAR():
             string or list of protein descriptors.
         window : str
             name of window function to apply to output of Fourier Transform.
-        filter : str
+        filter_ : str
             name of filter function to apply to ouput of Fourier Transform.
         use_dsp : bool (default = True)
             whether to transform AAI index encodings via DSP techniques and a Fourier

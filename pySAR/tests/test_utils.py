@@ -16,7 +16,7 @@ import utils as utils
 class UtilsTest(unittest.TestCase):
 
     def setUp(self):
-        """ Import all test datasets """
+        """ Import all test datasets. """
         try:
             self.test_dataset1 = pd.read_csv(os.path.join('tests','test_data',
                 'test_thermostability.txt'),sep=",", header=0)
@@ -47,13 +47,12 @@ class UtilsTest(unittest.TestCase):
         globals.OUTPUT_FOLDER = os.path.join('tests',globals.OUTPUT_FOLDER)
 
     def test_valid_sequence(self):
-        """ Test Valid/Invalid Sequences utility function """
+        """ Test Valid/Invalid Sequences utility function. """
 
         invalid_seqs = [["A", "B", "C", "D"],["E","F","J"]]
         invalid_seqs1 = ["ZZZZZZ"]
         invalid_seqs2 = [["Z",2,"Y","X",321]]
         invalid_seqs3 = "XXZXXZXXZ"
-
 #1.)
         #testing with invalid sequences
         self.assertIsNotNone(utils.valid_sequence(invalid_seqs))
@@ -84,7 +83,7 @@ class UtilsTest(unittest.TestCase):
         self.assertIsNone(utils.valid_sequence(self.test_dataset1['sequence'][random_seq2]))
 
     def test_remove_gaps(self):
-        """ Test utility function that removes any gaps from sequences """
+        """ Test utility function that removes any gaps from sequences. """
 
         seq1 = ["A", "B", "C", "D","-"]
         seq2 = ["A", "B", "C", "D","-","-", "-", "E", "F","-"]
@@ -118,7 +117,7 @@ class UtilsTest(unittest.TestCase):
         self.assertNotIn('-',seq4_test)
 
     def test_flatten(self):
-        """ Test flatten utility function that flattens an array or list"""
+        """ Test flatten utility function that flattens an array or list. """
 
         seq1 = np.array([[1, 2, 3], [4, 5, 6]], np.int32)
         seq2 = np.array([[1, 2, 3], [4, 5, 6],[7, 8, 9]], np.int32)
@@ -158,21 +157,15 @@ class UtilsTest(unittest.TestCase):
         self.assertIsInstance(flattened_array_5, str)
 
     def test_zero_padding(self):
-        """ Test zero padding utility function that pads an array or list with 0's """
+        """ Test zero padding utility function that pads an array or list with 0's. """
 
         seq1 = np.array([[1, 2, 3, 4, 5], [6, 7, 8]])
         seq2 = [["A", "B", "C"], ["D", "E", "F","G"],["H"]]
         seq3 = np.random.randint(10,90,(4,5,2))
 
-
-        #self.test_dataset3 is the only test dataset that has different sized seqs
-        # print((self.test_dataset2['sequence']))
-        # for x in range(0,len(self.test_dataset3['sequence'])):
-        #     y.append(len(self.test_dataset3['sequence'][x]))
-        # print('here',len(max(self.test_dataset2['sequence'],key=len)))
-
 #1.)
         test_dataset3_padded = utils.zero_padding((self.test_dataset3['sequence']))
+
         #verify all sequences in dataset have been zero-padded to same length
         for seq in range(0,len(test_dataset3_padded)):
             self.assertEqual(len(test_dataset3_padded[seq]), 361)
@@ -201,7 +194,7 @@ class UtilsTest(unittest.TestCase):
         self.assertTrue(padded_seqs3.any() == seq3.any())
 
     def test_create_output_dir(self):
-        """ Testing create output directory utility function """
+        """ Testing create output directory utility function. """
 
         utils.create_output_dir()
 
@@ -211,7 +204,7 @@ class UtilsTest(unittest.TestCase):
         self.assertTrue(os.path.isdir(globals.OUTPUT_FOLDER))
 
     def test_save_results(self):
-        """ Testing save results utility function"""
+        """ Testing save results utility function. """
 
         #create output dir to save results
         utils.create_output_dir()
@@ -244,7 +237,7 @@ class UtilsTest(unittest.TestCase):
         self.assertFalse(os.path.isfile(os.path.join(globals.OUTPUT_FOLDER, 'test_results4.csv')))
 
     def tearDown(self):
-        """ Delete any temp files or folders created during testing process """
+        """ Delete any temp files or folders created during testing process. """
 
         del self.test_dataset1
         del self.test_dataset2

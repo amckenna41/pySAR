@@ -39,9 +39,8 @@ aaindex.get_record('ABCDEFG        ')
 class AAIndexTests(unittest.TestCase):
 
     def setUp(self):
-        """
-        Inititalise AAIndex object and test directory variable
-        """
+        """ Inititalise AAIndex object and test directory variable. """
+
         self.aaindex = AAIndex()
         self.TEST_DIR = "tests/test_data"
 
@@ -53,8 +52,6 @@ class AAIndexTests(unittest.TestCase):
         its presence in the directory will pass the test.
 
         """
-        print('Testing AAIndex download...')
-
         #if AAI1 present in test dir then remove
         if (os.path.isfile(os.path.join(self.TEST_DIR, 'test_aaindex1'))):
             os.remove(os.path.join(self.TEST_DIR, 'test_aaindex1'))
@@ -70,14 +67,10 @@ class AAIndexTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.TEST_DIR, 'aaindex1')),
             'AAI did not download correctly to the {} directory '.format(self.TEST_DIR))
 
-    @unittest.skip("Similarly, don't want to overload the FTP server each time tests are run")
+    @unittest.skip("Don't want to overload the FTP server each time tests are run")
     def test_url(self):
-        """
-        Test Case to check that the URL endpoints used for downloading the AAI databases
-        return a 200 status code.
-
-        """
-        print('Testing AAIndex URLs...')
+        """ Test Case to check that the URL endpoints used for downloading the AAI databases
+        return a 200 status code. """
 
         AA_INDEX1_URL_FTP = "https://www.genome.jp/ftp/db/community/aaindex/aaindex1"
         AA_INDEX1_URL_HTTPS = "https://www.genome.jp/ftp/db/community/aaindex/aaindex1"
@@ -104,14 +97,10 @@ class AAIndexTests(unittest.TestCase):
         #maybe try requests.mock
 
     def test_get_amino_acids(self):
-        """
-        Test Case to check that only valid Amino Acids are used within the AAIndex
-        class.
+        """ Test Case to check that only valid Amino Acids are used within the AAIndex class. """
 
-        """
-        print('Testing Valid Amino Acids...')
-
-        valid_amino_acids = ['-', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+        valid_amino_acids = ['-', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K',
+            'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
         amino_acids = self.aaindex.get_amino_acids()
 
         for aa in amino_acids:
@@ -119,12 +108,9 @@ class AAIndexTests(unittest.TestCase):
                 amino acids: {}'.format(aa, valid_amino_acids))
 
     def test_num_features(self):
-        """
-        Test Case to check that the correct number of indices/features are present
+        """ Test Case to check that the correct number of indices/features are present
         in the AAIndex object. To date, 566 indices are present in the database,
-        features may be added to the AAI in time so the test takes this into account.
-
-        """
+        features may be added to the AAI in time so the test takes this into account. """
         print('Testing correct number of indices...')
 
         self.assertTrue(self.aaindex.get_num_records() >= 566, 'Incorrect number \

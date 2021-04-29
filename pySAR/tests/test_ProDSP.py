@@ -50,3 +50,6 @@ class ProDSPTests(unittest.TestCase):
         pass
 
     pass
+
+proDSP.fft.dtype == dtype('complex128')
+proDSP.rfft.dtype == dtype('complex128')

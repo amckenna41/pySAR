@@ -86,7 +86,7 @@ class Encoding(PySAR):
         utils.create_output_dir()
 
     def aai_encoding(self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',
-        filter_="", verbose=True):
+        filter_=None, verbose=True):
         """
         Encoding all protein sequences using each of the available indices in the
         AAI. The protein spectra of the AAI indices will be generated if use_dsp is true,
@@ -113,7 +113,7 @@ class Encoding(PySAR):
             protein spectra to generate from the FFT of the protein sequences.
         window : str (default = 'hamming')
             window function to apply to ouput of FFT on the protein sequences.
-        filter : str (default = "")
+        filter : str (default = None)
             filter function to apply to ouput of FFT on the protein sequences.
 
         Returns
@@ -145,9 +145,9 @@ class Encoding(PySAR):
         else:
             all_indices = aai_list
 
-        print('\n\n#######################################################################################\n')
+        print('\n#######################################################################################\n')
         print('Encoding using {} AAI combinations with the parameters:\n\nSpectrum: {}\nWindow Function: {} \
-            \nFilter:{}\nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_indices), spectrum,\
+            \nFilter: {}\nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_indices), spectrum,\
             window, filter_, repr(self.model), self.parameters, self.test_split))
         print('#######################################################################################\n')
 
@@ -161,6 +161,8 @@ class Encoding(PySAR):
         5.) Repeat steps 1 - 4 for all indices.
         6.) Output results into a final dataframe, save it and return.
         '''
+
+        start = time.time() #start counter
 
         #using tqdm package to create a progress bar showing encoding progress
         #file=sys.stdout to stop error where iterations were printing out of order
@@ -207,7 +209,7 @@ class Encoding(PySAR):
         end = time.time()
         elapsed = end - start
         print('\n\n##############################################################')
-        print('Elapsed Time for AAI + Descriptor Encoding: {0:.3f} seconds'.format(elapsed))
+        print('Elapsed Time for AAI Encoding: {0:.3f} seconds'.format(elapsed))
 
         #set columns in the output dataframe to each of the values/metrics lists
         aaindex_metrics_= aaindex_metrics_df.copy()
@@ -640,8 +642,7 @@ class Encoding(PySAR):
 
     def __str__(self):
         return "Instance of Encoding Class with attribute values: \
-                \nDataset: {}\n, Activity: {}\n,Algorithm: {}\n Parameters: {}\n\
-                Test Split: {}\n".format(
+                \nDataset: {}\n, Activity: {}\n,Algorithm: {}\n Parameters: {}\nTest Split: {}\n".format(
                     self.dataset, self.activity,self.algorithm,\
                     self.parameters, self.test_split
         )

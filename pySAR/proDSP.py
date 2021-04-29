@@ -111,43 +111,65 @@ class ProDSP():
                        'kaiser']
         all_filters = ['savgol']
 
-        #get closest correct spectra from user input, if no close match then raise error
-        spectra_matches = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))[0]
+        #set required input parameters if they are none, raise error if spectrum is none
+        if self.spectrum == None:
+            raise ValueError('Spectrum input parameter cannot be None.")
+        if self.window == None:
+            self.window = 1
+        if self.filter_ == None:
+            self.filter_ = ""
 
-        if spectra_matches == [] or spectra_matches == None:
+        if self.window == None:
+          self.window = 1
+        else:
+
+        if self.spectrum == None:
             raise ValueError('Invalid input Spectrum type ({}) not available in valid \
                 spectra: {}'.format(self.spectrum, all_spectra))
         else:
-            self.spectra = spectra_matches
+            #get closest correct spectra from user input, if no close match then raise error
+            spectra_matches = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))[0]
 
-        #get closest correct window function from user input
-        window_matches = (get_close_matches(self.window, all_windows, cutoff=0.4))
+            if spectra_matches == []:
+                raise ValueError('Invalid input Spectrum type ({}) not available in valid \
+                    spectra: {}'.format(self.spectrum, all_spectra))
+            else:
+                self.spectra = spectra_matches
 
-        #check if sym=True or sym=False
-
-        #get window function specified by window input parameter
-        if window_matches != [] and window_matches != None:
-            if window_matches[0] == 'hamming':
-                self.window = hamming(self.signal_len, sym=True)
-            elif window_matches[0] == "blackman":
-                self.window = blackman(self.signal_len, sym=True)
-            elif window_matches[0] == "blackmanharris":
-                self.window = blackmanharris(self.signal_len, sym=True)
-            elif window_matches[0] == "bartlett":
-                self.window = bartlett(self.signal_len, sym=True)
-            elif window_matches[0] == "gaussian":
-                self.window = gaussian(self.signal_len, std=7,sym=True)
-            elif window_matches[0] == "kaiser":
-                self.window = kaiser(self.signal_len, beta=14,sym=True)
+        if self.window == None:
+            self.window = 1
         else:
-            self.window = 1     #window = 1 is the same as applying no window
+            #get closest correct window function from user input
+            window_matches = (get_close_matches(self.window, all_windows, cutoff=0.4))
 
-        #get closest correct filter from user input
-        filter_matches = (get_close_matches(self.window, all_filters, cutoff=0.4))
+            #check if sym=True or sym=False
 
-        #set filter attribute according to approximate user input
-        if filter_matches ==[] or filter_matches == None:
-            self.filter_ = ""    #no filter
+            #get window function specified by window input parameter
+            if window_matches != []:
+                if window_matches[0] == 'hamming':
+                    self.window = hamming(self.signal_len, sym=True)
+                elif window_matches[0] == "blackman":
+                    self.window = blackman(self.signal_len, sym=True)
+                elif window_matches[0] == "blackmanharris":
+                    self.window = blackmanharris(self.signal_len, sym=True)
+                elif window_matches[0] == "bartlett":
+                    self.window = bartlett(self.signal_len, sym=True)
+                elif window_matches[0] == "gaussian":
+                    self.window = gaussian(self.signal_len, std=7,sym=True)
+                elif window_matches[0] == "kaiser":
+                    self.window = kaiser(self.signal_len, beta=14,sym=True)
+            else:
+                self.window = 1     #window = 1 is the same as applying no window
+
+        if self.filter_ == None:
+            self.filter_ = ""
+        else:
+            #get closest correct filter from user input
+            filter_matches = (get_close_matches(self.filter_, all_filters, cutoff=0.4))
+
+            #set filter attribute according to approximate user input
+            if filter_matches == []:
+                self.filter_ = ""           #no filter
 
     def encode_seqs(self):
         """
