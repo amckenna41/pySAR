@@ -148,7 +148,7 @@ class Descriptors():
         self.seq_order_coupling_number = pd.DataFrame()
         self.quasi_seq_order = pd.DataFrame()
         self.pseudo_aa_composition = pd.DataFrame()
-        self.amphipilic_pseudo_aa_composition = pd.DataFrame()
+        self.amp_pseudo_aa_composition = pd.DataFrame()
         self.all_descriptors = pd.DataFrame()
 
         #try importing descriptors csv with pre-calculated descriptor values,
@@ -220,7 +220,7 @@ class Descriptors():
         self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]
         self.quasi_seq_order = descriptor_df.iloc[:,9690:9790]
         self.pseudo_aa_composition = descriptor_df.iloc[:,9790:9840]
-        self.amphipilic_pseudo_aa_composition = descriptor_df.iloc[:,9840:9920]
+        self.amp_pseudo_aa_composition = descriptor_df.iloc[:,9840:9920]
         self.all_descriptors = descriptor_df.iloc[:,:]
 
     def get_aa_composition(self):
@@ -875,7 +875,7 @@ class Descriptors():
         #convert calculated Ampiphillic Psuedo_AAComp values into dataframe
         amp_pseudo_AAComp_df = pd.DataFrame(data=amp_pseudo_AAComp, columns=keys)
 
-        self.amphipilic_pseudo_aa_composition = amp_pseudo_AAComp_df  #set descriptor attribute
+        self.amp_pseudo_aa_composition = amp_pseudo_AAComp_df  #set descriptor attribute
 
         return amp_pseudo_AAComp_df
 
@@ -1055,7 +1055,7 @@ class Descriptors():
         if (getattr(self, "pseudo_aa_composition").empty):
                 self.pseudo_aa_composition = self.get_pseudo_aa_composition()
 
-        if (getattr(self, "amphipilic_pseudo_aa_composition").empty):
+        if (getattr(self, "amp_pseudo_aa_composition").empty):
                 self.amp_pseudo_aa_composition = self.get_amp_pseudo__aa_composition()
 
         #append all calculated descriptors to list
@@ -1087,7 +1087,7 @@ class Descriptors():
         'normalized_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation', \
         'ctd', 'composition', 'transition', 'distribution', 'conjoint_triad', \
         'seq_order_coupling_number','quasi_seq_order_descriptors',\
-        'pseudo_aa_composition', 'amphipilic_pseudo_aa_composition'
+        'pseudo_aa_composition', 'amp_pseudo_aa_composition'
 
         ]
         return valid_desc
