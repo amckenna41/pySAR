@@ -30,6 +30,8 @@ from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, \
 
 #double check seqorder coupling number maxlag parameter
 ###big change made to conjojt triad, replace range(8) to range(7)?
+#fix comments for pseudo & amp AAC
+#psuedo spelt wrong a lot.
 class Descriptors():
 
     """
@@ -780,7 +782,7 @@ class Descriptors():
             sequences. When lambda=0, the output is the 20-D amino acid composition.
         weight : float (default = 0.05)
             weight factor is designed for the users to put weight on the additional
-            psuedo AAC components with respect to the conventional AA components.
+            pseudo AAC components with respect to the conventional AA components.
             The user can select any value within the region from 0.05 to 0.7.
         AAP : list (default = AAP=[PseudoAAC._Hydrophobicity,
                 PseudoAAC._hydrophilicity, PseudoAAC._residuemass])
@@ -793,11 +795,11 @@ class Descriptors():
 
         Returns
         -------
-        psuedo_AAComp_df : pd.DataFrame
+        pseudo_AAComp_df : pd.DataFrame
             dataframe of pseudo amino acid composition descriptor values
             for the protein sequences.
         """
-        print('\nGetting Psuedo Amino Acid Composition Descriptors...')
+        print('\nGetting Pseudo Amino Acid Composition Descriptors...')
         print('####################################################\n')
 
         #if lambda not a non-negative int then set to default value of 30
@@ -821,7 +823,7 @@ class Descriptors():
         #convert calculated PsuedoAAComp values into dataframe
         psuedo_AAComp_df = pd.DataFrame(data=psuedo_AA_Comp, columns=keys)
 
-        self.pseudo_AAC = psuedo_AAComp_df      #set descriptor attribute
+        self.pseudo_aa_composition = psuedo_AAComp_df      #set descriptor attribute
 
         return psuedo_AAComp_df
 
@@ -845,7 +847,7 @@ class Descriptors():
 
         Returns
         -------
-        amp_pseudo_AAComp_df : pd.DataFrame
+        amphipilic_pseudo_aa_composition_df : pd.DataFrame
             dataframe of Amphiphilic pseudo amino acid composition descriptor
             values for the protein sequences.
         """
@@ -873,7 +875,7 @@ class Descriptors():
         #convert calculated Ampiphillic Psuedo_AAComp values into dataframe
         amp_pseudo_AAComp_df = pd.DataFrame(data=amp_pseudo_AAComp, columns=keys)
 
-        self.amp_pseudo_AAC = amp_pseudo_AAComp_df  #set descriptor attribute
+        self.amphipilic_pseudo_aa_composition = amp_pseudo_AAComp_df  #set descriptor attribute
 
         return amp_pseudo_AAComp_df
 
@@ -960,14 +962,14 @@ class Descriptors():
             if (getattr(self, desc).empty):
               self.get_quasi_seq_order()
             desc_encoding = self.quasi_seq_order
-        elif desc == 'pseudo_AAC':
+        elif desc == 'pseudo_aa_composition':
             if (getattr(self, desc).empty):
               self.get_pseudo_aa_composition()
-            desc_encoding = self.pseudo_AAC
-        elif desc == 'amp_pseudo_AAC':
+            desc_encoding = self.pseudo_aa_composition
+        elif desc == 'amp_pseudo_aa_composition':
             if (getattr(self, desc).empty):
               self.get_amp_pseudo__aa_composition()
-            desc_encoding = self.amp_pseudo_AAC
+            desc_encoding = self.amp_pseudo_aa_composition
         else:
           desc_encoding = None      #no matching descriptor
 
@@ -1051,17 +1053,17 @@ class Descriptors():
                 self.quasi_seq_order = self.get_quasi_seq_order()
 
         if (getattr(self, "pseudo_aa_composition").empty):
-                self.pseudo_AAC = self.get_pseudo_aa_composition()
+                self.pseudo_aa_composition = self.get_pseudo_aa_composition()
 
         if (getattr(self, "amphipilic_pseudo_aa_composition").empty):
-                self.amp_pseudo_AAC = self.get_amp_pseudo__aa_composition()
+                self.amp_pseudo_aa_composition = self.get_amp_pseudo__aa_composition()
 
         #append all calculated descriptors to list
         all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
                            self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
                            self.geary_autocorrelation, self.composition, self.transition,
                            self.distribution, self.conjoint_triad, self.seq_order_coupling_number,
-                           self.quasi_seq_order, self.pseudo_AAC, self.amp_pseudo_AAC]
+                           self.quasi_seq_order, self.pseudo_aa_composition, self.amp_pseudo_aa_composition]
 
         #concatenate individual descriptor dataframe attributes
         all_desc_df = pd.concat(all_desc, axis = 1)
@@ -1205,20 +1207,20 @@ class Descriptors():
         self._quasi_seq_order = val
 
     @property
-    def pseudo_AAC(self):
-        return self._pseudo_AAC
+    def pseudo_aa_composition(self):
+        return self._pseudo_aa_composition
 
-    @pseudo_AAC.setter
-    def pseudo_AAC(self, val):
-        self._pseudo_AAC = val
+    @pseudo_aa_composition.setter
+    def pseudo_aa_composition(self, val):
+        self._pseudo_aa_composition = val
 
     @property
-    def amp_pseudo_AAC(self):
-        return self._amp_pseudo_AAC
+    def amp_pseudo_aa_composition(self):
+        return self._amp_pseudo_aa_composition
 
-    @amp_pseudo_AAC.setter
-    def amp_pseudo_AAC(self, val):
-        self._amp_pseudo_AAC = val
+    @amp_pseudo_aa_composition.setter
+    def amp_pseudo_aa_composition(self, val):
+        self._amp_pseudo_aa_composition = val
 
     @property
     def all_descriptors(self):
@@ -1245,8 +1247,8 @@ class Descriptors():
         del self._conjoint_triad
         del self._seq_order_coupling_number
         del self._quasi_seq_order
-        del self._pseudo_AAC
-        del self._amp_pseudo_AAC
+        del self._pseudo_aa_composition
+        del self._amp_pseudo_aa_composition
 
 ################################################################################
 
