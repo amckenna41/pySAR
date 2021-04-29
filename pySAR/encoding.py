@@ -454,7 +454,7 @@ class Encoding(PySAR):
             encoded using AAI indices + descriptors encoding strategy.
         """
         #create dataframe to store output results from models
-        aai_desc_metrics_df = pd.DataFrame(columns=['Index','Category', 'Descriptor'\
+        aai_desc_metrics_df = pd.DataFrame(columns=['Index','Category', 'Descriptor',\
             'Descriptor Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
 
         #lists to store results for each predictive model
@@ -492,8 +492,8 @@ class Encoding(PySAR):
                 all_descriptors = desc_list
 
         print('\n\n##############################################################\n')
-        print('Encoding using {} AAI and {} descriptor combinations with the parameters:\n \
-            Window: {}\nFilter: {}\nSpectrum: {}\nAlgorithm: {}\nParameters: {}\n \
+        print('Encoding using {} AAI and {} descriptor combinations with the parameters:\n\
+            Window: {}\nFilter: {}\nSpectrum: {}\nAlgorithm: {}\nParameters: {}\n\
             Test Split: {}\n'.format(len(self.aaindex.get_record_codes()), len(all_descriptors),
                 window, filter_, spectrum, repr(self.model), self.parameters, self.test_split))
         print('##################################################################\n')

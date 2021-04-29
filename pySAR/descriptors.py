@@ -33,6 +33,7 @@ from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, \
 #fix comments for pseudo & amp AAC
 #psuedo spelt wrong a lot.
 #change any amphipilic_pseudo_aa_composition to amp_pseudo_aa_composition etc
+#when calling get_descriptor() - check if attribute exists first, if it does then return it else calculate
 class Descriptors():
 
     """
@@ -251,7 +252,7 @@ class Descriptors():
         aa = list((AAComposition.CalculateAAComposition(self.protein_seqs[0])).keys())
 
         #iterate through all sequences, calculate descriptor values and append to aa_comp list
-        time.sleep(1)
+        # time.sleep(1)
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="AA Composition", file=sys.stdout):
             AAComp=AAComposition.CalculateAAComposition(seq)
             aa_comp.append(list(AAComp.values()))
@@ -295,7 +296,7 @@ class Descriptors():
         dipeptides = list((AAComposition.CalculateDipeptideComposition(self.protein_seqs[0])).keys())
 
         #iterate through all sequences, calculate descriptor values and append to dipeptide_comp list
-        time.sleep(1)
+        # time.sleep(1)
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Dipeptide Composition", file=sys.stdout):
             AADipeptide=AAComposition.CalculateDipeptideComposition(seq)
             dipeptide_comp.append(list(AADipeptide.values()))
@@ -612,7 +613,7 @@ class Descriptors():
         keys = list((CTD.CalculateCTD(self.protein_seqs[0])).keys())
 
         #iterate through sequences, calculating the CTD values using PyBioMed Package
-        time.sleep(1)
+        # time.sleep(1)
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="CTD", file=sys.stdout):
             ctd_=CTD.CalculateCTD(seq)
             ctd.append(list(ctd_.values()))
