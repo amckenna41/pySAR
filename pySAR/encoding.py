@@ -373,7 +373,7 @@ class Encoding(PySAR):
         end = time.time()
         elapsed = end - start
         print('\n\n##############################################################')
-        print('Elapsed Time for Descriptor Encoding: {0:.3f} seconds'.format(elapsed))
+        print('Elapsed Time for Descriptor Encoding: {0:.3f} seconds\n'.format(elapsed))
 
         #if using combinations of 2 or 3 descriptors, group every 2 or 3 descriptor
         #   groups into one element in the descriptor group list
@@ -536,28 +536,29 @@ class Encoding(PySAR):
                 if desc_combo == 2 or desc_combo == 3:
                     for de in descr:
 
-                        # descriptor_list.append(getattr(desc, de)) #get descriptor attribute
-                        descriptor_list.append(desc.get_descriptor_encoding(de)) #get descriptor attribute
-                        descriptor_group_.append(desc.descriptor_groups['_'+de])
+                        descriptor_list.append(getattr(desc, de)) #get descriptor attribute
+                        # descriptor_list.append(desc.get_descriptor_encoding(de)) #get descriptor attribute
+                        descriptor_group_.append(desc.descriptor_groups[de])
 
-                                # desc_ = pd.concat(descriptor_list,axis=1)  check if this is needed here
-                    desc_ = descriptor_list
+                    desc_ = pd.concat(descriptor_list,axis=1) # check if this is needed here
+                    # desc_ = descriptor_list
 
                     #concatenate each descriptor dataframe into one
-                    if desc_combo == 2:
-                        descriptor_list_concat = np.concatenate((desc_[0],desc_[1]),axis = 1)
-                    elif desc_combo == 3:
-                        descriptor_list_concat = np.concatenate((desc_[0],desc_[1],desc_[2]),axis = 1)
-
-                    desc_ = descriptor_list_concat
+                    # if desc_combo == 2:
+                    #     descriptor_list_concat = np.concatenate((desc_[0],desc_[1]),axis = 1)
+                    # elif desc_combo == 3:
+                    #     descriptor_list_concat = np.concatenate((desc_[0],desc_[1],desc_[2]),axis = 1)
+                    #
+                    # desc_ = descriptor_list_concat
 
                 #if only using 1 descriptor
                 else:
-                    # desc_ = getattr(desc, descr) #get descriptor attribute
-                    desc_ = desc.get_descriptor_encoding(descr)
-                    descriptor_group_.append(desc.descriptor_groups['_'+descr])
+                    desc_ = getattr(desc, descr) #get descriptor attribute
+                    # desc_ = desc.get_descriptor_encoding(descr)
+                    descriptor_group_.append(desc.descriptor_groups[descr])
 
-                X = pd.DataFrame(desc_)
+                # X = pd.DataFrame(desc_)
+                X = desc_
 
                 #get protein activity values
                 Y  = self.get_activity()

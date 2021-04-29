@@ -32,6 +32,7 @@ from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, \
 ###big change made to conjojt triad, replace range(8) to range(7)?
 #fix comments for pseudo & amp AAC
 #psuedo spelt wrong a lot.
+#change any amphipilic_pseudo_aa_composition to amp_pseudo_aa_composition etc
 class Descriptors():
 
     """

@@ -230,7 +230,8 @@ def save_results(results, name):
     elif isinstance(results, pd.DataFrame) or \
         isinstance(results,pd.Series):
 
-        results.to_csv(os.path.join(globals.OUTPUT_FOLDER, name+'.csv'), index=False)
+        results.reset_index(drop=True, inplace=True)
+        results.to_csv(os.path.join(globals.OUTPUT_FOLDER, name+'.csv'))
 
     else:
         raise TypeError('Results Object must be of type: dict, pd.Series or \
