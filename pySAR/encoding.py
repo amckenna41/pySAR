@@ -325,14 +325,15 @@ class Encoding(PySAR):
                 for de in descr:
 
                     descriptor_list.append(getattr(desc, de))
-                    descriptor_group_.append(desc.descriptor_groups['_'+de])
+                    descriptor_group_.append(desc.descriptor_groups[de])
 
                 desc_ = pd.concat(descriptor_list,axis=1) #concatenate descriptors
                 # desc_ = descriptor_list
                 # desc_ = pd.DataFrame(descriptor_list)
             else:
                 desc_ = getattr(desc, descr)
-                descriptor_group_.append(desc.descriptor_groups['_'+descr])
+                # descriptor_group_.append(desc.descriptor_groups['_'+descr])
+                descriptor_group_.append(desc.descriptor_groups[descr])
 
             X = desc_
 
@@ -410,7 +411,7 @@ class Encoding(PySAR):
 
         return desc_metrics_df_
 
-!*! error with SOCNum calculation
+# !*! error with SOCNum calculation
     def aai_descriptor_encoding(self, aai_list=None, desc_list=None, desc_combo=1,
         use_dsp = True, spectrum='power', window='hamming', filter_="",verbose=True):
         """

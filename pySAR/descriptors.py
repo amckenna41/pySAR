@@ -217,8 +217,8 @@ class Descriptors():
         self.conjoint_triad = descriptor_df.iloc[:,9287:9630]
         self.seq_order_coupling_number = descriptor_df.iloc[:,9630:9690]
         self.quasi_seq_order = descriptor_df.iloc[:,9690:9790]
-        self.pseudo_AAC = descriptor_df.iloc[:,9790:9840]
-        self.amp_pseudo_AAC = descriptor_df.iloc[:,9840:9920]
+        self.pseudo_aa_composition = descriptor_df.iloc[:,9790:9840]
+        self.amphipilic_pseudo_aa_composition = descriptor_df.iloc[:,9840:9920]
         self.all_descriptors = descriptor_df.iloc[:,:]
 
     def get_aa_composition(self):
@@ -761,7 +761,7 @@ class Descriptors():
 
         return quasi_seq_order_df
 
-    def get_pseudo_AAC(self, lambda_=30, weight=0.05, AAP=[PseudoAAC._Hydrophobicity,
+    def get_pseudo_aa_composition(self, lambda_=30, weight=0.05, AAP=[PseudoAAC._Hydrophobicity,
             PseudoAAC._hydrophilicity, PseudoAAC._residuemass]):
         """
         Calculate pseudo Amino Acid Composition features for the protein sequences.
@@ -825,7 +825,7 @@ class Descriptors():
 
         return psuedo_AAComp_df
 
-    def get_amp_pseudo_AAC(self, lambda_=30, weight=0.5):
+    def get_amp_pseudo__aa_composition(self, lambda_=30, weight=0.5):
         """
         Calculate Amphiphilic (Type II) Pseudo amino acid composition features
         for the protein sequences.
@@ -962,11 +962,11 @@ class Descriptors():
             desc_encoding = self.quasi_seq_order
         elif desc == 'pseudo_AAC':
             if (getattr(self, desc).empty):
-              self.get_pseudo_AAC()
+              self.get_pseudo_aa_composition()
             desc_encoding = self.pseudo_AAC
         elif desc == 'amp_pseudo_AAC':
             if (getattr(self, desc).empty):
-              self.get_amp_pseudo_AAC()
+              self.get_amp_pseudo__aa_composition()
             desc_encoding = self.amp_pseudo_AAC
         else:
           desc_encoding = None      #no matching descriptor
@@ -1051,10 +1051,10 @@ class Descriptors():
                 self.quasi_seq_order = self.get_quasi_seq_order()
 
         if (getattr(self, "pseudo_aa_composition").empty):
-                self.pseudo_AAC = self.get_pseudo_AAC()
+                self.pseudo_AAC = self.get_pseudo_aa_composition()
 
         if (getattr(self, "amphipilic_pseudo_aa_composition").empty):
-                self.amp_pseudo_AAC = self.get_amp_pseudo_AAC()
+                self.amp_pseudo_AAC = self.get_amp_pseudo__aa_composition()
 
         #append all calculated descriptors to list
         all_desc = [self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
