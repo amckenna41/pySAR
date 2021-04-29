@@ -113,17 +113,6 @@ class ProDSP():
 
         #set required input parameters if they are none, raise error if spectrum is none
         if self.spectrum == None:
-            raise ValueError('Spectrum input parameter cannot be None.")
-        if self.window == None:
-            self.window = 1
-        if self.filter_ == None:
-            self.filter_ = ""
-
-        if self.window == None:
-          self.window = 1
-        else:
-
-        if self.spectrum == None:
             raise ValueError('Invalid input Spectrum type ({}) not available in valid \
                 spectra: {}'.format(self.spectrum, all_spectra))
         else:
