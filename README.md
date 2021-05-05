@@ -1,6 +1,16 @@
-# pySAR <a name="TOP"></a>
 
-| Logo |
+![alt text](https://raw.githubusercontent.com/amckenna41/pySAR/main/pySAR.png)
+
+# pySAR <a name="TOP"></a>
+[![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
+![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)
+![PythonV](https://img.shields.io/pypi/pyversions/Django?logo=2)
+[![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
+
+
+pySAR is a Python library for analysing Sequence Activity Relationships (SARs) of protein sequences. pySAR offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features. The software uses physiochemical and biochemical features from the Amino Acid Index (AAI) database as well as allowing for the calculation of a range of structural protein descriptors.<br>
+After finding the optimal technique and feature set at which to encode your dataset of sequences, pySAR can then be used to build a predictive regression model with the training data being that of the encoded sequences and training labels being the experimentally pre-calculated activity values for each protein sequence. The model can then be used to predict the activity/fitness value of a new unseen sequence.
+
 ## status
 > Development Stage
 
@@ -54,70 +64,48 @@ return '<Class Name: {}>'.format(self)
 - [ ] license logo
 - [ ] leave = False on 2nd loop
 <!-- #maybe split up multiple descriptor names/categorties in results DF into seperate columns -->
-[![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
 
-![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)
 
-pySAR is a Python library for analysing the sequence activity relationship (SAR)
-between proteins. pySAR allows the encoding of protein sequences using indices
-from the AAIndex database [] via Digital Signal Processing transformations and
-through specific physicochemical and structural protein descriptors.
 
 ## Installation
 
-To install, clone this repository locally:
+Install using pip:
 
 ```bash
-pip3 install pySAR
-cd pySAR
-```
-
-Install required dependencies and packages:
-```python
-python setup.py install
+pi3 install pySAR
 ```
 
 ## Usage
 
-### Local imports
-```python
-
-from utils import *
-from model import *
-from proDSP import *
-from evaluate import *
-from plots import *
-from descriptors import *
-from pySAR import *
-from encoding import *
-```
-
-### Building predictive model from AAI and or protein descriptors, e.g the below code
-will build a PlsRegression model using the AAIndex Indices CIDH920105 & PALJ810116
-and the amino acid composition descriptor. The 2 indices are encoded via the power
+### Building predictive model from AAI and or protein descriptors:
+e.g the below code will build a PlsRegression model using the AAI index CIDH920105 and the amino acid composition descriptor. The index is passed through a DSP pipeline and is transformed into its informational protein spectra using the power spectra, with a hamming window function applied to the output of the FFT.
 spectrum after a window function is applied.
 
 ```python
+#first-party imports
+from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+from aaindex import  AAIndex
+from model import Model
+from proDSP import ProDSP
+from evaluate import Evaluate
+import utils as utils
+from plots import plot_reg
+import descriptors as desc
 
-pySAR = PySAR(dataset="dataset.txt",seq_col="sequence", activity="activity", aa_indices=
-    ["CIDH920105","PALJ810116"], window="hamming", filter="", spectrum="power", descriptors=
-    ["aa_comp"] algorithm = "PlsRegression", parameters={}, test_split=0.2)
+pySAR = PySAR(dataset="dataset.txt",seq_col="sequence", activity="activity",algorithm = "PlsRegression", parameters={}, test_split=0.2)
 
+results_df = pySAR.encode_aai_desc(indices="CIDH920105", descriptors="aa_composition", spectrum="power", window="hamming")
 
-**when creaitn instance of pySAR
-
-
+```
 
 ### Encoding using all 566 AAIndex indices
 ```python
 
-#
+#create instance of Encoding class, inherits from pySAR class
 encoding = Encoding(dataset="dataset.txt", activity="activity_col",
-  algorithm="RandomForest", parameters={"":"","":"", })
+  algorithm="RandomForest", parameters={"n_estimators":"200","max_depth":"50"})
 
-aai_encoding = encoding.aai_encoding(use_dsp=True, spectrum='power', window='hamming', verbose=True)
-
-
+aai_encoding = encoding.aai_encoding(spectrum='imaginary', window='blackman')
 
 ```
 ### Encoding using list of 4 AAIndex indices, with no DSP functionalities
@@ -126,7 +114,7 @@ aai_encoding = encoding.aai_encoding(use_dsp=True, spectrum='power', window='ham
 encoding = Encoding(dataset="dataset.txt", activity="activity_col",
   algorithm="PLSRegression", parameters={"":"","":"", })
 
-aai_encoding = encoding.aai_encoding(use_dsp=False, aai_list=["PONP800102","RICJ880102","ROBB760107","KARS160113"], verbose=True)
+aai_encoding = encoding.aai_encoding(use_dsp=False, aai_list=["PONP800102","RICJ880102","ROBB760107","KARS160113"])
 
 
 ```
@@ -158,6 +146,25 @@ where protein_seqs is the dataset of protein sequences, desc_dataset is the name
 of the ouput csv used to store the calculated descriptors of the protein sequences
 and all_desc means that the class will get and calculate all descriptors.
 
+### Get record from AAIndex database
+
+```python
+
+  desc = Descriptor(protein_seqs = data, desc_dataset = "descriptors.csv",
+      all_desc=True)
+
+```
+## Output Results
+
+| Descriptor  | Index |         | R2  | RMSE | MSE         
+| ------------- | ------------- |
+| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  |
+
+| Command | Description |
+| --- | --- |
+| git status | List all new or modified files |
+| git diff | Show file differences that haven't been staged |
 
 ## System Requirements ##
 
@@ -180,9 +187,8 @@ MODULE_NAME ->
 
 * `/pySAR/PyBioMed` - package partially forked from https://github.com/gadsbyfly/PyBioMed, used in
 the calculation of the protein descriptors.
-* `/Resuts` - stores all calculated results from the evaluation of a variety of protein
-encoding strategies using pySAR.
-* `/pySAR/tests` - unit and integration tests for pySAR
+* `/Results` - stores all calculated results that were generated for the research article, studying the SAR for a thermostability dataset.
+* `/pySAR/tests` - unit and integration tests for pySAR.
 * `/pySAR/data` - all required data and datasets are stored in this folder.
 
 
@@ -192,4 +198,10 @@ If you have any questions or comments, please contact: amckenna41@qub.ac.uk @
 
 [Back to top](#TOP)
 
-.. |Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png
+|Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png
+
+
+Install required dependencies and packages:
+```python
+python setup.py install
+```
