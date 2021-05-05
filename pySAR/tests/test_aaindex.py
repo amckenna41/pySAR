@@ -4,38 +4,14 @@
 
 import os
 import sys
+import numpy as np
 from aaindex import AAIndex
 from globals import DATA_DIR, OUTPUT_FOLDER, OUTPUT_DIR
 import unittest
 import requests
 import urllib.request
 
-#assert calling this function with int or float etc rasies a typeerror
-    # def get_ref_from_code(self, feature_code):
-    #
-    #   try:
-    #       feature_code.strip()
-    #   except:
-    #     raise TypeError('Input parameter {} is not of correct datatype string, got {}' \
-    #         .format(feature_code, type(feature_code)))
-    #
-    #
-    #   #check that inputted feature_code does exist in the AAI1
-    #   if feature_code not in (self.get_record_codes()):
-    #         raise ValueError('Feature index {} not in AAI'.format(feature_code))
-    #
-    #   values = (self.aaindex_json[feature_code]['refs'])
-    #
-    #   return values
-
-
-#test get_amino_acids_encoding() <- test output shape, type, 21 x 21.
-# test '-' not in aaindex.get_amino_acids func
-
-#test aaindex.get_ref_from_code('abc') has the correct dict keys, refs, notes etc.
 #test whitespace functionality
-
-aaindex.get_record('ABCDEFG        ')
 class AAIndexTests(unittest.TestCase):
 
     def setUp(self):
@@ -44,30 +20,28 @@ class AAIndexTests(unittest.TestCase):
         self.aaindex = AAIndex()
         self.TEST_DIR = "tests/test_data"
 
-    @unittest.skip("Don't want to overload the FTP server each time tests are run")
+    @unittest.skip("Don't want to overload the FTP server each time tests are run.")
     def test_download(self):
-        """
-        Test Case to check that the download functionality works for the required AAI1 file.
+        """ Test Case to check that the download functionality works for the required AAI1 file.
         The file will firstly be removed from the test directory and then redownloaded, and
-        its presence in the directory will pass the test.
-
-        """
+        its presence in the directory will pass the test. """
+#1.)
         #if AAI1 present in test dir then remove
         if (os.path.isfile(os.path.join(self.TEST_DIR, 'test_aaindex1'))):
             os.remove(os.path.join(self.TEST_DIR, 'test_aaindex1'))
 
-        #Assert that OSError exception raised when erroneous directory input to download func
+        #assert that OSError exception raised when erroneous directory input to download func
         with self.assertRaises(OSError):
             self.aaindex.download_aaindex(save_dir="Non-existent-directory")
-
+#2.)
         #download AAI1 to local test directory
         self.aaindex.download_aaindex(save_dir=self.TEST_DIR)
 
         #verify download functionality has worked as desired
         self.assertTrue(os.path.isfile(os.path.join(self.TEST_DIR, 'aaindex1')),
-            'AAI did not download correctly to the {} directory '.format(self.TEST_DIR))
+            'AAI did not download correctly to the {} directory.'.format(self.TEST_DIR))
 
-    @unittest.skip("Don't want to overload the FTP server each time tests are run")
+    @unittest.skip("Don't want to overload the FTP server each time tests are run.")
     def test_url(self):
         """ Test Case to check that the URL endpoints used for downloading the AAI databases
         return a 200 status code. """
@@ -77,22 +51,22 @@ class AAIndexTests(unittest.TestCase):
         AA_INDEX2_URL = "https://www.genome.jp/ftp/db/community/aaindex/aaindex2"
         AA_INDEX3_URL = "https://www.genome.jp/ftp/db/community/aaindex/aaindex3"
         wrong_AA_INDEX_URL = "https://www.genome.jp/ftp/BLAH/BLAH/BLAH/BLAH"
-
+#1.)
         #test URL endpoints for AAINDEX are active and give a 200 status code
         r = requests.get(AA_INDEX1_URL, allow_redirects = True)
-        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200')
+        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200.')
 
         r = requests.get(AA_INDEX1_URL_HTTPS, allow_redirects = True)
-        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200')
+        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200.')
 
         r = requests.get(AA_INDEX2_URL, allow_redirects = True)
-        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200')
+        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200.')
 
         r = requests.get(AA_INDEX3_URL, allow_redirects = True)
-        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200')
-
+        self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200.')
+#2.)
         r = requests.get(wrong_AA_INDEX_URL, allow_redirects = True)
-        self.assertEqual(r.status_code, 404, 'Errenous URL, got 404 page not found error')
+        self.assertEqual(r.status_code, 404, 'Errenous URL, got 404 page not found error.')
 
         #maybe try requests.mock
 
@@ -102,40 +76,31 @@ class AAIndexTests(unittest.TestCase):
         valid_amino_acids = ['-', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K',
             'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
         amino_acids = self.aaindex.get_amino_acids()
-
+#1.)
         for aa in amino_acids:
             self.assertIn(aa, valid_amino_acids, 'Amino Acid {} not in valid \
-                amino acids: {}'.format(aa, valid_amino_acids))
+                amino acids: {}.'.format(aa, valid_amino_acids))
 
     def test_num_features(self):
-        """ Test Case to check that the correct number of indices/features are present
+        """ Test Case to check that the correct number of indices/records are present
         in the AAIndex object. To date, 566 indices are present in the database,
         features may be added to the AAI in time so the test takes this into account. """
-        print('Testing correct number of indices...')
-
+#1.)
         self.assertTrue(self.aaindex.get_num_records() >= 566, 'Incorrect number \
-            of features found in AAI, wanted 566, got {}'.format(self.aaindex.get_num_records()))
+            of features found in AAI, wanted 566, got {}.'.format(self.aaindex.get_num_records()))
 
     def test_feature_size(self):
-        """
-        Test Case to check that the AAI has the correct dimensionality. Check that
+        """ Test Case to check that the AAI has the correct dimensionality. Check that
         the number of keys in parsed JSON from the AAI is correct. The test takes
-        into account if more features are added to the database in the future.
-
-        """
-        print('Testing correct dimensionality of AAIndex...')
-
+        into account if more features are added to the database in the future. """
+#1.)
         self.assertTrue(len(self.aaindex.get_record_codes())>=566, 'Incorrect number \
-            of features found in AAI, wanted 566, got {}'.format(len(self.aaindex.get_record_codes())))
+            of features found in AAI, wanted 566, got {}.'.format(len(self.aaindex.get_record_codes())))
 
     def test_get_record_from_code(self):
-        """
-        Test Case to check that the correct amino acid values are returned for
-        the feature/index codes using the get_record_from_code function.
-
-        """
-        print('Testing getting AAi features from their indices...')
-
+        """ Test Case to check that the correct amino acid values are returned for
+        the feature/index codes using the get_record_from_code function. """
+#1.)
         #initialise test feature codes and their correct amino acid values
         feature1 = 'AURR980103'
         feature1_vals = {'A': 1.05, 'L': 0.96, 'R': 0.81, 'K': 0.97, 'N': 0.91,
@@ -160,51 +125,55 @@ class AAIndexTests(unittest.TestCase):
 #1.)
         #get amino acid values for inputted feature/index codes
         record = self.aaindex.get_record_from_code(feature1)
+
+        self.assertIn('description', list(record.keys()))
+        self.assertIn('refs', list(record.keys()))
+        self.assertIn('notes', list(record.keys()))
+        self.assertIn('values', list(record.keys()))
+
         self.assertEqual(feature1_vals, record['values'], 'Amino acid values gotten \
             from AAI do not match the desired values.')
-
-        self.assertIn('description', list(record.keys()))
-        self.assertIn('refs', list(record.keys()))
-        self.assertIn('notes', list(record.keys()))
-        self.assertIn('values', list(record.keys()))
-
+        self.assertEqual(record['description'], "Normalized positional residue frequency at helix termini N' (Aurora-Rose, 1998)")
+        self.assertEqual(record['notes'],'')
+        self.assertTrue(record['refs'].startswith("Aurora, R. and Rose, G."))
 #2.)
         record = self.aaindex.get_record_from_code(feature2)
+
+        self.assertIn('description', list(record.keys()))
+        self.assertIn('refs', list(record.keys()))
+        self.assertIn('notes', list(record.keys()))
+        self.assertIn('values', list(record.keys()))
+
         self.assertEqual(feature2_vals, record['values'], 'Amino acid values gotten \
             from AAI do not match the desired values.')
-
-        self.assertIn('description', list(record.keys()))
-        self.assertIn('refs', list(record.keys()))
-        self.assertIn('notes', list(record.keys()))
-        self.assertIn('values', list(record.keys()))
-
+        self.assertEqual(record['description'], 'pK-a(RCOOH) (Fauchere et al., 1988)')
+        self.assertEqual(record['notes'],'')
+        self.assertTrue(record['refs'].startswith("Fauchere, J.L., Charton, M"))
 #3.)
         record = self.aaindex.get_record_from_code(feature3)
-        self.assertEqual(feature3_vals, record['values'], 'Amino acid values gotten \
-            from AAI do not match the desired values.')
 
         self.assertIn('description', list(record.keys()))
         self.assertIn('refs', list(record.keys()))
         self.assertIn('notes', list(record.keys()))
         self.assertIn('values', list(record.keys()))
 
-
+        self.assertEqual(feature3_vals, record['values'], 'Amino acid values gotten \
+            from AAI do not match the desired values.')
+        self.assertEqual(record['description'], 'Normalized frequency of alpha-helix (Nagano, 1973)')
+        self.assertEqual(record['notes'],'')
+        self.assertTrue(record['refs'].startswith("Nagano, K."))
 #4.)
         record = self.aaindex.get_record_from_code(feature4)
         self.assertIn('description', list(record.keys()))
         self.assertIn('refs', list(record.keys()))
         self.assertIn('notes', list(record.keys()))
         self.assertIn('values', list(record.keys()))
+
         self.assertEqual(feature4_vals, record['values'], 'Amino acid values gotten \
             from AAI do not match the desired values.')
         self.assertEqual(record['description'], 'Information measure for extended (Robson-Suzuki, 1976)')
         self.assertEqual(record['notes'],'')
-        self.assertEqual(record['refs'],"Robson, B. and Suzuki, E. 'Conformational properties of amino acid \
-            residues in globular proteins' J. Mol. Biol. 107, 327-356 (1976); Kawashima, S. and Kanehisa, M.                     \
-            'AAindex: amino acid index database.'  Nucleic Acids Res. 28, 374 (2000).")
-
-
-
+        self.assertTrue(record['refs'].startswith("Robson, B. and Suzuki, E. 'Conformational properties"))
 #5.)
         #testing value error raised when errenous indices put into function
         feature5 = "ABCDEFGH"
@@ -212,22 +181,18 @@ class AAIndexTests(unittest.TestCase):
         feature7 = "blahblahblah"
 
         with self.assertRaises(ValueError):
-            feature_vals = self.aaindex.get_record_from_code(feature5)['values']
+            feature_vals = self.aaindex.get_record_from_code(feature5)
 
         with self.assertRaises(ValueError):
-            feature_vals = self.aaindex.get_record_from_code(feature6)['values']
+            feature_vals = self.aaindex.get_record_from_code(feature6)
 
         with self.assertRaises(ValueError):
-            feature_vals = self.aaindex.get_record_from_code(feature7)['values']
+            feature_vals = self.aaindex.get_record_from_code(feature7)
 
-    def test_feature_codes(self):
-        """
-        Test Case to check that correct feature/index codes are in the parsed JSON
+    def test_record_codes(self):
+        """ Test Case to check that correct feature/record codes are in the parsed JSON
         of all AAI records. Also testing that random erroneous feature codes are
-        not present.
-
-        """
-        print('Testing AAi feature indices...')
+        not present. """
 
         #testing actual index codes
         feature1 = 'VHEG790101'
@@ -244,14 +209,13 @@ class AAIndexTests(unittest.TestCase):
             not found in list of available indices'.format(feature3))
         self.assertIn(feature4, self.aaindex.get_record_codes(), 'Index {} \
             not found in list of available indices'.format(feature4))
-
+#2.)
         #testing bogus index codes
         feature5 = 'ABC1234'
         feature6 = 'ABC12345'
         feature7 = 'ABC123456'
         feature8 = 'ABC1234567'
 
-#2.)
         #testing errenous index codes are not in the AAI1
         self.assertNotIn(feature5, self.aaindex.get_record_codes(), 'Index {} \
             erroneously found in list of available indices.'.format(feature5))
@@ -263,22 +227,19 @@ class AAIndexTests(unittest.TestCase):
             erroneously found in list of available indices.'.format(feature8))
 
     def test_category(self):
-        """
-        Test Case to check that the correct category value is returned for each
-        index.
-
-        """
-        print('Testing AAi categories for indices...')
+        """ Test Case to check that the correct category value is returned for each index. """
 
         feature1 = 'TANS770109'
         feature2 = 'RADA880107'
         feature3 = 'ZIMJ680103'
         feature4 = 'WOLS870102'
-
-        cat1 = self.aaindex.get_category(feature1)
-        cat2 = self.aaindex.get_category(feature2)
-        cat3 = self.aaindex.get_category(feature3)
-        cat4 = self.aaindex.get_category(feature4)
+        err_feature1 = "blahblahblah"
+        err_feature2 = "12345"
+#1.)
+        cat1 = self.aaindex.get_category_from_record(feature1)
+        cat2 = self.aaindex.get_category_from_record(feature2)
+        cat3 = self.aaindex.get_category_from_record(feature3)
+        cat4 = self.aaindex.get_category_from_record(feature4)
 
         self.assertEqual(cat1, 'sec_struct', 'Incorrect category returned, got {} \
             instead of {} '.format(cat1, 'sec_struct'))
@@ -288,14 +249,15 @@ class AAIndexTests(unittest.TestCase):
             instead of {} '.format(cat3, 'polar'))
         self.assertEqual(cat4, 'meta','Incorrect category returned, got {} \
             instead of {} '.format(cat4, 'meta'))
+#2.)
+        with (self.assertRaises(ValueError)):
+            cat5 = self.aaindex.get_category_from_record(err_feature1)
+
+        with (self.assertRaises(ValueError)):
+            cat6 = self.aaindex.get_category_from_record(err_feature2)
 
     def test_aaindex_names(self):
-        """
-        Test Case to check that the correct names/description is returned for each
-        index.
-
-        """
-        print('Testing AAi names from indices...')
+        """ Test Case to check that the correct names/description is returned for each index. """
 
         names = self.aaindex.get_record_names()
 
@@ -318,58 +280,39 @@ class AAIndexTests(unittest.TestCase):
             not end with {}, got {}'.format('(Karkbara-Knisley, 2016)', name4))
 
     def test_aaindex_refs(self):
-        """
-        Test Case to check that the correct references are returned for each
-        index.
-
-        """
-        print('Testing AAI references from indices...')
+        """ Test Case to check that the correct references are returned for each index. """
 
         feature1 = 'VELV850101'
         feature2 = 'QIAN880139'
         feature3 = 'NAKH900112'
         feature4 = 'LEVM760103'
+        feature5 = "blah_blah"
+        feature6 = 123
+#1.)
+        ref1 = self.aaindex.get_ref_from_record(feature1)
+        ref2 = self.aaindex.get_ref_from_record(feature2)
+        ref3 = self.aaindex.get_ref_from_record(feature3)
+        ref4 = self.aaindex.get_ref_from_record(feature4)
 
-        ref1 = self.aaindex.get_ref_from_code(feature1)
-        ref2 = self.aaindex.get_ref_from_code(feature2)
-        ref3 = self.aaindex.get_ref_from_code(feature3)
-        ref4 = self.aaindex.get_ref_from_code(feature4)
-
-        # self.assertTrue(ref1.startswith('Veljkovic'), 'Incorrect index reference, \
-        #     got {} instead of {} '.format(ref1,'' ))
+        self.assertTrue(ref1.startswith('Veljkovic'), 'Incorrect index reference, \
+            got {} instead of {} '.format(ref1,'' ))
         self.assertIn("globular proteins using neural network models", ref2)
         self.assertIn("hydrophobicity of amino acid composition of mitochondrial proteins", ref3)
         self.assertTrue(ref4.endswith('Nucleic Acids Res. 28, 374 (2000).'))
+#2.)
+        with (self.assertRaises(ValueError)):
+            ref5 = self.aaindex.get_ref_from_record(feature5)
+
+        with (self.assertRaises(TypeError)):
+            ref6 = self.aaindex.get_ref_from_record(feature6)
 
     def test_aaindex_encoding(self):
         """ Testing amino acids one-hot encoding. """
-
-        pass
+#1.)
+        encoding = self.aaindex.get_amino_acids_encoding()
+        self.assertEqual(encoding.shape, (20,20))
+        self.assertIsInstance(encoding, np.ndarray)
 
 if __name__ == '__main__':
     #run all unit tests
     unittest.main(verbosity=2)
-
-# python -m unittest tests.test_descriptors -v (-v to give more verbose output)
-# python -m unittest test_module1 test_module2
-# python -m unittest test_module.TestClass
-# python -m unittest test_module.TestClass.test_method
-# python -m unittest tests/test_something.py
-# python -m unittest -v test_module
-# python -m unittest discover -s project_directory -p "*_test.py"
-    # @unittest.expectedFailure
-# assertIs(a, b)
-# assertIsNot(a, b)
-
-# assertIsNone(x)
-# assertIsNotNone(x)
-
-# assertIn(a, b)
-
-# assertNotIn(a, b)
-# assertIsInstance(a, b)
-#
-# assertNotIsInstance(a, b)
-
-# assertGreaterer()
-# assertLess()

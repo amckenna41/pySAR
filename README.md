@@ -46,6 +46,13 @@ return '<Class Name: {}>'.format(self)
 - [ ] Go through each parameters list and refer to its previous reference rather than repeating it.
 - [ ] add cutoff index/value again just for testing
 - [ ] print out default parameters if using them.
+- [ ] remove verbose argument - dont need since tqdm prints progress bar
+- [ ] add if __name__ == "main" to encoding and pySAR class.
+- [ ] split function defs to two lines?
+- [ ] publish to conda?
+- [ ] pypi logo
+- [ ] license logo
+- [ ] leave = False on 2nd loop
 <!-- #maybe split up multiple descriptor names/categorties in results DF into seperate columns -->
 [![pytest](https://github.com/ray-project/tune-sklearn/workflows/Development/badge.svg)](https://github.com/ray-project/tune-sklearn/actions?query=workflow%3A%22Development%22)
 
@@ -61,7 +68,7 @@ through specific physicochemical and structural protein descriptors.
 To install, clone this repository locally:
 
 ```bash
-git clone https://github.com/amckenna41/pySAR.git
+pip3 install pySAR
 cd pySAR
 ```
 

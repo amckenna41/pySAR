@@ -14,7 +14,6 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import SCORERS
 from difflib import get_close_matches
-import pandas as pd
 import numpy as np
 import inspect
 
@@ -29,11 +28,11 @@ class Model():
     Attributes
     ----------
     algorithm : str
-        sklearn regression algorithm to build and fit model with
+        sklearn regression algorithm to build and fit model with.
     parameters : dict (default = {})
         parameters to use for building regression model, by default the models'
         default parameters are used.
-    test_split : int
+    test_split : float (default = 0.2)
         size of the test data.
 
     Methods
@@ -70,7 +69,7 @@ class Model():
         model_matches = get_close_matches(self.algorithm.lower(),[item.lower() \
             for item in self.valid_models], cutoff=0.4)
 
-        #if algorithm is a valid model then set it to self.algorithm else raise error
+        #if algorithm is a valid model then set it to self.algorithm, else raise error
         if model_matches!=[]:
             self.algorithm = model_matches[0]
         else:
@@ -84,8 +83,8 @@ class Model():
     def get_model(self):
         """
         Create instance of model type specifed by input 'algorithm' argument. If
-        parameters input parameter = {} then default parameters are used else set
-        the parameters of the model to the values specified in the parameters input
+        parameters input 'parameters' = {} then default parameters are used else set
+        the parameters of the model to the values specified in the 'parameters' input
         parameter.
 
         Returns
@@ -225,7 +224,11 @@ class Model():
         """
         #validate that X and Y arrays are of the same size
         if (len(X)!=len(Y)):
-            raise ValueError('X and Y input parameters must be of the same length')
+            raise ValueError('X and Y input parameters must be of the same length.')
+
+        #reshape input arrays to 2D arrays
+        X = np.reshape(X, (-1,1))
+        Y = np.reshape(Y, (-1,1))
 
         #if invalid test size input then set to default 0.2
         if (test_size <= 0 or test_size >=1):
@@ -290,7 +293,7 @@ class Model():
     def hyperparameter_tuning(self, parameters, metric='r2', cv=5):
         """
         Hyperparamter tuning of model to find its optimal arrangment of parameters
-        using a Grid search.
+        using a Grid Search.
 
         Parameters
         ----------
@@ -310,7 +313,7 @@ class Model():
         """
         #input parameters parameter must be a dict, if not raise error
         if not isinstance(parameters, dict):
-            raise TypeError('Parameters argument must be of type dict')
+            raise TypeError('Parameters argument must be of type dict.')
 
         #input metric must be in available scoring metrics, if not raise error
         if metric not in sorted(SCORERS.keys()):
@@ -340,36 +343,33 @@ class Model():
         mean_test = grid_result.cv_results_['mean_test_score']
         std_test = grid_result.cv_results_['std_test_score']
         params = grid_result.cv_results_['params']
-        # self.best_score = grid_result.best_score_
-        # self.best_params = grid_result.best_params_
 
-        #predict values of unseen X data
+        #predict values of unseen test data
         best_model_pred = grid_result.predict(self.X_test)
 
         #create instance of Evaluate class and calculate metrics from best model
         eval = Evaluate(self.Y_test,best_model_pred)
-        all_metrics = eval.all_metrics()
 
         #print out results of grid search
-        print('\n#################################################')
-        print('############# Hyperparamter Results ##############')
-        print('#################################################\n')
+        print('\n#############################################################')
+        print('#################### Hyperparamter Results ####################')
+        print('#############################################################\n')
 
-        print('############ Parameters ############\n')
+        print('######################### Parameters ########################\n')
         print('# Best Params -> {}'.format(grid_result.best_params_))
         print('# Model Type -> {}'.format(repr(self)))
         print('# Scoring Metric -> {}'.format(metric))
         print('# CV -> {}'.format(cv))
         print('# Test Split -> {}'.format(self.test_size))
 
-        print('############# Metrics #############\n')
+        print('########################## Metrics ###########################\n')
         print('# Best Score -> {}'.format(grid_result.best_score_))
         print('# RMSE: {} '.format(evals.rmse))
         print('# MSE: {} '.format(evals.mse))
         print('# MAE: {}'.format(evals.mae))
         print('# RPD {}'.format(evals.rpd))
         print('# Variance {}\n'.format(eval.explained_var))
-        print('###################################')
+        print('###############################################################')
 
     def copy(self):
         """
@@ -383,7 +383,7 @@ class Model():
         model_copy = self.model
         return model_copy
 
-    def modelFitted(self):
+    def model_fitted(self):
         """
         Return if model has been fitted, true or false.
 
@@ -452,17 +452,7 @@ class Model():
 
     def __repr__(self):
         return type(self.model).__name__
-        # return "Model of type {} using {} parameters, model fit = {}".format(
-        #     type(self.model).__name__, self.parameters, self.modelFitted())
 
     def __sizeof__(self):
         """ Get size of sklearn model """
         return self.model.__sizeof__()
-
-
-
-# cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
-# n_scores = cross_val_score(model, X, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
-# # report model performance
-# print('Accuracy: %.3f (%.3f)' % (mean(n_scores), std(n_scores)))
-#

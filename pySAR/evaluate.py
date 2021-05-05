@@ -24,15 +24,14 @@ class Evaluate():
 
     Methods
     -------
-    r2_()
-    rmse_()
-    mse_()
-    mae_()
+    r2_(multioutput='uniform_average')
+    rmse_(multioutput='uniform_average')
+    mse_(multioutput='uniform_average')
+    mae_(multioutput='uniform_average')
     rpd_()
-    explained_var_()
+    explained_var_(multioutput='uniform_average')
     max_error_()
     mean_poisson_deviance_()
-    all_metrics()
 
     """
     def __init__(self, Y_true, Y_pred):
@@ -45,7 +44,7 @@ class Evaluate():
         #   if input predicted and observed arrays are not same shape then raise error
         if (self.Y_true.shape) != (self.Y_pred.shape):
             raise ValueError('Observed and predicted values must be of the same length, \
-                Y_true = {} & Y_pred = {}'.format(Y_true.shape, Y_pred.shape))
+                Y_true = {} & Y_pred = {}.'.format(Y_true.shape, Y_pred.shape))
 
         #calculate all metric values for inputs
         self.r2 = self.r2_()
@@ -141,14 +140,14 @@ class Evaluate():
         """
         return self.Y_true.std()/np.sqrt(self.mse_())
 
-    def explained_var_(self, multi_out='uniform_average'):
+    def explained_var_(self, multioutput='uniform_average'):
         """
         Calculates the explained variance regression score. Best possible score is 1.0,
         lower values are worse.
 
         Parameters
         ----------
-        multi_out : str (default = 'uniform_average')
+        multioutput : str (default = 'uniform_average')
             Defines aggregating of multiple output scores. Array-like value
             defines weights used to average scores.
         Returns
@@ -156,7 +155,7 @@ class Evaluate():
         explained_var : float
             The explained variance or ndarray if ‘multioutput’ is ‘raw_values’.
         """
-        return explained_variance_score(self.Y_true, self.Y_pred, multioutput=multi_out)
+        return explained_variance_score(self.Y_true, self.Y_pred, multioutput=multioutput)
 
     def max_error(self):
         """
@@ -180,26 +179,6 @@ class Evaluate():
             A non-negative floating point value (the best value is 0.0).
         """
         return mean_poisson_deviance(self.Y_true, self.Y_true)
-
-    def all_metrics(self):
-        """
-        Calculate all metrics for inputted predicted and observed class labels,
-        return a dict with the keys as the metrics names and values as the metric
-        values.
-
-        Returns
-        -------
-        all_metrics_dict : dict
-            dictionary of all calculated metrics values.
-        """
-        #initialise keys and values for metrics dict
-        keys = ['R2', 'RMSE', 'MSE', 'MAE', 'RPD','Explained Var']
-        vals = [self.r2, self.rmse, self.mse, self.mae, self.rpd, self.explained_var]
-
-        #zip keys and values into a dictionary
-        all_metrics_dict = dict(zip(keys,vals))
-
-        return all_metrics_dict
 
     def __repr__(self):
         return "<Evaluate(Y_true: {} Y_pred: {})>".format(

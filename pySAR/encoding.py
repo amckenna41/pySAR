@@ -29,10 +29,6 @@ import utils as utils
 from descriptors import Descriptors
 from plots import plot_reg
 
-#update comments/docstring of aai_encoding func
-#update comments/docstring of aai_desc_encoding func
-#functuonality where user can input what descriptors / aa_indices they want to encode with??
-#update comnments for input params of all 3 encodings - now accepted user defined indices & desc!
 
 class Encoding(PySAR):
     """
@@ -41,7 +37,7 @@ class Encoding(PySAR):
     value for new and unseen sequences that have not had their activity value
     experimentally measured. The encoding class allows for evaluation of a variety
     of potential techniques at which to numerically encode the protein sequences,
-    allowing for the builiding of predictive regression models that can ultimately
+    allowing for the builiding of predictive regression ML models that can ultimately
     predict the activity value of an unseen protein sequence. The strategies each
     generate a huge number of potential models that you can then assess for performance
     and predictability, selecting the best-performing model out of all those evaluated.
@@ -54,39 +50,42 @@ class Encoding(PySAR):
     pySAR supports 15 different descriptors. The features can be encoeed using
     different combinations, for example, 1 2 or 3 descriptors can be used for the
     descriptor and AAI + Descriptor encoding strategies. In total, this class
-    supports over 410,000 potential ways at which to encode the protein sequences
-    in the building of the predictive models.
+    supports over 410,000 possible ways at which to numerically encode the
+    protein sequences in the building of a predictive ML model.
 
-    Parameters
+    Attributes
     ----------
-    Refer to pySAR module doctring for description of parameters
+    **Refer to pySAR module doctring for description of parameters
 
     Methods
     -------
-    aai_encoding(self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',
-    filter_="", verbose=True)
-        encoding protein sequences using indices from the AAI
-    descriptor_encoding(desc_combo=1, verbose=True):
-        encoding protein sequences using protein descriptors from descrtipors module
-    aai_descriptor_encoding(desc_combo=1, verbose=True, use_dsp=True):
+    aai_encoding(self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',filter_="")
+        encoding protein sequences using indices from the AAI.
+    descriptor_encoding(desc_combo=1):
+        encoding protein sequences using protein descriptors from descrtipors module.
+    aai_descriptor_encoding(desc_combo=1, use_dsp=True):
         encoding protein sequences using indices from the AAI in concatenation
-        with the protein descriptors from the descriptors module
+        with the protein descriptors from the descriptors module.
     """
 
-    def __init__(self, dataset="",seq_col="sequence", activity="", \
-            algorithm="", parameters={}, test_split=0.2,descriptors_csv="descriptors.csv"):
+    def __init__(
+        self, dataset="",seq_col="sequence", activity="", \
+            algorithm="", parameters={}, test_split=0.2,descriptors_csv="descriptors.csv"
+            ):
 
-        super().__init__(dataset=dataset,seq_col=seq_col, \
+        super().__init__(
+            dataset=dataset,seq_col=seq_col, \
                 activity=activity, algorithm=algorithm, parameters=parameters,
-                test_split=test_split, descriptors_csv=descriptors_csv)
-
-        # self.data = self.read_data(data_json)
+                test_split=test_split, descriptors_csv=descriptors_csv
+                )
 
         #create output directory to store all of the program's outputs
         utils.create_output_dir()
 
-    def aai_encoding(self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',
-        filter_=None, verbose=True):
+    def aai_encoding(
+        self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',
+        filter_=None
+        ):
         """
         Encoding all protein sequences using each of the available indices in the
         AAI. The protein spectra of the AAI indices will be generated if use_dsp is true,
@@ -100,27 +99,24 @@ class Encoding(PySAR):
         Parameters
         ----------
         use_dsp : bool (default = True)
-            if true then pass AAI indices encoding through the DSP pipeline to
-            create protein spectra, dictated by instance attributes: spectrum,
+            if true then pass AAI indices encoding through a DSP pipeline to
+            create the protein spectra, dictated by instance attributes: spectrum,
             window and filter. If false then AAI indices encoding used as feature data.
-        verbose : bool (default = True)
-            if true, the progress of the encoding will be output, else output will
-            only occur when the encoding has finished.
         aai_list : list (default = None)
             list of aai indices to use for encoding the predictive models, by default
             all AAI indices will be used.
         spectrum : str (default = 'power')
             protein spectra to generate from the FFT of the protein sequences.
         window : str (default = 'hamming')
-            window function to apply to ouput of FFT on the protein sequences.
+            window function to apply to output of FFT on the protein sequences.
         filter : str (default = None)
-            filter function to apply to ouput of FFT on the protein sequences.
+            filter function to apply to output of FFT on the protein sequences.
 
         Returns
         -------
         aaindex_metrics_df : pd.DataFrame
             dataframe of calculated metric values from generated predictive models
-            encoded using all indices in the AAI for the AAI encoding strategy.
+            encoded using indices in the AAI for the AAI encoding strategy.
         """
 
         #initialise dataframe to store all output results of AAI encoding
@@ -161,13 +157,11 @@ class Encoding(PySAR):
         5.) Repeat steps 1 - 4 for all indices.
         6.) Output results into a final dataframe, save it and return.
         '''
-
         start = time.time() #start counter
 
         #using tqdm package to create a progress bar showing encoding progress
-        #file=sys.stdout to stop error where iterations were printing out of order
-        for index in tqdm(all_indices,unit=" indices",position=0,
-            desc="AAIndex",file=sys.stdout):
+        #   file=sys.stdout to stop error where iterations were printing out of order
+        for index in tqdm(all_indices,unit=" indices",position=0, desc="AAIndex",file=sys.stdout):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_enoding(index)
@@ -181,16 +175,16 @@ class Encoding(PySAR):
             else:
                 X = pd.DataFrame(encoded_seqs)
 
-            #get observed class labels from the dataset
+            #get observed activity values from the dataset
             Y  = self.get_activity()
 
-            #split feature data and class labels into train and test data
+            #split feature data and labels into train and test data
             X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
 
             #fit model to training data
             model_fit = self.model.fit()
 
-            #predict class labels for the test data
+            #predict activity values for the test data
             Y_pred = self.model.predict()
 
             #initilaise instance of Evaluate class
@@ -198,7 +192,7 @@ class Encoding(PySAR):
 
             #append values/results from current AAI encoding iteration to lists
             index_.append(index)
-            category_.append(self.aaindex.get_category(index))
+            category_.append(self.aaindex.get_category_from_record(index))
             r2_.append(eval.r2)
             rmse_.append(eval.rmse)
             mse_.append(eval.mse)
@@ -206,7 +200,7 @@ class Encoding(PySAR):
             mae_.append(eval.mae)
             explained_var_.append(eval.explained_var)
 
-        end = time.time()
+        end = time.time()       #stop counter
         elapsed = end - start
         print('\n\n##############################################################')
         print('Elapsed Time for AAI Encoding: {0:.3f} seconds'.format(elapsed))
@@ -230,9 +224,9 @@ class Encoding(PySAR):
 
         return aaindex_metrics_
 
-    def descriptor_encoding(self, desc_list=None, desc_combo=1, verbose=True):
+    def descriptor_encoding(self, desc_list=None, desc_combo=1):
         """
-        Encoding all protein sequences using each of the available physicochemical
+        Encoding all protein sequences using the available physiochemical
         and structural descriptors. The sequences can be encoded using combinations
         of 1, 2 or 3 of these descriptors, dictated by the desc_combo input parameter:
         set this to 1,2 or 3 for what encoding combination to use, default is 1. Each
@@ -249,8 +243,6 @@ class Encoding(PySAR):
         decs_list : list (default = None)
             list of descriptors to use for encoding, by default all available descriptors
             in the descriptors module will be used for the encoding.
-        verbose : bool (default = True)
-            **refer to aai_encoding(...) docstring.
 
         Returns
         -------
@@ -258,9 +250,6 @@ class Encoding(PySAR):
             dataframe of calculated metric values from generated predictive models
             encoded using all descriptors for the descriptors encoding strategy.
         """
-        #initialise Descriptor object with protein sequences, set all_desc to calculate all descriptors
-        # desc = Descriptors(self.data[self.seq_col], all_desc = True)
-
         #create dataframe to store output results from models
         desc_metrics_df = pd.DataFrame(columns=['Descriptor','Group','R2', 'RMSE',
             'MSE', 'RPD', 'MAE', 'Explained Var'])
@@ -276,13 +265,6 @@ class Encoding(PySAR):
         explained_var_ = []
         msle_ = []
         desc_count = 1  #counters to keep track of current index & descriptor
-
-        #if no descriptors passed into desc_list then use all descriptors by default
-        # **updarte this to the same as aai_descriptor_encoding
-        # if desc_list == None or desc_list == [] or desc_list == "":
-        #     all_descriptors = desc.all_descriptors_list(desc_combo)
-        # else:
-        #     all_descriptors = desc_list
 
         #if no descriptors passed into desc_list then use all descriptors by default,
         #   get list of  all descriptors according to desc_combo value
@@ -304,7 +286,7 @@ class Encoding(PySAR):
             repr(self.model), self.parameters, self.test_split))
         print('##################################################################\n')
 
-        start = time.time() #start counter
+        start = time.time()     #start counter
 
         '''
         1.) Get current descriptor value or combination of descriptors from all_descriptors list.
@@ -328,8 +310,7 @@ class Encoding(PySAR):
                     descriptor_group_.append(desc.descriptor_groups[de])
 
                 desc_ = pd.concat(descriptor_list,axis=1) #concatenate descriptors
-                # desc_ = descriptor_list
-                # desc_ = pd.DataFrame(descriptor_list)
+
             else:
                 desc_ = getattr(desc, descr)
                 # descriptor_group_.append(desc.descriptor_groups['_'+descr])
@@ -344,7 +325,7 @@ class Encoding(PySAR):
             if using the PlsRegression algorithm and there is only 1 feature (1-dimension)
             in the feature data X then create a new PLSReg model with the n_components
             parameter set to 1 instead of the default 2 - this stops the error:
-            ValueError - Invalid Number of Components: 2
+            'ValueError - Invalid Number of Components: 2'
 
             Also, get train/test split, fit model and predict activity of test data.
             '''
@@ -353,6 +334,7 @@ class Encoding(PySAR):
               X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X, Y)
               model_fit = tmp_model.fit()
               Y_pred = tmp_model.predict()
+
             else:
               X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
               model_fit = self.model.fit()
@@ -370,7 +352,7 @@ class Encoding(PySAR):
             mae_.append(eval.mae)
             explained_var_.append(eval.explained_var)
 
-        end = time.time()
+        end = time.time()           #stop counter
         elapsed = end - start
         print('\n\n##############################################################')
         print('Elapsed Time for Descriptor Encoding: {0:.3f} seconds\n'.format(elapsed))
@@ -411,12 +393,13 @@ class Encoding(PySAR):
 
         return desc_metrics_df_
 
-# !*! error with SOCNum calculation
-    def aai_descriptor_encoding(self, aai_list=None, desc_list=None, desc_combo=1,
-        use_dsp = True, spectrum='power', window='hamming', filter_="",verbose=True):
+    def aai_descriptor_encoding(
+        self, aai_list=None, desc_list=None, desc_combo=1,
+        use_dsp = True, spectrum='power', window='hamming', filter_=None
+        ):
         """
         Encoding all protein sequences using each of the indices in the AAI as well
-        as the descriptors. The sequences can be encoded using 1 AAI + 1 Descriptor,
+        as the protein descriptors. The sequences can be encoded using 1 AAI + 1 Descriptor,
         2 Descriptors or 3 Descriptors, dictated by the desc_combo input parameter:
         set this to 1,2 or 3 for what encoding combination to use, default is 1.
         The protein spectra of the AAI indices will be generated if use_dsp is true,
@@ -442,9 +425,7 @@ class Encoding(PySAR):
             **refer to aai_encoding(...) docstring.
         window : str (default = 'hamming')
             **refer to aai_encoding(...) docstring.
-        filter : str (default = "")
-            **refer to aai_encoding(...) docstring.
-        verbose : bool (default = True)
+        filter : str (default = None)
             **refer to aai_encoding(...) docstring.
 
         Returns
@@ -478,7 +459,7 @@ class Encoding(PySAR):
             all_indices = aai_list
 
         #if no descriptors passed into desc_list then use all descriptors by default,
-        #   get list of  all descriptors according to desc_combo value
+        #   get list of all descriptors according to desc_combo value
         if desc_list == None or desc_list == [] or desc_list == "":
             desc = Descriptors(self.data[self.seq_col], all_desc = True)
             all_descriptors = desc.all_descriptors_list(desc_combo)
@@ -501,7 +482,7 @@ class Encoding(PySAR):
         start = time.time() #start counter
 
         '''
-        1.) Get AAI index encoding of protein sequences, if using DSP, create instance
+        1.) Get AAI index encoding of protein sequences. If using DSP, create instance
         of proDSP class and generate protein spectra from the AAI indices, according to
         instance parameters: spectrum, window and filter.
         2.) Get all 15 descriptor values and concatenate to AAI encoding features.
@@ -537,27 +518,17 @@ class Encoding(PySAR):
                     for de in descr:
 
                         descriptor_list.append(getattr(desc, de)) #get descriptor attribute
-                        # descriptor_list.append(desc.get_descriptor_encoding(de)) #get descriptor attribute
+                        # descriptor_list.append(desc.get_descriptor_encoding(de))
                         descriptor_group_.append(desc.descriptor_groups[de])
 
                     desc_ = pd.concat(descriptor_list,axis=1) # check if this is needed here
-                    # desc_ = descriptor_list
-
-                    #concatenate each descriptor dataframe into one
-                    # if desc_combo == 2:
-                    #     descriptor_list_concat = np.concatenate((desc_[0],desc_[1]),axis = 1)
-                    # elif desc_combo == 3:
-                    #     descriptor_list_concat = np.concatenate((desc_[0],desc_[1],desc_[2]),axis = 1)
-                    #
-                    # desc_ = descriptor_list_concat
 
                 #if only using 1 descriptor
                 else:
-                    desc_ = getattr(desc, descr) #get descriptor attribute
+                    desc_ = getattr(desc, descr)    #get descriptor attribute
                     # desc_ = desc.get_descriptor_encoding(descr)
                     descriptor_group_.append(desc.descriptor_groups[descr])
 
-                # X = pd.DataFrame(desc_)
                 X = desc_
 
                 #get protein activity values
@@ -567,7 +538,7 @@ class Encoding(PySAR):
                 if using the PlsRegression algorithm and there is only 1 feature (1-dimension)
                 in the feature data X then create a new PLSReg model with the n_components
                 parameter set to 1 instead of the default 2 - this stops the error:
-                ValueError - Invalid Number of Components: 2.
+                'ValueError - Invalid Number of Components: 2.'
 
                 Also, get train/test split, fit model and predict activity of test data.
                 '''
@@ -587,9 +558,8 @@ class Encoding(PySAR):
 
                 #append values/results from current encoding iteration to lists
                 index_.append(index)
-                index_category_.append(self.aaindex.get_category(index))
+                index_category_.append(self.aaindex.get_category_from_record(index))
                 descriptor_.append(descr)
-                # descriptor_group_.append(desc.descriptor_groups[descr])
                 r2_.append(eval.r2)
                 rmse_.append(eval.rmse)
                 mse_.append(eval.mse)
@@ -599,7 +569,7 @@ class Encoding(PySAR):
 
             desc_count = 1  #reset descriptor counter
 
-        end = time.time()
+        end = time.time()           #stop counter
         elapsed = end - start
         print('\n\n##############################################################')
         print('Elapsed Time for AAI + Descriptor Encoding: {0:.3f} seconds'.format(elapsed))

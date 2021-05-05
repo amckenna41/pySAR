@@ -26,7 +26,7 @@ def valid_sequence(sequences):
 
     Parameters
     ----------
-    sequences: list/np.ndarray
+    sequences : list/np.ndarray
         list or array of protein sequences.
 
     Returns
@@ -73,7 +73,7 @@ def remove_gaps(sequences):
 
     Parameters
     ----------
-    sequences: str/list/np.ndarray
+    sequences : str/list/np.ndarray
         string of 1 protein sequence or array/list of protein sequences.
 
     Returns
@@ -81,13 +81,12 @@ def remove_gaps(sequences):
     protein_seqs : np.ndarray
         returns the same inputted protein sequences but with any gaps ('-') removed.
     """
-    #convert single string into 1 element list
 
     is_string=False   #bool needed to ensure correct output format if input is str
 
     if isinstance(sequences, str):
       is_string = True
-      sequences = [sequences]     #cast str of protein seq to list
+      sequences = [sequences]     #convert single string into 1 element list
 
     #concatenate multiple sequences into 1 iterable list
     if isinstance(sequences, list) and \
@@ -100,9 +99,8 @@ def remove_gaps(sequences):
     for row in range(0, len(sequences)):
         try:
             sequences[row] = sequences[row].replace("-","")
-        except ValueError:
-            print('Error removing gaps from sequences at index {} '.format(row))
-            return None
+        except:
+            raise ValueError('Error removing gaps from sequences at index {} '.format(row))
 
     #if input was str then join list of sequences into one str
     if is_string:
@@ -116,7 +114,7 @@ def flatten(array):
     1 Dimensional array/list. Input must contain an array of arrays of the same
     length. Input will be flattened into a 1-dimensional array of size M * N
     where M = len(array) and N = len(array[0]). The flattened output can then be
-    reshaped into the requried shape and format.
+    reshaped into the required shape and format.
 
     Parameters
     ----------
@@ -128,8 +126,8 @@ def flatten(array):
     flatten(array/list) : np.ndarray/list
         flattened 1 dimensional list or array.
     """
+    #if input is a string then return input as cannot be flattened
     if isinstance(array, str):
-        print('Input was a string, and cant be flattened, returning input')
         return array
 
     #create flatten lambda function
@@ -150,12 +148,12 @@ def flatten(array):
 
 def zero_padding(sequences):
     """
-    Pad seqences in sequences with 0's such that every sequence is of the same length
-    of max(len(seq)).
+    Pad sequences in input array with 0's such that every sequence is of the same length
+    of max(len(sequences)).
 
     Parameters
     ----------
-    seqs: np.ndarray / list
+    sequences : np.ndarray / list
         array or list of encoded protein sequences.
 
     Returns
@@ -185,12 +183,15 @@ def create_output_dir():
     Create output directory pointed to by global OUTPUT_DIR folder and create a
     folder according to the OUTPUT_FOLDER global var within this directory,
     used for storing the outputs/results from current job. Each output folder will
-    have a unique name as the current DateTime will be used in its naming.
+    have a unique name as the current date & time (DateTime) will be used in its naming.
 
     """
     #if directory doesn't exist then create it
     if not os.path.isdir(globals.OUTPUT_DIR):
-        os.makedirs(globals.OUTPUT_DIR)
+        try:
+            os.makedirs(globals.OUTPUT_DIR)
+        except OSError:
+            print('Error creating directory {} '.format(globals.OUTPUT_DIR))
 
     #if output folder already exists then delete it
     if os.path.isdir(globals.OUTPUT_FOLDER):
@@ -201,7 +202,6 @@ def create_output_dir():
         os.makedirs(globals.OUTPUT_FOLDER)
     except OSError:
         print('Error creating directory {} '.format(globals.OUTPUT_FOLDER))
-        return None
 
 def save_results(results, name):
     """
@@ -211,12 +211,11 @@ def save_results(results, name):
 
     Parameters
     ----------
-    results: dict/pd.DataFrame/pd.Series
+    results : dict/pd.DataFrame/pd.Series
         object of the metrics and results from the encoding process. Ideally should
         be a dataframe/series but function also accepts a dict of results.
-    name: str
+    name : str
         name to call results file.
-
     """
     #output results to csv if results variable is a dictionary
     if isinstance(results,dict):
@@ -226,7 +225,7 @@ def save_results(results, name):
             w.writeheader()
             w.writerow(results)
 
-    #output results to csv if results variable is a dataframe
+    #output results to csv if results variable is a dataframe or Series
     elif isinstance(results, pd.DataFrame) or \
         isinstance(results,pd.Series):
 
@@ -236,6 +235,5 @@ def save_results(results, name):
     else:
         raise TypeError('Results Object must be of type: dict, pd.Series or \
             pd.DataFrame, got object of type {}'.format(type(results)))
-
 
 #def convert fasta_to_seq(fasta)

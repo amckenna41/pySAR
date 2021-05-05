@@ -14,11 +14,11 @@ def plot_reg(Y_true, Y_pred, r2):
 
     Parameters
     ----------
-    Y_true: np.ndarray
+    Y_true : np.ndarray
         array of observed values.
-    Y_pred: np.ndarray
+    Y_pred : np.ndarray
         array of predicted values
-    r2: float
+    r2 : float
         r2_score value
     """
     fig, ax = plt.subplots(figsize=(8, 8))

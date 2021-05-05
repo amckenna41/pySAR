@@ -4,16 +4,19 @@
 
 import os
 import sys
-from model import *
-from globals import *
 import unittest
 import sklearn
 import numpy as np
+from sklearn.cross_decomposition import PLSRegression
+
+from model import Model
+from globals import *
 
 class ModelTests(unittest.TestCase):
 
     def setUp(self):
         """ Create dummy data. """
+
         self.dummy_X = np.random.ranf(size=100)
         self.dummy_X_2 = np.random.ranf(size=50)
         self.dummy_Y = np.random.randint(10,size=100)
@@ -30,38 +33,36 @@ class ModelTests(unittest.TestCase):
         for test_mod in range(0,len(test_models)):
 
             model = Model(test_models[test_mod])
-
+#1.)
             #checking model object is of the correct sklearn model datatype
             self.assertEqual(type(model.model).__name__, test_models[test_mod],
                 'Model type is not correct, wanted {}, got {} '.format(
                     test_models[test_mod], type(model.model).__name__
                 ))
-            #assert that model has not been fitted
-            self.assertFalse(model.modelFitted(), 'Model should not be fitted \
+#2.)        #assert that model has not been fitted
+            self.assertFalse(model.model_fitted(), 'Model should not be fitted \
                 on initialisation')
-            #verify that parameters input param = {} meaning the defauly params for the model are used
-            self.assertEqual(model.parameters,{}, 'Default Parameters attribute \
-                should be an empty dict, but got {}'.format(model.parameters))
-            #verify test split attribute is = 0.2, its default value
-            self.assertEqual(model.test_split, 0.2, 'Default test split attribute \
-                should be 0.2, but got {}'.format(model.test_split))
-            #verify that input model type is a valid model for the class
+#3.)        #verify that parameters input param = {} meaning the default params for the model are used
+            self.assertEqual(model.parameters,{},
+                'Default Parameters attribute should be an empty dict, but got {}'.format(model.parameters))
+#4.)        #verify test split attribute is = 0.2, its default value
+            self.assertEqual(model.test_split, 0.2,
+            'Default test split attribute should be 0.2, but got {}'.format(model.test_split))
+#5.)        #verify that input model type is a valid model for the class
             self.assertTrue(model.algorithm in [item.lower() \
-                for item in model.valid_models], 'Input algorithm {} \
-                not in available algorithms: {}'.format(model.algorithm, model.valid_models))
+                for item in model.valid_models],
+                'Input algorithm {} not in available algorithms: {}'.format(model.algorithm, model.valid_models))
+#6.)        #verify repr represenation of model object is correct
+            self.assertEqual(repr(model), test_models[test_mod],
+                'Repr function should return {}, but got {}'.format(test_models[test_mod], repr(model)))
+#7.)        #verify algorithm is a regression
+            self.assertTrue(sklearn.base.is_regressor(model.model),
+                'Model type should be a sklearn regressor.')
 
-            #verify repr represenation of model object is correct
-            self.assertEqual(repr(model).lower(), test_models[test_mod], 'Repr function should \
-                return {}, but got {}'.format(test_models[test_mod], repr(model)))
-            #verify algorithm is a regression
-            self.assertTrue(sklearn.base.is_regressor(model.model), 'Model type \
-                should be a sklearn regressor.')
-
+#8.)        #fit model and assert it has been fitted
             model.train_test_split(self.dummy_X, self.dummy_Y)
-
-            #fit model and assert it has been fitted
             model.fit()
-            self.assertTrue(model.modelFitted(), 'Model has not been fitted')
+            self.assertTrue(model.model_fitted(), 'Model has not been fitted')
 
 
 
@@ -139,7 +140,7 @@ class ModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             bad_model = Model('blahblahblah')
 
-    def test_model_instances():
+    def test_model_instances(self):
 
 
 
@@ -161,17 +162,17 @@ class ModelTests(unittest.TestCase):
     # @unittest.skip("Don't want to overload the FTP server each time tests are run")
     # def test_download(self):
 
-    def test_parameters():
+    def test_parameters(self):
 
-        pls_parameters = {"n_components":20,"algorithm":"svd", "max_iter":200}
+        pls_parameters = {"n_components":20,"scale":False, "max_iter":200}
 
-        model = Model('PlsRegression',parameters = pls_parameters)
+        model = Model(algorithm="PlsRegression",parameters={})
 
-        pls_model = PLSRegression(n_components=20, algorithm="svd", max_iter=200)
+        pls_model = PLSRegression(n_components=20, scale="svd", max_iter=200)
 
-        self.assertEqual(model.parameters.items, pls_parameters.items)
+        # self.assertEqual(model.model.parameters.items(), pls_parameters.items())
 
-        for k, v in pls_parameters:
+        for k, v in pls_parameters.items():
 
             self.assertIn(k, list(pls_model.get_params()))
 
@@ -190,19 +191,19 @@ class ModelTests(unittest.TestCase):
         #
 
 
-        bagging_parameters = {}
-
-        model = Model('PlsRegression',parameters = pls_parameters)
-
-        pls_model = PLSRegression(n_components=20, algorithm="svd", max_iter=200)
-
-        self.assertEqual(model.parameters.items, pls_parameters.items)
-
-        for k, v in pls_parameters:
-
-            self.assertIn(k, list(pls_model.get_params()))
-
-        pass
+        # bagging_parameters = {}
+        #
+        # model = Model('PlsRegression',parameters = pls_parameters)
+        #
+        # pls_model = PLSRegression(n_components=20, algorithm="svd", max_iter=200)
+        #
+        # self.assertEqual(model.parameters.items, pls_parameters.items)
+        #
+        # for k, v in pls_parameters:
+        #
+        #     self.assertIn(k, list(pls_model.get_params()))
+        #
+        # pass
 
     def test_train_test_split(self):
         pass
@@ -212,7 +213,9 @@ class ModelTests(unittest.TestCase):
 
         pass
 
-
+    def test_copy(self):
+        #test model1 = model2
+        pass
     def tearDown(self):
 
         del self.dummy_X
@@ -222,32 +225,5 @@ class ModelTests(unittest.TestCase):
         #remove model save dir
         pass
 if __name__ == '__main__':
+    #run all model tests
     unittest.main(verbosity=2)
-
-# python -m unittest tests.test_aaindex -v (-v to give more verbose output)
-# python -m unittest test_module1 test_module2
-# python -m unittest test_module.TestClass
-# python -m unittest test_module.TestClass.test_method
-# python -m unittest tests/test_something.py
-# python -m unittest -v test_module
-# python -m unittest discover -s project_directory -p "*_test.py"
-    # @unittest.expectedFailure
-# assertIs(a, b)
-# assertIsNot(a, b)
-
-# assertIsNone(x)
-# assertIsNotNone(x)
-
-# assertIn(a, b)
-
-# assertNotIn(a, b)
-# assertIsInstance(a, b)
-#
-# assertNotIsInstance(a, b)
-
-# assertGreaterer()
-# assertLess()
-
-
-#with self.assertRaises(ValueError):
-#   calc.divide(10,0)
