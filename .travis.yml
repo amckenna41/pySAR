@@ -18,8 +18,8 @@ install:
   - pip3 install codecov
   - pip3 install coverage
   - pip3 install pytest-cov
-  - pip3 install pytest
-  - pip install flake8 pytest
+  - pip3 install pytest-flake8
+  # - pip install flake8 pytest
   # - pip3 install -r requirements.txt
   - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
   # Install the package from setup.py

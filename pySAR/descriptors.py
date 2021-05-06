@@ -8,7 +8,6 @@ import numpy as np
 import datetime, time
 import itertools
 import pickle
-import yaml
 import os
 import time
 from difflib import get_close_matches
