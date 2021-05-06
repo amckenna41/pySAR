@@ -59,7 +59,7 @@ class PySARTests(unittest.TestCase):
             'Algorithm attribute not correct, expected {}, got {}.'.format("PLSRegression",test_pySAR.algorithm))
         self.assertEqual(test_pySAR.test_split, 0.2)
         self.assertEqual(test_pySAR.descriptors_csv, "descriptors.csv")
-        self.assertIsNone(test_pySAR.aa_indices)
+        self.assertIsNone(test_pySAR.aai_indices)
         self.assertIsNone(test_pySAR.descriptors)
         self.assertEqual(test_pySAR._parameters, {},
             'Parameters attribute expected to be empty, got {}.'.format(test_pySAR.parameters))
