@@ -9,7 +9,6 @@ import numpy as np
 import os
 import shutil
 import json
-import yaml
 import csv
 from pathlib import Path
 
