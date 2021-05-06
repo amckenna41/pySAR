@@ -43,8 +43,8 @@ jobs:
       run: |
         cd pySAR
         python3 -m unittest discover
-   - name: Lint with flake8
-    run: |
+    - name: Lint with flake8
+      run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
@@ -52,13 +52,13 @@ jobs:
 
       # Upload to TestPyPI
     - name: Build and Upload to TestPyPI
-        run: |
-          python3 setup.py sdist bdist_wheel
-          python3 -m twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PY_PI_TEST }}
-          TWINE_REPOSITORY: testpypi
+      run: |
+        python3 setup.py sdist bdist_wheel
+        python3 -m twine upload dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PY_PI_TEST }}
+        TWINE_REPOSITORY: testpypi
 
     # - name: Install pypa/build
     #   run: >-
