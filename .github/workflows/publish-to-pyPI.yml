@@ -31,7 +31,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
       # Installs and upgrades pip, installs other dependencies and installs the package from setup.py
-    - name: "Installs and upgrades pip, installs other dependencies and installs the package from setup.py"
+    - name: Installs and upgrades pip, installs other dependencies and installs the package from setup.py
         run: |
           # Upgrade pip
           python3 -m pip install --upgrade pip
