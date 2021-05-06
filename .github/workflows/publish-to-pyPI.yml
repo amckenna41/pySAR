@@ -39,12 +39,10 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         python3 setup.py install
       # Tests with unittest
-    - name: Test with unittest
-        run: |
-          cd pySAR
-          python3 -m unittest discover
-          cd ..
-
+    - name: Test with pytest
+      run: |
+        cd pySAR
+        python3 -m unittest discover
     - name: Lint with flake8
        run: |
         # stop the build if there are Python syntax errors or undefined names
