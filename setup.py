@@ -36,7 +36,7 @@ setup(name='pySAR',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
-        'Topic :: Scientific/Engineering :: Medical Science Apps',
+        'Topic :: Scientific/Engineering :: Medical Science Apps.',
     ],
       install_requires=[
           'numpy==1.16.6',
