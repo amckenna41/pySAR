@@ -227,8 +227,10 @@ class Model():
             raise ValueError('X and Y input parameters must be of the same length.')
 
         #reshape input arrays to 2D arrays
-        X = np.reshape(X, (-1,1))
-        Y = np.reshape(Y, (-1,1))
+        if (X.ndim!=2):
+            X = np.reshape(X, (-1,1))
+        if (Y.ndim!=2):
+            Y = np.reshape(Y, (-1,1))
 
         #if invalid test size input then set to default 0.2
         if (test_size <= 0 or test_size >=1):

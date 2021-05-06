@@ -27,7 +27,6 @@ import utils as utils
 from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, \
     ConjointTriad, QuasiSequenceOrder, PseudoAAC
 
-#fix comments for pseudo & amp AAC
 class Descriptors():
     """
     Class for calculating a wide variety of protein descriptors. These descriptors

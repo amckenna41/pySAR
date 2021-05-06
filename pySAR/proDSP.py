@@ -262,7 +262,7 @@ class ProDSP():
             self.spectrum_encoding = self.fft_real
         elif self.spectra == 'imaginary':
             self.spectrum_encoding = self.fft_imag
-        elif self.spectra == 'abs':
+        elif self.spectra == 'absolute':
             self.spectrum_encoding = self.fft_abs
 
     def inverse_FFT(self, a, n):

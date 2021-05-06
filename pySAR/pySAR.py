@@ -93,7 +93,7 @@ class PySAR():
         self.parameters = parameters
         self.test_split = test_split
         self.descriptors_csv = descriptors_csv
-        self.aa_indices = None
+        self.aai_indices = None
         self.descriptors = None
 
         #create instance of AAIndex class
@@ -297,7 +297,7 @@ class PySAR():
         if indices == None or indices == "":
             raise ValueError('AAI indices input parameter cannot be None or empty')
 
-        self.aa_indices = indices
+        self.aai_indices = indices
 
         #if input spectrum is none or empty, raise error.
         if use_dsp:
@@ -333,14 +333,14 @@ class PySAR():
         #create instance of Evaluate class which will get all the evaluation metrics
         eval = Evaluate(Y_test, Y_pred)
 
-        #get categories for all indices in self.aa_indices
-        if isinstance(self.aa_indices, list):
+        #get categories for all indices in self.aai_indices
+        if isinstance(self.aai_indices, list):
             index_cat = ""
-            for i in range(0,len(self.aa_indices)):
+            for i in range(0,len(self.aai_indices)):
                 index_cat += index_cat + ', '+ \
-                    self.aaindex.get_category_from_record(self.aa_indices[i])
+                    self.aaindex.get_category_from_record(self.aai_indices[i])
         else:
-            index_cat = self.aaindex.get_category(self.aa_indices)
+            index_cat = self.aaindex.get_category_from_record(self.aai_indices)
 
         #set results Series variables
         aai_df['Index'] = indices
@@ -361,8 +361,8 @@ class PySAR():
         #save results of encoding to output folder specified by OUTPUT_FOLDER
         utils.save_results(aai_df, 'aai_encoding')
 
-        #reset aa_indices instance variable
-        # self.aa_indices = ""
+        #reset aai_indices instance variable
+        # self.aai_indices = ""
 
         return aai_df
 
@@ -558,8 +558,11 @@ class PySAR():
                 raise ValueError('AAI Indices and Descriptor input parameters \
                     must not be empty or None')
 
-        self.aa_indices = indices           #set instance attributes
+        self.aai_indices = indices           #set instance attributes
         self.descriptors = descriptors
+
+        #create instance of Descriptors class using data in instance variable
+        descr = Descriptors(self.data[self.seq_col])
 
         #create output results Series
         aai_desc_df = pd.Series(index=['Index','Category','Descriptor',
@@ -598,24 +601,26 @@ class PySAR():
         #create instance of Evaluate class which will get all the evaluation metrics
         eval = Evaluate(Y_test, Y_pred)
 
-        #get categories for all indices in self.aa_indices
-        if isinstance(self.aa_indices, list):
-            for i in range(0,len(self.aa_indices)):
+        index_cat = ""
+
+        #get categories for all indices in self.aai_indices
+        if isinstance(self.aai_indices, list):
+            for i in range(0,len(self.aai_indices)):
                 index_cat += index_cat + ', '+ \
-                    self.aaindex.get_category(self.aa_indices[i])
+                    self.aaindex.get_category_from_record(self.aai_indices[i])
         else:
-            index_cat = self.aaindex.get_category(self.aa_indices)
+            index_cat = self.aaindex.get_category_from_record(self.aai_indices)
 
         #get groups for all descriptors in self.desciptors
         if isinstance(self.descriptors, list):
             for i in range(0,len(self.descriptors)):
                 desc_group += desc_group + ', '+ \
-                    self.desc.descriptor_groups[self.descriptors[i]]
+                    descr.descriptor_groups['_'+self.descriptors[i]]
         else:
-            desc_cat = self.desc.descriptor_groups[self.descriptors]
+            desc_cat = descr.descriptor_groups['_'+self.descriptors]
 
         #set output dataframe columns
-        aai_desc_df['Index'] = str(self.aa_indices)
+        aai_desc_df['Index'] = str(self.aai_indices)
         aai_desc_df['Category'] = str(index_cat)
         aai_desc_df['Descriptor'] = str(self.descriptors)
         aai_desc_df['Group'] = str(desc_cat)
@@ -649,12 +654,11 @@ class PySAR():
         print('\n#############################################################')
         print('######################## Results ############################\n')
         print('#############################################################\n')
-
         print('####################### Parameters ##########################\n')
         print('# Dataset -> {}\n# Dataset Size -> {}\n# Sequence Length -> {} \
-            \n#Activity -> {}\n# AAI Indices -> {}\n# Descriptors -> {}\n# Algorithm -> {}\
+            \n# Activity -> {}\n# AAI Indices -> {}\n# Descriptors -> {}\n# Algorithm -> {}\
                 \n# Model Parameters -> {}\n# Test Split -> {}\n'.format(
-                self.dataset,self.num_seqs, self.seq_len, self.activity, self.aa_indices,
+                self.dataset,self.num_seqs, self.seq_len, self.activity, self.aai_indices,
                 self.descriptors, repr(self.model), self.model.model.get_params(),
                 self.test_split
                 ))
@@ -732,12 +736,12 @@ class PySAR():
         self._activity = val
 
     @property
-    def aa_indices(self):
-        return self._aa_indices
+    def aai_indices(self):
+        return self._aai_indices
 
-    @aa_indices.setter
-    def aa_indices(self, val):
-        self._aa_indices = val
+    @aai_indices.setter
+    def aai_indices(self, val):
+        self._aai_indices = val
 
     @property
     def descriptors(self):
