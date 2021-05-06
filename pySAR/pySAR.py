@@ -466,6 +466,9 @@ class PySAR():
 
         self.descriptors = descriptor
 
+        #create instance of Descriptors class using data in instance variable
+        descr = desc.Descriptors(self.data[self.seq_col])
+
         #pandas series to store all output results
         desc_df = pd.Series(index=['Descriptor','Group','R2', 'RMSE', 'MSE',
             'RPD', 'MAE', 'Explained Var'],dtype='object')
@@ -484,6 +487,8 @@ class PySAR():
 
         #create instance of Evaluate class which will get all the evaluation metrics
         eval = Evaluate(Y_test, Y_pred)
+
+        desc_group = ""
 
         #get groups for all descriptors in self.desciptors
         if isinstance(self.descriptors, list):
@@ -516,7 +521,6 @@ class PySAR():
         # self.descriptors = ""
 
         return desc_df
-
 
     def encode_aai_desc(self, indices=None,descriptors=None,spectrum='power',
         window="", filter_=None,use_dsp=True):
@@ -562,7 +566,7 @@ class PySAR():
         self.descriptors = descriptors
 
         #create instance of Descriptors class using data in instance variable
-        descr = Descriptors(self.data[self.seq_col])
+        descr = desc.Descriptors(self.data[self.seq_col])
 
         #create output results Series
         aai_desc_df = pd.Series(index=['Index','Category','Descriptor',
@@ -610,6 +614,8 @@ class PySAR():
                     self.aaindex.get_category_from_record(self.aai_indices[i])
         else:
             index_cat = self.aaindex.get_category_from_record(self.aai_indices)
+
+        desc_group = ""
 
         #get groups for all descriptors in self.desciptors
         if isinstance(self.descriptors, list):

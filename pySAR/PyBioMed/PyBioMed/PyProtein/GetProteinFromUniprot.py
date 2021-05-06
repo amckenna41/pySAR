@@ -77,8 +77,8 @@ def GetProteinSequenceFromTxt(path, openfile, savefile):
     savefile is the file saving the obtained protein sequences such as "protein.txt"
     #########################################################################################
     """
-    f1 = file(path + savefile, "wb")
-    f2 = file(path + openfile, "r")
+    f1 = open(path + savefile, "wb")
+    f2 = open(path + openfile, "r")
     # 	res=[]
     for index, i in enumerate(f2):
 

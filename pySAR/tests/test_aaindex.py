@@ -53,7 +53,7 @@ class AAIndexTests(unittest.TestCase):
         wrong_AA_INDEX_URL = "https://www.genome.jp/ftp/BLAH/BLAH/BLAH/BLAH"
 #1.)
         #test URL endpoints for AAINDEX are active and give a 200 status code
-        r = requests.get(AA_INDEX1_URL, allow_redirects = True)
+        r = requests.get(AA_INDEX1_URL_FTP, allow_redirects = True)
         self.assertEqual(r.status_code, 200, 'URL not returning Status Code 200.')
 
         r = requests.get(AA_INDEX1_URL_HTTPS, allow_redirects = True)

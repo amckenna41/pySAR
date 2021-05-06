@@ -872,7 +872,7 @@ class Descriptors():
 
         return pseudo_aa_composition_df
 
-    def get_amp_pseudo__aa_composition(self, lambda_=30, weight=0.5):
+    def get_amp_pseudo_aa_composition(self, lambda_=30, weight=0.5):
         """
         Calculate Amphiphilic (Type II) Pseudo amino acid composition features
         for the protein sequences. Amphiphilic pseudo amino acid composition has
@@ -918,13 +918,13 @@ class Descriptors():
 
         #iterate through sequences, calculating the descriptor values using PyBioMed Package
         for seq in tqdm(self.protein_seqs,unit=" sequences",position=0,desc="Ampiphillic Amino Acid Composition",file=sys.stdout):
-            amp_pseudo=PseudoAAC.GetAPseudoAAC(seq, lamda=lambda_, weight=weight)
+            amp_pseudo = PseudoAAC.GetAPseudoAAC(seq, lamda=lambda_, weight=weight)
             amp_pseudo_AAComp.append(list(amp_pseudo.values()))
 
         #convert calculated Ampiphillic pseudo_AAComp values into dataframe
         amp_pseudo_aa_composition_df = pd.DataFrame(data=amp_pseudo_AAComp, columns=keys)
 
-        self.amp_pseudo_aa_composition = amp_pseudo_AAComp_df  #set descriptor attribute
+        self.amp_pseudo_aa_composition = amp_pseudo_aa_composition_df  #set descriptor attribute
 
         return amp_pseudo_aa_composition_df
 
@@ -954,7 +954,7 @@ class Descriptors():
             desc = desc_matches[0]  #set desc to closest descriptor match found
         else:
             raise ValueError('Could not find a match for the input descriptor {} \
-                in available valid models: {}.'.format(descriptor, valid_desc))
+                in available valid models: {}.'.format(descriptor, self.valid_descriptors()))
 
         #if sought descriptor attribute dataframe is empty, call the descriptor's
         #   get_descriptor() function, set desc_encoding to descriptor attribute
@@ -1016,7 +1016,7 @@ class Descriptors():
             desc_encoding = self.pseudo_aa_composition
         elif desc == 'amp_pseudo_aa_composition':
             if (getattr(self, desc).empty):
-              self.get_amp_pseudo__aa_composition()
+              self.get_amp_pseudo_aa_composition()
             desc_encoding = self.amp_pseudo_aa_composition
         else:
           desc_encoding = None           #no matching descriptor
@@ -1105,7 +1105,7 @@ class Descriptors():
                 self.pseudo_aa_composition = self.get_pseudo_aa_composition()
 
         if (getattr(self, "amp_pseudo_aa_composition").empty):
-                self.amp_pseudo_aa_composition = self.get_amp_pseudo__aa_composition()
+                self.amp_pseudo_aa_composition = self.get_amp_pseudo_aa_composition()
 
         #append all calculated descriptors to list
         all_desc = [

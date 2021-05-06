@@ -13,9 +13,12 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import SCORERS
+from sklearn.exceptions import UndefinedMetricWarning
 from difflib import get_close_matches
 import numpy as np
 import inspect
+import os
+import pickle
 
 from evaluate import Evaluate
 
@@ -319,9 +322,9 @@ class Model():
 
         #input metric must be in available scoring metrics, if not raise error
         if metric not in sorted(SCORERS.keys()):
-            raise sklearn.exceptions.UndefinedMetricWarning('Invalid scoring metric, \
+            raise UndefinedMetricWarning('Invalid scoring metric, \
                 {} not in available Sklearn Scoring Metrics: {}\n'.format(
-                    metric, sklearn.metrics.SCORERS.keys()))
+                    metric, SCORERS.keys()))
 
         #cv must be of type int and be between 5 and 10, if not then default of 5 is used
         if not (isinstance(cv, int)) or (cv<5 or cv>10):
@@ -366,10 +369,10 @@ class Model():
 
         print('########################## Metrics ###########################\n')
         print('# Best Score -> {}'.format(grid_result.best_score_))
-        print('# RMSE: {} '.format(evals.rmse))
-        print('# MSE: {} '.format(evals.mse))
-        print('# MAE: {}'.format(evals.mae))
-        print('# RPD {}'.format(evals.rpd))
+        print('# RMSE: {} '.format(eval.rmse))
+        print('# MSE: {} '.format(eval.mse))
+        print('# MAE: {}'.format(eval.mae))
+        print('# RPD {}'.format(eval.rpd))
         print('# Variance {}\n'.format(eval.explained_var))
         print('###############################################################')
 
