@@ -33,8 +33,9 @@ jobs:
     # - name: Installs and upgrades pip, installs other dependencies and installs the package from setup.py
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
+        python -m pip install --upgrade pip
         python3 -m pip install setuptools wheel twine
+        pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         python3 setup.py install
       # Tests with unittest
