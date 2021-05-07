@@ -15,7 +15,7 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / 'README.md').read_text()
 
 setup(name='pySAR',
-      version='0.0.2',
+      version='0.0.3',
       description='A Python package used to analysis Protein Sequence Activity Relationships',
       long_description = README,
       long_description_content_type = "text/markdown",
