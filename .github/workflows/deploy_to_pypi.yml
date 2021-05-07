@@ -60,5 +60,5 @@ jobs:
     # build distribution package of software and upload to the test PYPi server
     - name: Install pySAR from Test PyPI
       run: |
-        pip install -i pySAR
+        pip install pySAR
         echo "pySAR successfully installed"
