@@ -1,9 +1,9 @@
-name: Publish pySAR 🐍 distributions 📦 to TestPyPI
+name: Deploy to TestPyPI 📦
 
 # trigger deploy workflow once build and test workflow has successfully completed
 on:
   workflow_run:
-    workflows: ["Building and Testing pySAR 🐍"]
+    workflows: ["Building and Testing 🐍"]
     types:
       - completed
       
