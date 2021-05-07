@@ -1,4 +1,4 @@
-name: Publish pySAR 🐍 distributions 📦 to PyPI and TestPyPI
+name: Publish pySAR 🐍 distributions 📦 to TestPyPI
 
 # trigger deploy workflow once build and test workflow has successfully completed
 on:
@@ -43,7 +43,8 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PY_PI_TEST }}
         TWINE_REPOSITORY: testpypi
-        
+ 
+     #sleep for 30 seconds to ensure that distribution package has successfully been uploaded to pyPI
     - name: Wait / Sleep
       uses: jakejarvis/wait-action@v0.1.0
 
