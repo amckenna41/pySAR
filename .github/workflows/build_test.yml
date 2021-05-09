@@ -46,6 +46,7 @@ jobs:
       run: |
         python3 -m pytest tests/
 
+  # - pytest --cov-report term --cov=pySAR tests/
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -60,7 +61,7 @@ jobs:
     # - name: Python security check using Bandit
     #   uses: Joel-hanson/bandit-report-artifacts@V1
 
-    - name: Bandit Check
-      uses: jpetrucciani/bandit-check@1.6.2
-      with:
-        continue-on-error: true
+    # - name: Bandit Check
+    #   uses: jpetrucciani/bandit-check@1.6.2
+    #   with:
+    #     continue-on-error: true

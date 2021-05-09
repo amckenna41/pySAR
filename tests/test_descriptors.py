@@ -284,7 +284,7 @@ class DescriptorTests(unittest.TestCase):
             self.assertFalse(quasi_seq_order.empty, 'Descriptor dataframe should not be empty')
             self.assertTrue(quasi_seq_order.any().isnull().sum()== 0,'Descriptor contains null values')
 
-    # @unittest.skip("Descriptor can take quite a bit of time to calculate therefore skipping")
+    @unittest.skip("Descriptor can take quite a bit of time to calculate therefore skipping")
     def test_pseudo_AAC(self):
         """ Testing Pseudo Amino Acid Composition descriptor attributes and methods. """
 #1.)
@@ -301,7 +301,7 @@ class DescriptorTests(unittest.TestCase):
             self.assertFalse(pseudo_AAC.empty, 'Descriptor dataframe should not be empty')
             self.assertTrue(pseudo_AAC.any().isnull().sum()== 0, 'Descriptor contains null values')
 
-    # @unittest.skip("Descriptor can take quite a bit of time to calculate therefore skipping")
+    @unittest.skip("Descriptor can take quite a bit of time to calculate therefore skipping")
     def test_amp_pseudo_AAC(self):
         """ Testing Amphiphilic Pseudo Amino Acid Composition descriptor attributes and methods. """
 #1.)
