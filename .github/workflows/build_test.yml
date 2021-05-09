@@ -77,4 +77,4 @@ jobs:
       run: |
         echo "Running coverage report..."
         pytest --cov-report term --cov=pySAR tests/
-        coveralls
+    # coveralls
