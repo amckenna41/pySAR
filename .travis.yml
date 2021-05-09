@@ -29,7 +29,7 @@ script:
   - echo "Running unit tests..."
   - python3 -m unittest discover
   - echo "Running pytest tests..."
-  - python -m pytest tests/
+  - python3 -m pytest tests/
   - echo "Running flake8 tests..."
   # stop the build if there are Python syntax errors or undefined names
   - flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
