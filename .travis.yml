@@ -2,9 +2,9 @@ language: python
 
 # set Python versions to be tested on
 python:
+  - 3.6
   - 3.7
   - 3.8
-  - 3.9
 
 # install and update pip, clone bandit repo
 before_install:
