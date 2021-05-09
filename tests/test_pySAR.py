@@ -296,7 +296,7 @@ class PySARTests(unittest.TestCase):
         #     self.assertEqual(len(test_desc),8)
         #     self.assertEqual(test_desc.dtype, object)
 
-    @unittest.skip("Error with importing descriptor file - FIX.")
+    @unittest.skip("Slight error with importing descriptors file, fix.")
     def test_aai_desc_encoding(self):
         """ Testing AAI + Descriptor encoding functionality. """
 
@@ -310,7 +310,7 @@ class PySARTests(unittest.TestCase):
         desc_4 = ["moranauto", "quasi_seq_order"]
 #1.)
         test_pySAR = pysar.PySAR(dataset=(os.path.join('tests','test_data','test_localization.txt')),
-            activity="log_GFP",algorithm="PLSre")
+            activity="log_GFP",algorithm="PLSre", descriptors_csv="notafile.csv")
 #2.)
         with self.assertRaises(ValueError,msg='ValueError: Descriptor and indices parameter cannot both be None.'):
             test_desc = test_pySAR.encode_desc(descriptor=None)
