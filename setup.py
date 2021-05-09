@@ -15,11 +15,12 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / 'README.md').read_text()
 
 setup(name='pySAR',
-<<<<<<< HEAD
-      version='0.0.4',
-=======
-      version='0.0.3',
->>>>>>> a0598ffeb0c057700cede56f2b509cc7110469cf
+# <<<<<<< HEAD
+#       version='0.0.5',
+# =======
+#       version='0.0.5',
+# >>>>>>> a0598ffeb0c057700cede56f2b509cc7110469cf
+      version='0.0.6',
       description='A Python package used to analysis Protein Sequence Activity Relationships',
       long_description = README,
       long_description_content_type = "text/markdown",

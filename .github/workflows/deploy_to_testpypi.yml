@@ -16,14 +16,14 @@ jobs:
   build:
 
 =======
-      
+
   # allow for workflow to be manually initiated from the Actions tab
   workflow_dispatch:
 
 jobs:
   # build and deploy
   build:
-    
+
 >>>>>>> a0598ffeb0c057700cede56f2b509cc7110469cf
     name: Deploy to TestPyPI 📦
     runs-on: ubuntu-latest         # platform: [ubuntu-latest, macos-latest, windows-latest]
@@ -32,7 +32,7 @@ jobs:
 <<<<<<< HEAD
         python-version: [3.8]  #deploying using one Python version on 1 runner
 =======
-        python-version: [3.8]  #deploying using one Python version on 1 runner 
+        python-version: [3.8]  #deploying using one Python version on 1 runner
 >>>>>>> a0598ffeb0c057700cede56f2b509cc7110469cf
     steps:
     - uses: actions/checkout@v2
@@ -44,7 +44,7 @@ jobs:
 <<<<<<< HEAD
     # install all required modules and dependancies using pip and setup.py installation
 =======
-    # install all required modules and dependancies using pip and setup.py installation 
+    # install all required modules and dependancies using pip and setup.py installation
 >>>>>>> a0598ffeb0c057700cede56f2b509cc7110469cf
     - name: Install dependencies
       run: |
@@ -55,7 +55,7 @@ jobs:
 <<<<<<< HEAD
 
 =======
-        
+
 >>>>>>> a0598ffeb0c057700cede56f2b509cc7110469cf
     # build distribution package of software and upload to the test PYPi server
     - name: Build and Upload to TestPyPI
@@ -74,7 +74,7 @@ jobs:
 
     # download package of pySAR from Test PYPI server to ensure it uploaded correctly
 =======
- 
+
      #sleep for 30 seconds to ensure that distribution package has successfully been uploaded to pyPI
     - name: Wait / Sleep
       uses: jakejarvis/wait-action@v0.1.0
