@@ -38,7 +38,7 @@ setup(name='pySAR',
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
     ],
       install_requires=[
-          'numpy==1.16.6',
+          'numpy>=1.16.6',
           'pandas',
           'scipy',
           'delayed',

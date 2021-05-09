@@ -21,8 +21,8 @@ install:
   - pip3 install pytest
   - pip3 install pytest-cov
   - pip install flake8 pytest
-  - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
   - python3 setup.py install          # install pySAR dependancies
+  - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
   - ./bandit/install.sh               # install bandit
 
 script:
