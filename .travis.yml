@@ -18,6 +18,7 @@ install:
   - python3 -m pip install setuptools wheel twine
   - pip3 install codecov
   - pip3 install coverage
+  - pip3 install pytest
   - pip3 install pytest-cov
   - pip install flake8 pytest
   - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
@@ -25,7 +26,7 @@ install:
   - ./bandit/install.sh               # install bandit
 
 script:
-  - cd pySAR
+  # - cd pySAR
   - echo "Running unit tests..."
   - python3 -m unittest discover
   - echo "Running pytest tests..."
