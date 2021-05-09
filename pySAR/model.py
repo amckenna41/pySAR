@@ -56,11 +56,11 @@ class Model():
     model_fitted():
 
     """
-    def __init__(self, algorithm,parameters={}, test_split = 0.2):
+    def __init__(self, algorithm,parameters={}):
 
         self.algorithm = algorithm
         self.parameters = parameters
-        self.test_split = test_split
+        self.test_split = None
 
         #list of valid models available to use for this class
         self.valid_models = ['PlsRegression','RandomForestRegressor','AdaBoostRegressor',\
@@ -237,6 +237,8 @@ class Model():
         #if invalid test size input then set to default 0.2
         if (test_size <= 0 or test_size >=1):
             test_size = 0.2
+
+        self.test_split = test_size     #setting test_size attribute
 
         #scale X
         if scale:

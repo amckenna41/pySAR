@@ -251,99 +251,83 @@ class PySARTests(unittest.TestCase):
         test_pySAR = pysar.PySAR(dataset=(os.path.join('tests','test_data','test_thermostability.txt')),
             activity="T50",algorithm="PLSre")
 
-# ******
-#         with self.assertRaises(ValueError,msg='ValueError: Indices parameter cannot be None.'):
-#             test_aai_ = test_pySAR.encode_aai(indices=None)
-# #2.)
-#         with self.assertRaises(ValueError,msg='ValueError: Spectrum parameter cannot be None.'):
-#             test_aai_ = test_pySAR.encode_aai(use_dsp=True, spectrum=None)
-# #2.)
-#         with self.assertRaises(TypeError,msg='ValueError: Erroneous indices put into indices parameter.'):
-#             test_aai_ = test_pySAR.encode_aai(indices=aa_indices, spectrum='power')
+        with self.assertRaises(ValueError,msg='ValueError: Indices parameter cannot be None.'):
+            test_aai_ = test_pySAR.encode_aai(indices=None)
+#2.)
+        with self.assertRaises(ValueError,msg='ValueError: Spectrum parameter cannot be None.'):
+            test_aai_ = test_pySAR.encode_aai(use_dsp=True, spectrum=None)
+#3.)
+        with self.assertRaises(ValueError,msg='ValueError: Erroneous indices put into indices parameter.'):
+            test_aai_ = test_pySAR.encode_aai(indices=error_aaindices, spectrum='power')
+#4.)
+        for index in range(0, len(all_indices)):
+            test_aai_ = test_pySAR.encode_aai(spectrum='power', indices=all_indices[index])
+            self.assertIsInstance(test_aai_,pd.Series, 'Output should be a DataFrame, got {}'.format(type(test_aai_)))
+            self.assertEqual(len(test_aai_),8)
+            self.assertEqual(test_aai_.dtype, object)
 
-#
-# #3.)
-#         for index in range(0, len(all_indices)):
-#
-#             test_aai_ = test_pySAR.aai_encoding(spectrum='power', indices=all_indices[index])
-#             self.assertIsInstance(test_aai_,pd.Series, 'Output should be a DataFrame, got {}'.format(type(test_aai_)))
-#             self.assertEqual(len(test_aai_),8)
-#             self.assertEqual(test_aai_.dtype, object)
-#             self.assertIn('Index', test_aai_.index)
-#             # self.assertEqual(test_aai_['Index'], "CHAM810101, ISOY800103")
-#             self.assertIn('Category', test_aai_.index)
-#             # self.assertEqual(test_aai_['Category'], "CHAM810101, ISOY800103")
-#             self.assertIn('R2', test_aai_.index)
-#             self.assertIn('RMSE', test_aai_.index)
-#             self.assertIn('MSE', test_aai_.index)
-#             self.assertIn('MAE', test_aai_.index)
-#             self.assertIn('RPD', test_aai_.index)
-#             self.assertIn('Explained Var', test_aai_.index)
-#
-# #4.)        testing that regression plot and results file saved to output folder
-#             self.assertTrue(os.path.isdir(os.path.join(_globals.OUTPUT_FOLDER, 'model_regPlot.png')))
-#             self.assertTrue(os.path.isdir(os.path.join(_globals.OUTPUT_FOLDER, 'aai_encoding.csv')))
-#
-#     def test_desc_encoding(self):
-#         """ Testing Descriptor encoding functionality. """
-#
-#         desc_1 = "aa_comp"
-#         desc_2 = "distribution"
-#         desc_3 = "conjoint_triad"
-#         desc_4 = ["moranauto", "quasi_seq_order"]
-#         all_desc = [desc_1, desc_2, desc_3, desc_4]
-#
-# #1.)
-#         test_pySAR = PySAR(dataset=(os.path.join('tests','test_data','test_enantioselectivity.txt')),
-#             activity="e-value",algorithm="PLSre")
-#
-#         with self.assertRaises(ValueError,msg='ValueError: Descriptor parameter cannot be None.'):
-#             test_desc = test_pySAR.desc_encoding(descriptor=None)
-#
-# #2.)
-#         for de in range(0,len(all_desc)):
-#
-#             test_desc = test_pySAR.desc_encoding(descriptor="aa_comp")
-#             self.assertIsInstance(test_desc,pd.Series, 'Output should be a DataFrame, got {}'.format(type(test_desc)))
-#             self.assertEqual(len(test_desc),8)
-#             self.assertEqual(test_desc.dtype, object)
-#             self.assertIn('Descriptor', test_desc.index)
-#             # self.assertEqual(test_desc['Descriptor'], "Descriptor")
-#             self.assertIn('Group', test_desc.index)
-#             # self.assertEqual(test_desc['Group'], "ffasf")
-#             self.assertIn('R2', test_desc.index)
-#             self.assertIn('RMSE', test_desc.index)
-#             self.assertIn('MSE', test_desc.index)
-#             self.assertIn('MAE', test_desc.index)
-#             self.assertIn('RPD', test_desc.index)
-#             self.assertIn('Explained Var', test_desc.index)
-#
-# #3.)        #testing that regression plot and results file saved to output folder
-#             self.assertTrue(os.path.isdir(os.path.join(_globals.OUTPUT_FOLDER, 'model_regPlot.png')))
-#             self.assertTrue(os.path.isdir(os.path.join(_globals.OUTPUT_FOLDER, 'desc_encoding.csv')))
-#
-#
-#     def test_aai_desc_encoding(self):
-#         """ Testing AAI + Descriptor encoding functionality. """
-#
-#         aa_indices_1 = "CHAM810101"
-#         aa_indices_2 = "NAKH920102"
-#         aa_indices_3 = "LIFS790103"
-#         aa_indices_4 = ["PTIO830101", "QIAN880136", "RACS820110"]
-#         desc_1 = "aa_comp"
-#         desc_2 = "distribution"
-#         desc_3 = "conjoint_triad"
-#         desc_4 = ["moranauto", "quasi_seq_order"]
-#
-# #1.)
-#         test_pySAR = PySAR(dataset=(os.path.join('tests','test_data','test_localization.txt')),
-#             activity="log_GFP",algorithm="PLSre")
-#
-#         with self.assertRaises(ValueError,msg='ValueError: Descriptor and indices parameter cannot both be None.'):
-#             test_desc = test_pySAR.desc_encoding(descriptor=None)
-#             test_desc = test_pySAR.aai_desc_encoding(indices=None)
-#             test_desc = test_pySAR.aai_desc_encoding(descriptor="aa_comp")
-#             test_desc = test_pySAR.aai_desc_encoding(indices="LIFS790103")
+    def test_desc_encoding(self):
+        """ Testing Descriptor encoding functionality. """
+
+        desc_1 = "aa_comp"
+        desc_2 = "distribution"
+        desc_3 = "conjoint_triad"
+        desc_4 = ["moranauto", "quasi_seq_order"]
+        all_desc = [desc_1, desc_2, desc_3, desc_4]
+        error_desc = "blahblahblah"
+        error_desc_1 = 123
+#1.)
+        test_pySAR = pysar.PySAR(dataset=(os.path.join('tests','test_data','test_enantioselectivity.txt')),
+            activity="e-value",algorithm="PLSre", descriptors_csv="no_dataset.csv")
+
+        with self.assertRaises(ValueError,msg='ValueError: Descriptor parameter cannot be None.'):
+            test_desc = test_pySAR.encode_desc(descriptor=None)
+
+        with self.assertRaises(ValueError,msg='ValueError: Descriptor parameter cannot be None.'):
+            test_desc = test_pySAR.encode_desc(descriptor=error_desc)
+        #
+        # with self.assertRaises(ValueError,msg='TypeError: Descriptor parameter has to be a strong or list.'):
+        #     test_desc = test_pySAR.encode_desc(descriptor=error_desc_1)
+#2.)
+        # for de in range(0,len(all_desc)):
+        #     test_desc = test_pySAR.encode_desc(descriptor="aa_composition")
+        #     self.assertIsInstance(test_desc,pd.Series, 'Output should be a Series, got {}.'.format(type(test_desc)))
+        #     self.assertEqual(len(test_desc),8)
+        #     self.assertEqual(test_desc.dtype, object)
+
+    @unittest.skip("Error with importing descriptor file - FIX.")
+    def test_aai_desc_encoding(self):
+        """ Testing AAI + Descriptor encoding functionality. """
+
+        aa_indices_1 = "CHAM810101"
+        aa_indices_2 = "NAKH920102"
+        aa_indices_3 = "LIFS790103"
+        aa_indices_4 = ["PTIO830101", "QIAN880136", "RACS820110"]
+        desc_1 = "aa_comp"
+        desc_2 = "distribution"
+        desc_3 = "conjoint_triad"
+        desc_4 = ["moranauto", "quasi_seq_order"]
+#1.)
+        test_pySAR = pysar.PySAR(dataset=(os.path.join('tests','test_data','test_localization.txt')),
+            activity="log_GFP",algorithm="PLSre")
+#2.)
+        with self.assertRaises(ValueError,msg='ValueError: Descriptor and indices parameter cannot both be None.'):
+            test_desc = test_pySAR.encode_desc(descriptor=None)
+            test_desc = test_pySAR.encode_aai_desc(indices=None)
+            test_desc = test_pySAR.encode_aai_desc(descriptor="aa_comp")
+            test_desc = test_pySAR.encode_aai_desc(indices="LIFS790103")
+#3.)
+        with self.assertRaises(ValueError,msg='ValueError: Descriptor and indices must be lists or strings.'):
+            test_desc = test_pySAR.encode_desc(descriptor=123)
+            test_desc = test_pySAR.encode_aai_desc(indices=0.90)
+            test_desc = test_pySAR.encode_aai_desc(descriptor=False)
+            test_desc = test_pySAR.encode_aai_desc(indices=9000)
+#4.)
+        test_aai_ = test_pySAR.encode_aai_desc(descriptors=desc_1, indices=aa_indices_1, spectrum='power')
+        self.assertIsInstance(test_aai_,pd.Series,
+            'Output should be a DataFrame, got {}'.format(type(test_aai_)))
+        self.assertEqual(len(test_aai_),8)
+        self.assertEqual(test_aai_.dtype, object)
 
     def tearDown(self):
         """ Delete any temp files or folders created during testing process. """
@@ -358,7 +342,6 @@ class PySARTests(unittest.TestCase):
             shutil.rmtree(_globals.OUTPUT_DIR, ignore_errors=False, onerror=None)
         if (os.path.isdir(_globals.OUTPUT_FOLDER)):
             shutil.rmtree(_globals.OUTPUT_FOLDER, ignore_errors=False, onerror=None)
-
 
         # del _globals.OUTPUT_DIR
         # del _globals.OUTPUT_FOLDER

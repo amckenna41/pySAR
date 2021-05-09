@@ -221,10 +221,8 @@ class EvaluateTests(unittest.TestCase):
 
     def test_meanPoissonDeviance(self):
         """ Testing mean poisson deviation metric. """
-
         pass
 
     def test_rpd(self):
         """ Testing RPD evaluation metric. """
-
         pass

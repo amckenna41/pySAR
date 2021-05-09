@@ -12,8 +12,6 @@ import json
 import csv
 from pathlib import Path
 
-# import .globals_ as _globals
-# import .globals
 from .globals_ import DATA_DIR, OUTPUT_DIR, OUTPUT_FOLDER
 
 def valid_sequence(sequences):

@@ -16,9 +16,9 @@ warnings.warn = warn
 ###################################
 
 from sklearn.cross_decomposition import PLSRegression
-
+from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRegressor
+from sklearn.svm import SVR
 from pySAR.model import *
-
 
 class ModelTests(unittest.TestCase):
 
@@ -54,8 +54,8 @@ class ModelTests(unittest.TestCase):
             self.assertEqual(model.parameters,{},
                 'Default Parameters attribute should be an empty dict, but got {}'.format(model.parameters))
 #4.)        #verify test split attribute is = 0.2, its default value
-            self.assertEqual(model.test_split, 0.2,
-                'Default test split attribute should be 0.2, but got {}'.format(model.test_split))
+            self.assertEqual(model.test_split, None,
+                'Default test split attribute should be None, but got {}'.format(model.test_split))
 #5.)        #verify that input model type is a valid model for the class
             self.assertTrue(model.algorithm in [item.lower() \
                 for item in model.valid_models],
@@ -75,7 +75,6 @@ class ModelTests(unittest.TestCase):
     def test_model_input_closeness(self):
         """ Test case for testing the algorithm closeness function used to get the
             closest available algorithm to the algorithm input into the class. """
-
 #1.)
         model = Model('plsreg')
         self.assertEqual(model.algorithm, "plsregression")
@@ -167,49 +166,44 @@ class ModelTests(unittest.TestCase):
         Y_pred = model.predict()
         self.assertIsInstance(Y_pred, np.ndarray)
         self.assertEqual(len(Y_pred), len(Y_test))
-# ***
+
     def test_parameters(self):
-
+        """ Testing parameters of Model class. """
+#1.)
+        #create instance of PLS model using Model class & creating instance
+        #   using SKlearn libary, comparing if the parameters of both instances are equal
         pls_parameters = {"n_components":20,"scale":False, "max_iter":200}
-
-        model = Model(algorithm="PlsRegression",parameters={})
-
+        model = Model(algorithm="PlsRegression",parameters=pls_parameters)
         pls_model = PLSRegression(n_components=20, scale="svd", max_iter=200)
 
-        # self.assertEqual(model.model.parameters.items(), pls_parameters.items())
-
-        for k, v in pls_parameters.items():
-
+        for k, v in model.model.get_params().items():
             self.assertIn(k, list(pls_model.get_params()))
+#2.)
+        rf_parameters = {"n_estimators":200, "max_depth":50,"min_samples_split":10}
+        model = Model(algorithm="RandomForest",parameters=rf_parameters)
+        rf_model = RandomForestRegressor(n_estimators=200, max_depth=50, min_samples_split=10)
 
+        for k, v in model.model.get_params().items():
+            self.assertIn(k, list(rf_model.get_params()))
+#3.)
+        knn_parameters = {"n_neighbors":10, "weights":"distance","algorithm":"ball_tree"}
+        model = Model(algorithm="KNN",parameters=knn_parameters)
+        knn_model = KNeighborsRegressor(n_neighbors=10,weights='distance',algorithm="kd_tree")
 
-        rf_parameters = {}
+        for k, v in model.model.get_params().items():
+            self.assertIn(k, list(knn_model.get_params()))
+#4.)
+        svr_parameters = {"kernel":"poly", "degree":5,"coef0":1}
+        model = Model(algorithm="SVR",parameters=svr_parameters)
+        svr_model = SVR(kernel='poly', degree=5, coef0=1)
 
-        # model = Model('PlsRegression',parameters = pls_parameters)
-        #
-        # pls_model = PLSRegression(n_components=20, algorithm="svd", max_iter=200)
-        #
-        # self.assertEqual(model.parameters.items, pls_parameters.items)
-        #
-        # for k, v in pls_parameters:
-        #
-        #     self.assertIn(k, list(pls_model.get_params()))
-        #
+        for k, v in model.model.get_params().items():
+            self.assertIn(k, list(svr_model.get_params()))
+#5.)
 
+#6.)
 
-        # bagging_parameters = {}
-        #
-        # model = Model('PlsRegression',parameters = pls_parameters)
-        #
-        # pls_model = PLSRegression(n_components=20, algorithm="svd", max_iter=200)
-        #
-        # self.assertEqual(model.parameters.items, pls_parameters.items)
-        #
-        # for k, v in pls_parameters:
-        #
-        #     self.assertIn(k, list(pls_model.get_params()))
-        #
-        # pass
+#7.)
 
     def test_hyperparamter_tuning(self):
         pass
@@ -221,8 +215,6 @@ class ModelTests(unittest.TestCase):
 
         del self.dummy_X
         del self.dummy_Y
-
-        pass
 
 if __name__ == '__main__':
     #run all model tests

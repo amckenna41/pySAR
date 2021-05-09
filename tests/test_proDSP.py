@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 # from aaindex import AAIndex
 import pySAR.aaindex as aaindex
-import pySAR.proDSP as proDSP
+import pySAR.proDSP as proDSP_
 import pySAR.pySAR as pysar
 # from proDSP import ProDSP
 # from pySAR import PySAR
@@ -51,7 +51,7 @@ class ProDSPTests(unittest.TestCase):
         test_aaindices3 = ["FAUJ880108","NAKH900102","YUTK870103"]
 #1.)
         encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)
-        proDsp = proDSP.ProDSP(encoded_seq1)
+        proDsp = proDSP_.ProDSP(encoded_seq1)
         self.assertEqual(proDsp.spectrum, "power")
         self.assertEqual(proDsp.window_type, "hamming")
         self.assertIsInstance(proDsp.window, np.ndarray)
@@ -67,32 +67,35 @@ class ProDSPTests(unittest.TestCase):
         self.assertTrue(proDsp.spectrum_encoding.any() == proDsp.fft_power.any())
         self.assertEqual(proDsp.fft_freqs.shape,encoded_seq1.shape)
 #2.)
-        proDsp = proDSP.ProDSP(encoded_seq1, window="notawindow")
+        proDsp = proDSP_.ProDSP(encoded_seq1, window="notawindow")
         self.assertEqual(proDsp.window, 1)
 #3.)
         with(self.assertRaises(ValueError)):
-            proDsp = proDSP.ProDSP(encoded_seq1, spectrum="blahblahblah")
+            proDsp = proDSP_.ProDSP(encoded_seq1, spectrum="blahblahblah")
 
         with(self.assertRaises(ValueError)):
-            proDsp = proDSP.ProDSP(encoded_seq1, spectrum=None)
+            proDsp = proDSP_.ProDSP(encoded_seq1, spectrum=None)
 #4.)
-        proDsp = proDSP.ProDSP(encoded_seq1, filter_="blahblahblah")
+        proDsp = proDSP_.ProDSP(encoded_seq1, filter_="blahblahblah")
         self.assertEqual(proDsp.filter_, "")
 #5.)
         #test window closeness function
-        proDsp = proDSP.ProDSP(encoded_seq1, window = "hamm")
+        proDsp = proDSP_.ProDSP(encoded_seq1, window = "hamm")
         self.assertEqual(proDsp.window_type, "hamming")
-        proDsp = proDSP.ProDSP(encoded_seq1, window = "bart")
+        proDsp = proDSP_.ProDSP(encoded_seq1, window = "bart")
         self.assertEqual(proDsp.window_type, "bartlett")
-        proDsp = proDSP.ProDSP(encoded_seq1, window = "gausi")
+        proDsp = proDSP_.ProDSP(encoded_seq1, window = "gausi")
         self.assertEqual(proDsp.window_type, "gaussian")
-#6.)    #
-        # proDSP = ProDSP(encoded_seq1, spectrum = "absolut")
-        # self.assertEqual(proDSP.spectrum, "absolute")
-        # proDSP = ProDSP(encoded_seq1, spectrum = "imagin")
-        # self.assertEqual(proDSP.spectrum, "imaginary")
+#6.)
+        proDSP = proDSP_.ProDSP(encoded_seq1, spectrum = "absolute")
+        self.assertEqual(proDSP.spectrum, "absolute")
+        proDSP = proDSP_.ProDSP(encoded_seq1, spectrum = "imaginary")
+        self.assertEqual(proDSP.spectrum, "imaginary")
 
-        #create array of Random 2D array, pass into FFT
+        self.assertEqual(proDsp.window_type, "gaussian")
+#7.)
+        proDSP = proDSP_.ProDSP(encoded_seq1, filter_ = "savgol")
+        self.assertEqual(proDSP.filter_, "savgol")
 
     def test_preprocessing(self):
         """ Testing preprocessing functionality of proDSP class. """
@@ -100,7 +103,7 @@ class ProDSPTests(unittest.TestCase):
         test_aaindices1 = "COHE430101"
 #1.)
         encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)
-        proDsp = proDSP.ProDSP(encoded_seq1)
+        proDsp = proDSP_.ProDSP(encoded_seq1)
         proDsp.pre_processing()
         self.assertTrue(np.all((proDsp.fft_power==0)))
         self.assertTrue(np.all((proDsp.fft_real==0)))
@@ -116,7 +119,7 @@ class ProDSPTests(unittest.TestCase):
         test_aaindices1 = "COHE430101"
 #1.)
         encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)
-        proDsp = proDSP.ProDSP(encoded_seq1)
+        proDsp = proDSP_.ProDSP(encoded_seq1)
         self.assertTrue(proDsp.fft_power.dtype, "complex128")
         self.assertTrue(proDsp.fft_real.dtype, "complex128")
         self.assertTrue(proDsp.fft_imag.dtype, "complex128")
@@ -125,10 +128,10 @@ class ProDSPTests(unittest.TestCase):
     def test_max_freq(self):
         """ Testing max frequency functionality. """
 
+#1.)
         test_aaindices1 = "COHE430101"
-
         encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)
-        proDsp = proDSP.ProDSP(encoded_seq1)
+        proDsp = proDSP_.ProDSP(encoded_seq1)
 
 # proDSP.fft.dtype == dtype('complex128')
 # proDSP.rfft.dtype == dtype('complex128')

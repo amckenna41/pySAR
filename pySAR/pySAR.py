@@ -14,13 +14,13 @@ from difflib import get_close_matches
 import json
 
 from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-from .aaindex import  AAIndex
+from .aaindex import AAIndex
 from .model import Model
 from .proDSP import ProDSP
 from .evaluate import Evaluate
 from .utils import *
 from .plots import plot_reg
-from .descriptors import *
+from .descriptors import Descriptors
 
 class PySAR():
     """
@@ -109,8 +109,7 @@ class PySAR():
         self.seq_len = len(max(self.data[self.seq_col],key=len))
 
         #create instance of model class of type specified by algorithm
-        self.model = Model(algorithm=self.algorithm, parameters=self.parameters,
-            test_split=self.test_split)
+        self.model = Model(algorithm=self.algorithm, parameters=self.parameters)
 
         #updating algoritm attribute
         self.algoritm = repr(self.model)
@@ -388,7 +387,7 @@ class PySAR():
             raise ValueError('No descriptors have been input.')
 
         #create instance of Descriptors class using data in instance variable
-        descr = desc.Descriptors(self.data[self.seq_col])
+        descr = Descriptors(self.data[self.seq_col])
 
         #get closest valid available descriptors from input descriptor parameter,
         #   if a list of descriptors passed in as the input parameter then get
@@ -466,7 +465,7 @@ class PySAR():
         self.descriptors = descriptor
 
         #create instance of Descriptors class using data in instance variable
-        descr = desc.Descriptors(self.data[self.seq_col])
+        descr = Descriptors(self.data[self.seq_col])
 
         #pandas series to store all output results
         desc_df = pd.Series(index=['Descriptor','Group','R2', 'RMSE', 'MSE',
@@ -558,14 +557,14 @@ class PySAR():
         #   or instance variables, return error if either is None
         if (descriptors == None or descriptors == "") or \
             (indices == None or indices == ""):
-                raise ValueError('AAI Indices and Descriptor input parameters \
-                    must not be empty or None')
+                raise ValueError('AAI Indices and Descriptor input parameters must \
+                    not be empty or None')
 
         self.aai_indices = indices           #set instance attributes
         self.descriptors = descriptors
 
         #create instance of Descriptors class using data in instance variable
-        descr = desc.Descriptors(self.data[self.seq_col])
+        descr = Descriptors(self.data[self.seq_col])
 
         #create output results Series
         aai_desc_df = pd.Series(index=['Index','Category','Descriptor',
@@ -697,22 +696,6 @@ class PySAR():
             array of all activity/fitness values for the protein sequences
         """
         return self.data[self.activity].values.reshape((-1,1))
-
-    # def to_JSON(self):
-    #     """
-    #     Write all class attributes and parameters to a JSON file. This func
-    #     is called at the end of the building of the predictive model and stored
-    #     in the model output directory to keep a record of the specific parameters used.
-    #
-    #     Returns
-    #     -------
-    #     output_json: JSON
-    #         JSON of all encoding parameters and attributes.
-    #     """
-    #     # return json.dumps(self, default=lambda o: o.__dict__,
-    #     print(vars(self))
-    #     return json.dumps(self, default=lambda o: o._asdict(),
-    #         sort_keys=True, indent=4)
 
 ######################          Getters & Setters          ######################
 

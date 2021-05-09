@@ -9,10 +9,6 @@ import unittest
 import numpy as np
 import pandas as pd
 
-# from pySAR.aaindex import AAIndex
-# import pySAR.globals as globals
-# import pySAR.utils as utils
-# from pySAR.aaindex import *
 import pySAR.globals_ as _globals
 import pySAR.utils as utils
 

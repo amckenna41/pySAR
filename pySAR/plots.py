@@ -26,12 +26,10 @@ def plot_reg(Y_true, Y_pred, r2):
     r2_annotation = 'R2: {:.3f} '.format(r2)
     ax.text(0.15, 0.92, r2_annotation, ha="left", va="top", fontsize=15, color="green",
         fontweight="bold",transform=ax.transAxes)
-    plt.xlabel('Predicted Value')
-    plt.ylabel('Observed Value')
-    plt.title('Observed vs Predicted values for protein activity')
+    plt.xlabel('Predicted Value',fontdict=dict(weight='bold'), fontsize=12)
+    plt.ylabel('Observed Value',fontdict=dict(weight='bold'), fontsize=12)
+    plt.title('Observed vs Predicted values for protein activity',fontdict=dict(weight='bold'), fontsize=15)
     plt.savefig(os.path.join(OUTPUT_FOLDER,'model_regPlot.png'))  #save plot to output folder
-    plt.show()
+    plt.show(block=False)
+    plt.pause(3)
     plt.close()
-
-
-#plot showing top10 mutants and their name and predicted activity value

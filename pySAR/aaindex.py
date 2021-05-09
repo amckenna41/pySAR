@@ -622,9 +622,7 @@ class AAIndex():
         )
 
     def __repr__(self):
-        return '<AAIndex: Filename: {}, URL: {}'.format(
-            self.aaindex_filename, self.url
-        )
+        return (self.aaindex_json)
 
     def __sizeof__(self):
         """return size of AAI database file"""

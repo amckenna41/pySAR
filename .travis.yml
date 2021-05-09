@@ -2,7 +2,7 @@ language: python
 
 # set Python versions to be tested on
 python:
-  - 3.6
+  # - 3.6
   - 3.7
   - 3.8
 

@@ -13,21 +13,22 @@
 [![Size](https://img.shields.io/github/repo-size/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
 [![Commits](https://img.shields.io/github/commit-activity/w/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
 
-#everything is italisz
-
-
-pySAR is a Python library for analysing Sequence Activity Relationships (SARs) of protein sequences. pySAR offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features. The software uses physiochemical and biochemical features from the Amino Acid Index (AAI) database as well as allowing for the calculation of a range of structural protein descriptors.<br>
-After finding the optimal technique and feature set at which to encode your dataset of sequences, pySAR can then be used to build a predictive regression model with the training data being that of the encoded sequences and training labels being the experimentally pre-calculated activity values for each protein sequence. The model can then be used to predict the activity/fitness value of a new unseen sequence.
-
 Table of Contents
 -----------------
 
+  * [Introduction](#introduction)
   * [Requirements](#requirements)
   * [Installation](#installation)
   * [Usage](#usage)
   * [Directory Folders](#directories)
   * [Tests](#tests)
   * [Contact](#contact)
+
+Introduction
+------------
+
+pySAR is a Python library for analysing Sequence Activity Relationships (SARs) of protein sequences. pySAR offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features. The software uses physiochemical and biochemical features from the Amino Acid Index (AAI) database as well as allowing for the calculation of a range of structural protein descriptors.<br>
+After finding the optimal technique and feature set at which to encode your dataset of sequences, pySAR can then be used to build a predictive regression model with the training data being that of the encoded sequences and training labels being the experimentally pre-calculated activity values for each protein sequence. The model can then be used to predict the activity/fitness value of a new unseen sequence.
 
 Requirements
 ------------
@@ -48,7 +49,7 @@ Installation
 Install the latest version of pySAR using pip:
 
 ```bash
-pi3 install pySAR
+pip3 install pySAR
 ```
 
 Install by cloning repository:
@@ -65,18 +66,11 @@ Usage
 e.g: the below code will build a PlsRegression model using the AAI index CIDH920105 and the 'amino acid composition' descriptor. The index is passed through a DSP pipeline and is transformed into its informational protein spectra using the power spectra, with a hamming window function applied to the output of the FFT. The concatenated features from the AAI index and the descriptor will be used as the feature data in building the PLS model.
 
 ```python
-#first-party imports
-from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-from aaindex import AAIndex
-from model import Model
-from proDSP import ProDSP
-from evaluate import Evaluate
-import utils as utils
-from plots import plot_reg
-import descriptors as desc
+#import pySAR package
+import pySAR as pysar
 
 #create instance of PySAR class
-pySAR = PySAR(dataset="dataset.txt",activity="activity",algorithm="PlsRegression")
+pySAR = pysar.PySAR(dataset="dataset.txt",activity="activity",algorithm="PlsRegression")
 """
 PySAR parameters:
 
@@ -118,6 +112,7 @@ Output results showing AAI index and its category as well as all the associated 
 Encoding protein sequences in dataset using all 566 indices in the AAI database. At each iteration, the encoded sequences using the indices from the AAI will be used to generate an protein spectra using the imaginary spectrum with a blackman window function applied, this will then be used as feature data to build a predictive model that can be used for accurate prediction of the sought activity value of unseen protein sequences. The output results will show the calculated metric values when measuring predicted vs observed activity values for the test sequences.
 
 ```python
+from pySAR.encoding import *
 
 #create instance of Encoding class, inherits from pySAR class, using RandomForest algorithm
 #   with 200 estimators and a max_depth of 50.
@@ -141,6 +136,7 @@ Output results showing AAI index and its category as well as all the associated 
 Same procedure as prior, except 4 indices from the AAI are being specifically input into the function, with the encoded sequence output being concatenated together and used as feature data to build the predictive PlsRegression model with its default parameters.
 
 ```python
+from pySAR.encoding import *
 
 encoding = Encoding(dataset="dataset.txt", activity="activity_col",
   algorithm="PLSRegression", parameters={})
@@ -154,7 +150,7 @@ aai_encoding = encoding.aai_encoding(use_dsp=False, aai_list=["PONP800102","RICJ
 ### Encoding protein sequences using their calculated protein descriptors
 Calculate the protein descriptor values for a dataset of protein sequences from the 15 available descriptors in the <em>descriptors</em> module. Use each descriptor as a feature set in the building of the predictive models used to predict the activity value of unseen sequences. By default, function will look for a file called 'descriptors.csv' that contains the pre-calculated descriptor values for a dataset, this filename can be changed according to <em>descriptors_csv</em> input parameter, if file is not found then all descriptor values will be calculated for dataset.
 ```python
-
+from pySAR.encoding import *
 #create instance of Encoding class using AdaBoost algorithm, using 100 estimaors & a learning rate of 1.5
 encoding = Encoding(dataset="dataset.txt", activity="activity_col",algorithm="AdaBoost",   
        parameters={"n_estimators":100,"learning_rate":1.5}, descriptors_csv="descriptors.csv")
@@ -178,7 +174,7 @@ Output results showing the protein descriptor and its group as well as all the a
 ### Encoding using AAI + protein descriptors
 Encoding protein sequences in dataset using all 566 indices in the AAI database combined with protein descriptors. All 566 indices can be used in concatenation with 1, 2 or 3 descriptors. E.g: at each iteration the encoded sequences using the indices from the AAI will be used to generate an protein spectra using the power spectrum with no window function applied, this will then be combined with the feature set generated from the dataset's descriptor values and used to build a predictive model that can be used for accurate prediction of the sought activity value of unseen protein sequences. The output results will show the calculated metric values when measuring predicted vs observed activity values for the test sequences.
 ```python
-
+from pySAR.encoding import *
 #create instance of Encoding class using RF algorithm, using 100 estimaors with a learning rate of 1.5
 encoding = Encoding(dataset="dataset.txt", activity="activity_col",algorithm="AdaBoost",   
        parameters={"n_estimators":100,"learning_rate":1.5}, descriptors_csv="descriptors.csv")
@@ -201,6 +197,7 @@ Output results showing AAI index and its category, the protein descriptor and it
 ### Generate all protein descriptors
 Functionality to calculate ALL 15 descriptor values for a dataset of protein sequences. Output values are stored in dataset set by <em>desc_dataset</em> input parameter. Output will be of the shape N x 9920, where N is the number of protein sequences in the dataset and 9920 is the total number of features calculated from all 15 descriptors. Moving forward pySAR will pull the descriptor values from this file rather than recalculating them.
 ```python
+from pySAR.descriptors import *
 
 #calculating all descriptor values and storing in file names 'descriptors.csv'
 #     all_desc = True means that all descriptors will be calculated, it is False by default.
@@ -211,9 +208,10 @@ desc = Descriptor(protein_seqs = data, desc_dataset = "descriptors.csv",
 ### Get record from AAIndex database
 The AAIndex class offers diverse functionalities for obtaining any element from any record in the database. Each record is stored in json format in a class attribute called <em>aaindex_json</em>. You can search for a particular record by its index code, description or reference. You can also get the index category and importantly its associated amino acid values.
 ```python
+import pySAR.aaindex as aaindex
 
-import aaindex
-aai = AAIndex()
+#create AAIndex object
+aai = aaindex.AAIndex()
 
 record = aai.get_record_from_code('CHOP780206')   #get full AAI record
 category = aai.get_category_from_record('CHOP780206') #get record's category
