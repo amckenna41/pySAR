@@ -21,7 +21,6 @@ from .aaindex import  AAIndex
 from .model import Model
 from .proDSP import ProDSP
 from .evaluate import Evaluate
-from .pySAR import *
 from .utils import *
 from .PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, \
     ConjointTriad, QuasiSequenceOrder, PseudoAAC
