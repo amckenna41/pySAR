@@ -266,7 +266,7 @@ class PySARTests(unittest.TestCase):
             self.assertEqual(len(test_aai_),8)
             self.assertEqual(test_aai_.dtype, object)
 
-    @unittest.skip("Slight error with circular imports, skipping.")
+    # @unittest.skip("Slight error with circular imports, skipping.")
     def test_desc_encoding(self):
         """ Testing Descriptor encoding functionality. """
 
