@@ -20,7 +20,7 @@ setup(name='pySAR',
 # =======
 #       version='0.0.5',
 # >>>>>>> a0598ffeb0c057700cede56f2b509cc7110469cf
-      version='0.0.7',
+      version='0.0.8',
       description='A Python package used to analysis Protein Sequence Activity Relationships',
       long_description = README,
       long_description_content_type = "text/markdown",
