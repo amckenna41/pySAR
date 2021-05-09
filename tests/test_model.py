@@ -7,10 +7,18 @@ import sys
 import unittest
 import sklearn
 import numpy as np
+
+#### Suppress Sklearn warnings ####
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
+###################################
+
 from sklearn.cross_decomposition import PLSRegression
 
-from model import Model
-from globals import *
+from pySAR.model import *
+
 
 class ModelTests(unittest.TestCase):
 
@@ -47,7 +55,7 @@ class ModelTests(unittest.TestCase):
                 'Default Parameters attribute should be an empty dict, but got {}'.format(model.parameters))
 #4.)        #verify test split attribute is = 0.2, its default value
             self.assertEqual(model.test_split, 0.2,
-            'Default test split attribute should be 0.2, but got {}'.format(model.test_split))
+                'Default test split attribute should be 0.2, but got {}'.format(model.test_split))
 #5.)        #verify that input model type is a valid model for the class
             self.assertTrue(model.algorithm in [item.lower() \
                 for item in model.valid_models],
@@ -63,29 +71,6 @@ class ModelTests(unittest.TestCase):
             model.train_test_split(self.dummy_X, self.dummy_Y)
             model.fit()
             self.assertTrue(model.model_fitted(), 'Model has not been fitted')
-
-
-
-        # model = Modoel('AdaBoostRegressor')
-        # self.assertEqual(type(self.model).__name__, 'AdaBoostRegressor')
-        #
-        # model = Model('BaggingRegressor')
-        # self.assertEqual(type(self.model).__name__, 'BaggingRegressor')
-        #
-        # model = Modoel('LinearRegression')
-        # self.assertEqual(type(self.model).__name__, 'LinearRegression')
-        #
-        # model = Model('DecisionTreeRegressor')
-        # self.assertEqual(type(self.model).__name__, 'DecisionTreeRegressor')
-        #
-        # model = Modoel('Lasso')
-        # self.assertEqual(type(self.model).__name__, 'Lasso')
-        #
-        # model = Model('SVR')
-        # self.assertEqual(type(self.model).__name__, 'SVR')
-        #
-        # model = Model('KNN')
-        # self.assertEqual(type(self.model).__name__, 'KNN')
 
     def test_model_input_closeness(self):
         """ Test case for testing the algorithm closeness function used to get the
@@ -140,28 +125,49 @@ class ModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             bad_model = Model('blahblahblah')
 
-    def test_model_instances(self):
+    def test_train_test_split(self):
+        """ Testing splitting up dataset into training and test data. """
+#1.)
+        model = Model('plsreg')
+        X_train, X_test, Y_train, Y_test = model.train_test_split(self.dummy_X, self.dummy_Y)
 
+        self.assertTrue(len(X_train) == 80)
+        self.assertTrue(len(Y_train) == 80)
+        self.assertTrue(len(X_test) == 20)
+        self.assertTrue(len(Y_test) == 20)
+#2.)
+        model = Model('plsreg')
+        with self.assertRaises(ValueError):
+            X_train, X_test, Y_train, Y_test = model.train_test_split(self.dummy_X_2, self.dummy_Y)
+#3.)
+        model = Model('adaboostreg')
+        X_train, X_test, Y_train, Y_test = model.train_test_split(self.dummy_X, self.dummy_Y, test_size=0.5)
 
+        self.assertTrue(len(X_train) == 50)
+        self.assertTrue(len(Y_train) == 50)
+        self.assertTrue(len(X_test) == 50)
+        self.assertTrue(len(Y_test) == 50)
+#4.)
+        model = Model('bagging')
+        X_train, X_test, Y_train, Y_test = model.train_test_split(self.dummy_X_2, self.dummy_Y_2, test_size=0.1)
 
-        pass
+        self.assertTrue(len(X_train) == 45)
+        self.assertTrue(len(Y_train) == 45)
+        self.assertTrue(len(X_test) == 5)
+        self.assertTrue(len(Y_test) == 5)
 
-    def test_X_Y(self):
-        #assert X and Y have the same length
-        pass
 
     def test_predict(self):
-        pass
-    # sklearn.utils.validation.check_is_fitted(estimator, attributes=None, *, msg=None, all_or_any=<built-in function all>)
+        """ Testing the prediction of values for unseen sequences using the trained model. """
+#1.)
+        model = Model('knn')
+        X_train, X_test, Y_train, Y_test = model.train_test_split(self.dummy_X_2, self.dummy_Y_2)
+        model.fit()
 
-    # def test_testsplit():
-    #
-    #     model = Model('LinearRegression')
-    #     self.ass
-    #     pass
-    # @unittest.skip("Don't want to overload the FTP server each time tests are run")
-    # def test_download(self):
-
+        Y_pred = model.predict()
+        self.assertIsInstance(Y_pred, np.ndarray)
+        self.assertEqual(len(Y_pred), len(Y_test))
+# ***
     def test_parameters(self):
 
         pls_parameters = {"n_components":20,"scale":False, "max_iter":200}
@@ -205,25 +211,19 @@ class ModelTests(unittest.TestCase):
         #
         # pass
 
-    def test_train_test_split(self):
-        pass
-
     def test_hyperparamter_tuning(self):
-
-
         pass
 
     def test_copy(self):
-        #test model1 = model2
         pass
+
     def tearDown(self):
 
         del self.dummy_X
         del self.dummy_Y
 
-
-        #remove model save dir
         pass
+
 if __name__ == '__main__':
     #run all model tests
     unittest.main(verbosity=2)

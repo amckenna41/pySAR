@@ -12,8 +12,9 @@ import json
 import csv
 from pathlib import Path
 
-# from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-import globals
+# import .globals_ as _globals
+# import .globals
+from .globals_ import DATA_DIR, OUTPUT_DIR, OUTPUT_FOLDER
 
 def valid_sequence(sequences):
     """
@@ -186,21 +187,21 @@ def create_output_dir():
 
     """
     #if directory doesn't exist then create it
-    if not os.path.isdir(globals.OUTPUT_DIR):
+    if not os.path.isdir(OUTPUT_DIR):
         try:
-            os.makedirs(globals.OUTPUT_DIR)
+            os.makedirs(OUTPUT_DIR)
         except OSError:
-            print('Error creating directory {} '.format(globals.OUTPUT_DIR))
+            print('Error creating directory {} '.format(OUTPUT_DIR))
 
     #if output folder already exists then delete it
-    if os.path.isdir(globals.OUTPUT_FOLDER):
-        shutil.rmtree(globals.OUTPUT_FOLDER, ignore_errors=False, onerror=None)
+    if os.path.isdir(OUTPUT_FOLDER):
+        shutil.rmtree(OUTPUT_FOLDER, ignore_errors=False, onerror=None)
 
     #create output folder in directory
     try:
-        os.makedirs(globals.OUTPUT_FOLDER)
+        os.makedirs(OUTPUT_FOLDER)
     except OSError:
-        print('Error creating directory {} '.format(globals.OUTPUT_FOLDER))
+        print('Error creating directory {} '.format(OUTPUT_FOLDER))
 
 def save_results(results, name):
     """
@@ -219,7 +220,7 @@ def save_results(results, name):
     #output results to csv if results variable is a dictionary
     if isinstance(results,dict):
 
-        with open(os.path.join(globals.OUTPUT_FOLDER, name+'.csv'), 'w') as f:
+        with open(os.path.join(OUTPUT_FOLDER, name+'.csv'), 'w') as f:
             w = csv.DictWriter(f, results.keys())
             w.writeheader()
             w.writerow(results)
@@ -229,7 +230,7 @@ def save_results(results, name):
         isinstance(results,pd.Series):
 
         results.reset_index(drop=True, inplace=True)
-        results.to_csv(os.path.join(globals.OUTPUT_FOLDER, name+'.csv'))
+        results.to_csv(os.path.join(OUTPUT_FOLDER, name+'.csv'))
 
     else:
         raise TypeError('Results Object must be of type: dict, pd.Series or \

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
 
 def plot_reg(Y_true, Y_pred, r2):
     """
@@ -30,6 +30,7 @@ def plot_reg(Y_true, Y_pred, r2):
     plt.ylabel('Observed Value')
     plt.title('Observed vs Predicted values for protein activity')
     plt.savefig(os.path.join(OUTPUT_FOLDER,'model_regPlot.png'))  #save plot to output folder
+    plt.show()
     plt.close()
 
 

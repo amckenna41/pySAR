@@ -9,10 +9,9 @@ import unittest
 unittest.TestLoader.sortTestMethodsUsing = None
 import random
 
-from descriptors import Descriptors
-from pySAR import PySAR
-from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, PseudoAAC
-import utils as utils
+from pySAR.PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, PseudoAAC
+import pySAR.descriptors as descr
+import pySAR.utils as utils
 
 class DescriptorTests(unittest.TestCase):
 
@@ -46,7 +45,7 @@ class DescriptorTests(unittest.TestCase):
 
         #testing on all 4 datasets
         for dataset in range(0,len(self.all_test_datasets)):
-            desc = Descriptors(self.all_test_datasets[dataset]['sequence'], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[dataset]['sequence'], desc_dataset="")
         # desc = Descriptors(self.test_dataset1['sequence'], desc_dataset="")
 #1.)
             #verify num_seqs descriptors attribute is correct
@@ -84,14 +83,14 @@ class DescriptorTests(unittest.TestCase):
             #descriptor module should raise ValueError when the full dataset DF is
             #   passed in instead of just the sequences.
             with self.assertRaises(ValueError):
-                fail_desc = Descriptors(invalid_testdata1_copy)
+                fail_desc = descr.Descriptors(invalid_testdata1_copy)
 
             #J,O,U and Z are all invalid amino acid values
             invalid_testdata1_copy['sequence'][0] = 'JOUZ'
 
             #descriptor module should raise ValueError if invalid sequence found in dataset
             with self.assertRaises(ValueError):
-                fail_desc = Descriptors(invalid_testdata1_copy['sequence'])
+                fail_desc = descr.Descriptors(invalid_testdata1_copy['sequence'])
 
     def test_descriptor_groups(self):
         """ Testing the descriptor groups dictionary which stores the specific group
@@ -99,8 +98,7 @@ class DescriptorTests(unittest.TestCase):
 
         #testing on all 4 datasets
         for dataset in range(0,len(self.all_test_datasets)):
-            desc = Descriptors(self.all_test_datasets[dataset]['sequence'], desc_dataset="")
-        # desc = Descriptors(self.test_dataset1['sequence'], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[dataset]['sequence'], desc_dataset="")
 #1.)
             self.assertEqual(list(desc.descriptor_groups.keys()), desc.all_descriptors_list())
             self.assertEqual(list(desc.descriptor_groups.values()).count("Composition"), 3)
@@ -111,17 +109,16 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(list(desc.descriptor_groups.values()).count("Pseudo Composition"), 2)
             self.assertEqual(len(desc.descriptor_groups.keys()), len(desc.all_descriptors_list()))
 #2.)
-            self.assertEqual(desc.descriptor_groups['_aa_composition'], "Composition")
-            self.assertEqual(desc.descriptor_groups['_dipeptide_composition'], "Composition")
-            self.assertEqual(desc.descriptor_groups['_moran_autocorrelation'], "Autocorrelation")
-            self.assertEqual(desc.descriptor_groups['_geary_autocorrelation'], "Autocorrelation")
-            self.assertEqual(desc.descriptor_groups['_composition'], "CTD")
-            self.assertEqual(desc.descriptor_groups['_distribution'], "CTD")
-            self.assertEqual(desc.descriptor_groups['_transition'], "CTD")
-            self.assertEqual(desc.descriptor_groups['_pseudo_aa_composition'], "Pseudo Composition")
-            self.assertEqual(desc.descriptor_groups['_quasi_seq_order'], "Quasi-Sequence-Order")
-            self.assertEqual(desc.descriptor_groups['_amp_pseudo_aa_composition'], "Pseudo Composition")
-
+            self.assertEqual(desc.descriptor_groups['aa_composition'], "Composition")
+            self.assertEqual(desc.descriptor_groups['dipeptide_composition'], "Composition")
+            self.assertEqual(desc.descriptor_groups['moran_autocorrelation'], "Autocorrelation")
+            self.assertEqual(desc.descriptor_groups['geary_autocorrelation'], "Autocorrelation")
+            self.assertEqual(desc.descriptor_groups['composition'], "CTD")
+            self.assertEqual(desc.descriptor_groups['distribution'], "CTD")
+            self.assertEqual(desc.descriptor_groups['transition'], "CTD")
+            self.assertEqual(desc.descriptor_groups['pseudo_aa_composition'], "Pseudo Composition")
+            self.assertEqual(desc.descriptor_groups['quasi_seq_order'], "Quasi-Sequence-Order")
+            self.assertEqual(desc.descriptor_groups['amp_pseudo_aa_composition'], "Pseudo Composition")
 #3.)
             self.assertIsInstance(desc.descriptor_groups, dict)
 
@@ -133,7 +130,7 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             aa_comp = desc.get_aa_composition()
 
             self.assertEqual(aa_comp.shape, (1,20), 'Descriptor not of correct shape.')
@@ -150,7 +147,7 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             dipeptide_comp = desc.get_dipeptide_composition()
 
             self.assertEqual(dipeptide_comp.shape, (1,400),'Descriptor not of correct shape.')
@@ -158,7 +155,7 @@ class DescriptorTests(unittest.TestCase):
             self.assertFalse(dipeptide_comp.empty, 'Descriptor dataframe should not be empty')
             self.assertTrue(dipeptide_comp.any().isnull().sum()== 0,'Descriptor contains null values.')
 
-    @unittest.skip("Descriptor can take quite a bit of time to calculate therefore skipping")
+    # @unittest.skip("Descriptor can take quite a bit of time to calculate therefore skipping")
     def test_tripeptide_composition(self):
         """ Testing Tripeptide Composition protein descriptor attributes and methods. """
 #1.)
@@ -167,7 +164,7 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             tripeptide_comp = desc.get_tripeptide_composition()
 
             self.assertEqual(tripeptide_comp.shape, (1,8000),'Descriptor not of correct shape.')
@@ -183,7 +180,7 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             norm_moreaubroto = desc.get_norm_moreaubroto_autocorrelation()
 
             self.assertEqual(norm_moreaubroto.shape, (1,240))
@@ -199,14 +196,13 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             moran = desc.get_moran_autocorrelation()
 
             self.assertEqual(moran.shape, (1,240))
             self.assertIsInstance(moran, pd.DataFrame)
             self.assertFalse(moran.empty, 'Descriptor dataframe should not be empty')
             self.assertTrue(moran.any().isnull().sum()== 0)
-
 
     def test_geary_autocorrelation(self):
         """ Testing Geary autocorrelation descriptor attributes and methods. """
@@ -216,7 +212,7 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             geary = desc.get_geary_autocorrelation()
 
             self.assertEqual(geary.shape, (1,240))
@@ -232,14 +228,13 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             ctd = desc.get_ctd()
 
             self.assertEqual(ctd.shape, (1,147))
             self.assertIsInstance(ctd, pd.DataFrame)
             self.assertFalse(ctd.empty, 'Descriptor dataframe should not be empty')
             self.assertTrue(ctd.any().isnull().sum()== 0)
-
 
     def test_conjoint_triad(self):
         """ Testing Conjoint Triad descriptor attributes and methods. """
@@ -249,14 +244,13 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             conjoint_triad = desc.get_conjoint_triad()
 
             self.assertEqual(conjoint_triad.shape, (1,343), 'Descriptor not of correct shape (1,343)')
             self.assertIsInstance(conjoint_triad, pd.DataFrame,'Descriptor not of type DataFrame')
             self.assertFalse(conjoint_triad.empty, 'Descriptor dataframe should not be empty')
             self.assertTrue(conjoint_triad.any().isnull().sum()== 0,'Descriptor contains null values')
-
 
     def test_seq_order_coupling_number(self):
         """ Testing sequence order coupling number descriptor attributes and methods. """
@@ -266,14 +260,13 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             seq_order_coupling_number = desc.get_seq_order_coupling_number()
 
             self.assertEqual(seq_order_coupling_number.shape, (1,60), 'Descriptor not of correct shape (1,60)')
             self.assertIsInstance(seq_order_coupling_number, pd.DataFrame,'Descriptor not of type DataFrame')
             self.assertFalse(seq_order_coupling_number.empty, 'Descriptor dataframe should not be empty')
             self.assertTrue(seq_order_coupling_number.any().isnull().sum()== 0,'Descriptor contains null values')
-
 
     def test_quasi_seq_order(self):
         """ Testing Quasi sequence order descriptor attributes and methods. """
@@ -283,7 +276,7 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             quasi_seq_order = desc.get_quasi_seq_order()
 
             self.assertEqual(quasi_seq_order.shape, (1,100), 'Descriptor not of correct shape (1,100)')
@@ -300,7 +293,7 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
             pseudo_AAC = desc.get_pseudo_aa_composition()
 
             self.assertEqual(pseudo_AAC.shape, (1,50), 'Descriptor not of correct shape (1,50)')
@@ -317,8 +310,8 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
-            amp_pseudo_AAC = desc.get_amp_pseudo__aa_composition()
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            amp_pseudo_AAC = desc.get_amp_pseudo_aa_composition()
 
             self.assertEqual(amp_pseudo_AAC.shape, (1,80), 'Descriptor not of correct shape (1,80)')
             self.assertIsInstance(amp_pseudo_AAC, pd.DataFrame)
@@ -342,7 +335,7 @@ class DescriptorTests(unittest.TestCase):
 
             #get random sequence in dataset to calculate descriptor values for
             random_seq = random.randint(0,len(self.all_test_datasets[data])-1)
-            desc = Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
+            desc = descr.Descriptors(self.all_test_datasets[data]['sequence'][random_seq], desc_dataset="")
 
             #test each descriptor is calculated when string of its name passed to func
             for val_desc in range(0,len(valid_desc)):

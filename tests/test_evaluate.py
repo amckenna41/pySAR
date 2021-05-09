@@ -8,7 +8,7 @@ from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, e
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-from evaluate import Evaluate
+from pySAR.evaluate import Evaluate
 
 class EvaluateTests(unittest.TestCase):
 
@@ -26,8 +26,7 @@ class EvaluateTests(unittest.TestCase):
         self.f = np.random.randint(20, size=10).reshape((-1,1))
 
     def test_evaluate(self):
-        """ Test Evaluate class initialisation and its attribute. """
-
+        """ Test Evaluate class initialisation and its attributes. """
 #1.)
         #assert that value error is raised when input parameters to class are not same shape
         with self.assertRaises(ValueError):
@@ -137,14 +136,13 @@ class EvaluateTests(unittest.TestCase):
             self.assertEqual(len(w),1)
             self.assertTrue("divide by zero encountered in double_scalars" in str(w[-1].message))
 
-        self.assertEqual(eval.mse, 0)
+        self.assertEqual(eval.rmse, 0)
         self.assertIsInstance(eval.rmse,float)
 #2.)
         #############################################
         eval = Evaluate(self.c, self.d)
         self.assertIsInstance(eval.mse,float)
         self.assertTrue(eval.mse>0)
-
 #3.)
         #############################################
         eval = Evaluate(self.e, self.f)
@@ -153,25 +151,80 @@ class EvaluateTests(unittest.TestCase):
 
     def test_mae(self):
         """ Testing MAE evaluation metric. """
+#1.)
+        with warnings.catch_warnings(record=True) as w:
+
+            warnings.simplefilter("always")
+            eval = Evaluate(self.a, self.a)
+            self.assertEqual(len(w),1)
+            self.assertTrue("divide by zero encountered in double_scalars" in str(w[-1].message))
+
+        self.assertEqual(eval.mae, 0)
+        self.assertIsInstance(eval.mae,float)
+#2.)
+        #############################################
+        eval = Evaluate(self.c, self.d)
+        self.assertIsInstance(eval.mae,float)
+        self.assertTrue(eval.mae>0)
+#3.)
+        #############################################
+        eval = Evaluate(self.e, self.f)
+        self.assertIsInstance(eval.mae,float)
+        self.assertTrue(eval.mae>0)
+
+
+    def test_explainedVar(self):
+        """ Testing Explained Variance metric. """
+#1.)
+        with warnings.catch_warnings(record=True) as w:
+
+            warnings.simplefilter("always")
+            eval = Evaluate(self.a, self.a)
+            self.assertEqual(len(w),1)
+            self.assertTrue("divide by zero encountered in double_scalars" in str(w[-1].message))
+
+        self.assertEqual(eval.explained_var, 1)
+        self.assertIsInstance(eval.explained_var,float)
+#2.)
+        #############################################
+        eval = Evaluate(self.c, self.d)
+        self.assertIsInstance(eval.explained_var,float)
+        self.assertTrue(eval.explained_var==-3)
+#3.)
+        #############################################
+        eval = Evaluate(self.e, self.f)
+        self.assertIsInstance(eval.explained_var,float)
+        self.assertTrue(eval.explained_var<=1)
+
+    def test_maxError(self):
+        """ Testing max error evaluation metric. """
+#1.)
+        with warnings.catch_warnings(record=True) as w:
+
+            warnings.simplefilter("always")
+            eval = Evaluate(self.a, self.a)
+            self.assertEqual(len(w),1)
+            self.assertTrue("divide by zero encountered in double_scalars" in str(w[-1].message))
+
+        self.assertEqual(eval.max_error_(), 0)
+        self.assertIsInstance(eval.max_error_(),float)
+#2.)
+        #############################################
+        eval = Evaluate(self.c, self.d)
+        self.assertIsInstance(eval.max_error_(),float)
+        self.assertTrue(eval.max_error_()==9)
+#3.)
+        #############################################
+        eval = Evaluate(self.e, self.f)
+        self.assertIsInstance(eval.max_error_(),float)
+        self.assertTrue(eval.max_error_()>=1)
+
+    def test_meanPoissonDeviance(self):
+        """ Testing mean poisson deviation metric. """
 
         pass
 
     def test_rpd(self):
         """ Testing RPD evaluation metric. """
-
-        pass
-
-    def test_explainedVar(self):
-        """ Testing Explained Variance metric. """
-
-        pass
-
-    def test_maxError(self):
-        """ Testing max error evaluation metric. """
-
-        pass
-
-    def test_meanPoissonDeviance(self):
-        """ Testing mean poisson deviation metric. """
 
         pass

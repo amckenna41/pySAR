@@ -14,9 +14,10 @@ except:
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-import utils as utils
-from globals import OUTPUT_FOLDER, OUTPUT_DIR
-from aaindex import AAIndex
+from .utils import *
+# import .utils as utils
+from .globals_ import DATA_DIR, OUTPUT_DIR, OUTPUT_FOLDER
+from .aaindex import AAIndex
 
 class ProDSP():
     """
@@ -100,7 +101,7 @@ class ProDSP():
 
         """
         #zero-pad encoded sequences so they are all the same length
-        self.encoded_sequences = utils.zero_padding(self.encoded_sequences)
+        self.encoded_sequences = zero_padding(self.encoded_sequences)
         self.num_seqs = self.encoded_sequences.shape[0]
         self.signal_len = self.encoded_sequences.shape[1]
 

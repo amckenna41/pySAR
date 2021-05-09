@@ -5,7 +5,6 @@
 
 import pandas as pd
 import numpy as np
-import utils as utils
 import datetime, time
 import argparse
 import itertools
@@ -18,16 +17,15 @@ from os import path, makedirs, remove
 from difflib import get_close_matches
 import json
 
-from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-from aaindex import  AAIndex
-from model import Model
-from proDSP import ProDSP
-from evaluate import Evaluate
-from pySAR import PySAR
-import utils as utils
-from descriptors import Descriptors
-from plots import plot_reg
-
+from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+from .aaindex import  AAIndex
+from .model import Model
+from .proDSP import ProDSP
+from .evaluate import Evaluate
+from .pySAR import PySAR
+from .utils import *
+from .descriptors import Descriptors
+from .plots import plot_reg
 
 class Encoding(PySAR):
     """
@@ -79,11 +77,11 @@ class Encoding(PySAR):
                 )
 
         #create output directory to store all of the program's outputs
-        utils.create_output_dir()
+        create_output_dir()
 
     def aai_encoding(
         self, use_dsp=True, aai_list=None, spectrum='power',window='hamming',
-        filter_=None
+        filter_=None, cutoff_index=1
         ):
         """
         Encoding all protein sequences using each of the available indices in the
@@ -110,6 +108,8 @@ class Encoding(PySAR):
             window function to apply to output of FFT on the protein sequences.
         filter : str (default = None)
             filter function to apply to output of FFT on the protein sequences.
+        cutoff_index : int (default = 1)
+            **refer to aai_encoding(...) docstring.
 
         Returns
         -------
@@ -137,14 +137,19 @@ class Encoding(PySAR):
         #if no indices passed into aai_list then use all indices by default
         if aai_list == None or aai_list == [] or aai_list == "":
             all_indices = self.aaindex.get_record_codes()
+        elif isinstance(aai_list,str):   #if single descriptor input, cast to list
+            all_indices = [aai_list]
         else:
             all_indices = aai_list
 
         print('\n#######################################################################################\n')
-        print('Encoding using {} AAI combinations with the parameters:\n\nSpectrum: {}\nWindow Function: {} \
-            \nFilter: {}\nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_indices), spectrum,\
-            window, filter_, repr(self.model), self.parameters, self.test_split))
+        print('Encoding using {} AAI combination(s) with the parameters:\n\n# Spectrum -> {}\n# Window Function -> {} \
+            \n# Filter -> {}\n# Algorithm -> {}\n# Parameters -> {}\n# Test Split -> {}\n'.format(len(all_indices), spectrum,\
+            window, filter_, repr(self.model), self.model.model.get_params(), self.test_split))
         print('#######################################################################################\n')
+
+        #set the proportion of iterations to actually complete -> mainly used for testing
+        cutoff_index = int(len(all_indices) * cutoff_index)
 
         '''
         1.) Get AAI index encoding of protein sequences, if using DSP (use_dsp = True),
@@ -160,7 +165,7 @@ class Encoding(PySAR):
 
         #using tqdm package to create a progress bar showing encoding progress
         #   file=sys.stdout to stop error where iterations were printing out of order
-        for index in tqdm(all_indices,unit=" indices",position=0, desc="AAIndex",file=sys.stdout):
+        for index in tqdm(all_indices[:cutoff_index],unit=" indices",position=0, desc="AAI Indices",file=sys.stdout):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_enoding(index)
@@ -219,11 +224,11 @@ class Encoding(PySAR):
         aaindex_metrics_ = aaindex_metrics_.sort_values(by=['R2'],ascending=False)
 
         #save results dataframe, saved to OUTPUT_DIR by default.
-        utils.save_results(aaindex_metrics_,'aaindex_results')
+        save_results(aaindex_metrics_,'aaindex_results')
 
         return aaindex_metrics_
 
-    def descriptor_encoding(self, desc_list=None, desc_combo=1):
+    def descriptor_encoding(self, desc_list=None, desc_combo=1, cutoff_index=1):
         """
         Encoding all protein sequences using the available physiochemical
         and structural descriptors. The sequences can be encoded using combinations
@@ -242,6 +247,8 @@ class Encoding(PySAR):
         decs_list : list (default = None)
             list of descriptors to use for encoding, by default all available descriptors
             in the descriptors module will be used for the encoding.
+        cutoff_index : int (default = 1)
+            **refer to aai_encoding(...) docstring.
 
         Returns
         -------
@@ -270,6 +277,9 @@ class Encoding(PySAR):
         if desc_list == None or desc_list == [] or desc_list == "":
             desc = Descriptors(self.data[self.seq_col], all_desc = True)
             all_descriptors = desc.all_descriptors_list(desc_combo)
+        elif isinstance(desc_list,str):     #if single descriptor input, cast to list
+            desc = Descriptors(self.data[self.seq_col])
+            all_descriptors = [desc_list]
         else:
             desc = Descriptors(self.data[self.seq_col])
             if desc_combo == 2:
@@ -280,10 +290,13 @@ class Encoding(PySAR):
                 all_descriptors = desc_list     #using default combination of descriptors
 
         print('\n\n##############################################################\n')
-        print('Encoding using {} descriptor combinations with the parameters:\n \
-            \nAlgorithm: {}\nParameters: {}\nTest Split: {}\n'.format(len(all_descriptors),\
+        print('Encoding using {} descriptor combination(s) with the parameters:\n \
+            \n# Algorithm: {}\n# Parameters: {}\n# Test Split: {}\n'.format(len(all_descriptors),\
             repr(self.model), self.parameters, self.test_split))
         print('##################################################################\n')
+
+        #set the proportion of iterations to actually complete -> mainly used for testing
+        cutoff_index = int(len(all_descriptors) * cutoff_index)
 
         start = time.time()     #start counter
 
@@ -295,7 +308,7 @@ class Encoding(PySAR):
         5.) Repeat steps 1 - 4 for all descriptors.
         6.) Output results into a final dataframe, save it and return.
         '''
-        for descr in tqdm(all_descriptors,unit=" descriptor",position=0,desc="Descriptors",file=sys.stdout):
+        for descr in tqdm(all_descriptors[:cutoff_index],unit=" descriptor",position=0,desc="Descriptors",file=sys.stdout):
 
             desc_ = pd.DataFrame()           #reset descriptor DF and list
             descriptor_list = []
@@ -311,9 +324,10 @@ class Encoding(PySAR):
                 desc_ = pd.concat(descriptor_list,axis=1) #concatenate descriptors
 
             else:
-                desc_ = getattr(desc, descr)
-                # descriptor_group_.append(desc.descriptor_groups['_'+descr])
+                # desc_ = getattr(desc, descr)
+                desc_ = desc.get_descriptor_encoding(descr)
                 descriptor_group_.append(desc.descriptor_groups[descr])
+                # descriptor_group_.append(desc.descriptor_groups[descr])
 
             X = desc_
 
@@ -330,12 +344,12 @@ class Encoding(PySAR):
             '''
             if X.shape[1] == 1 and repr(self.model) == "PLSRegression":
               tmp_model = Model('plsreg',parameters={'n_components':1})
-              X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X, Y)
+              X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X, Y, test_size=self.test_split)
               model_fit = tmp_model.fit()
               Y_pred = tmp_model.predict()
 
             else:
-              X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
+              X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y, test_size=self.test_split)
               model_fit = self.model.fit()
               Y_pred = self.model.predict()
 
@@ -388,13 +402,13 @@ class Encoding(PySAR):
             save_path = 'desc_results'
 
         #save results dataframe to specified save_path
-        utils.save_results(desc_metrics_df_,save_path)
+        save_results(desc_metrics_df_,save_path)
 
         return desc_metrics_df_
 
     def aai_descriptor_encoding(
-        self, aai_list=None, desc_list=None, desc_combo=1,
-        use_dsp = True, spectrum='power', window='hamming', filter_=None
+        self, aai_list=None, desc_list=None, desc_combo=1, use_dsp=True,
+        spectrum='power', window='hamming', filter_=None, cutoff_index=1
         ):
         """
         Encoding all protein sequences using each of the indices in the AAI as well
@@ -426,6 +440,8 @@ class Encoding(PySAR):
             **refer to aai_encoding(...) docstring.
         filter : str (default = None)
             **refer to aai_encoding(...) docstring.
+        cutoff_index : int (default = 1)
+            **refer to aai_encoding(...) docstring.
 
         Returns
         -------
@@ -454,6 +470,8 @@ class Encoding(PySAR):
         #if no indices passed into aai_list then use all indices by default
         if aai_list == None or aai_list == [] or aai_list == "":
             all_indices = self.aaindex.get_record_codes()
+        elif isinstance(aai_list,str):   #if single descriptor input, cast to list
+            all_indices = [aai_list]
         else:
             all_indices = aai_list
 
@@ -462,6 +480,9 @@ class Encoding(PySAR):
         if desc_list == None or desc_list == [] or desc_list == "":
             desc = Descriptors(self.data[self.seq_col], all_desc = True)
             all_descriptors = desc.all_descriptors_list(desc_combo)
+        elif isinstance(desc_list,str):     #if single descriptor input, cast to list
+            desc = Descriptors(self.data[self.seq_col])
+            all_descriptors = [desc_list]
         else:
             desc = Descriptors(self.data[self.seq_col])
             if desc_combo == 2:
@@ -472,11 +493,14 @@ class Encoding(PySAR):
                 all_descriptors = desc_list
 
         print('\n\n##############################################################\n')
-        print('Encoding using {} AAI and {} descriptor combinations with the parameters:\n\
-            Window: {}\nFilter: {}\nSpectrum: {}\nAlgorithm: {}\nParameters: {}\n\
-            Test Split: {}\n'.format(len(self.aaindex.get_record_codes()), len(all_descriptors),
+        print('Encoding using {} AAI and {} descriptor combination(s) with the parameters:\n\
+            \n# Window -> {}\n# Filter -> {}\n# Spectrum -> {}\n# Algorithm -> {}\n# Parameters -> {}\
+            \n# Test Split -> {}\n'.format(len(all_indices), len(all_descriptors),
                 window, filter_, spectrum, repr(self.model), self.parameters, self.test_split))
         print('##################################################################\n')
+
+        #set the proportion of iterations to actually complete -> mainly used for testing
+        cutoff_index = int(len(all_indices) * cutoff_index)
 
         start = time.time() #start counter
 
@@ -491,7 +515,7 @@ class Encoding(PySAR):
         6.) Repeat steps 1 - 5 for all indices in the AAI.
         7.) Output results into a final dataframe, save it and return.
         '''
-        for index in tqdm(all_indices,unit=" indices",desc="AAIndex"):
+        for index in tqdm(all_indices[:cutoff_index],unit=" indices",desc="AAI Indices"):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_enoding(index)
@@ -570,7 +594,7 @@ class Encoding(PySAR):
 
         end = time.time()           #stop counter
         elapsed = end - start
-        print('\n\n##############################################################')
+        print('\n##############################################################')
         print('Elapsed Time for AAI + Descriptor Encoding: {0:.3f} seconds'.format(elapsed))
 
         #if using combinations of 2 or 3 descriptors, group every 2 or 3 descriptor
@@ -607,7 +631,7 @@ class Encoding(PySAR):
             save_path = 'aaindex_desc_results'
 
         #save results dataframe to specified save_path
-        utils.save_results(aai_desc_metrics_df_,save_path)
+        save_results(aai_desc_metrics_df_,save_path)
 
         return aai_desc_metrics_df_
 

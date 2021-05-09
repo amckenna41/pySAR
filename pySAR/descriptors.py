@@ -16,14 +16,14 @@ import sys
 from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
 
-from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-from aaindex import  AAIndex
-from model import Model
-from proDSP import ProDSP
-from evaluate import Evaluate
-import pySAR
-import utils as utils
-from PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, \
+from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+from .aaindex import  AAIndex
+from .model import Model
+from .proDSP import ProDSP
+from .evaluate import Evaluate
+from .pySAR import *
+from .utils import *
+from .PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, \
     ConjointTriad, QuasiSequenceOrder, PseudoAAC
 
 class Descriptors():
@@ -125,11 +125,11 @@ class Descriptors():
                 columns containing the protein sequences.')
 
         #remove any gaps from protein sequences
-        self.protein_seqs = utils.remove_gaps(self.protein_seqs)
+        self.protein_seqs = remove_gaps(self.protein_seqs)
 
         #validate that all inputtted protein sequences are valid and only contain
         #   valid amino acids, if not then raise ValueError
-        invalid_seqs = utils.valid_sequence(self.protein_seqs)
+        invalid_seqs = valid_sequence(self.protein_seqs)
         if invalid_seqs!=None:
             raise ValueError('Invalid Amino Acids found in protein sequence \
                 dataset: {}'.format(invalid_seqs))
@@ -193,7 +193,7 @@ class Descriptors():
             file name containing pre-calculated descriptor values. Ideally, the
             file should be stored in the DATA_DIR.
         """
-        print('Importing Descriptors File....')
+        # print('Importing Descriptors File....')
 
         try:
             descriptor_df = pd.read_csv(descriptor_file)
@@ -433,7 +433,7 @@ class Descriptors():
           norm_moreaubroto_autocorr_keys.append(list(norm_moreaubroto_autocorr[0][aa_name[name]].keys()))
 
         #flatten column names/keys into 1 1-D list
-        norm_moreaubroto_autocorr_keys = utils.flatten(norm_moreaubroto_autocorr_keys)
+        norm_moreaubroto_autocorr_keys = flatten(norm_moreaubroto_autocorr_keys)
 
         '''
         Reformatting the output of the descriptors from the PyBioMed package.
@@ -448,7 +448,7 @@ class Descriptors():
                 )
 
         #flatten list of lists of the autocorrelation values
-        norm_moreaubroto_autocorr_values = utils.flatten(norm_moreaubroto_autocorr_values)
+        norm_moreaubroto_autocorr_values = flatten(norm_moreaubroto_autocorr_values)
 
         #reshape into N x M array where N is the number of protein sequences and M
         #   is the number of AA properties used in the correlation
@@ -509,7 +509,7 @@ class Descriptors():
           moran_autocorr_keys.append(list(moran_autocorr[0][aa_name[name]].keys()))
 
         #flatten column names/keys into 1 1-D list
-        moran_autocorr_keys = utils.flatten(moran_autocorr_keys)
+        moran_autocorr_keys = flatten(moran_autocorr_keys)
 
         '''
         Reformatting the output of the descriptors from the PyBioMed package.
@@ -524,7 +524,7 @@ class Descriptors():
                 )
 
         #flatten list of lists of the autocorrelation values
-        moran_autocorr_values = utils.flatten(moran_autocorr_values)
+        moran_autocorr_values = flatten(moran_autocorr_values)
 
         #reshape into N x M array where N is the number of protein sequences and M
         #   is the number of AA properties used in the correlation
@@ -584,7 +584,7 @@ class Descriptors():
           geary_autocorr_keys.append(list(geary_autocorr[0][aa_name[name]].keys()))
 
         #flatten column names/keys into 1 1-D list
-        geary_autocorr_keys = utils.flatten(geary_autocorr_keys)
+        geary_autocorr_keys = flatten(geary_autocorr_keys)
 
         '''
         Reformatting the output of the descriptors from the PyBioMed package.
@@ -599,7 +599,7 @@ class Descriptors():
                 )
 
         #flatten list of lists of the autocorrelation values
-        geary_autocorr_values = utils.flatten(geary_autocorr_values)
+        geary_autocorr_values = flatten(geary_autocorr_values)
 
         #reshape into N x M array where N is the number of protein sequences and M
         #   is the number of AA properties used in the correlation
@@ -1043,6 +1043,7 @@ class Descriptors():
        #filter out class attributes that are not any of the desired descriptors
        all_descriptors = list(filter(lambda x: x.startswith('_'), list(self.__dict__.keys())))
        all_descriptors = list(filter(lambda x: not x.startswith('_all_desc'), all_descriptors))
+       all_descriptors = [de[1:] for de in all_descriptors]
 
        #get all combinations of 2 or 3 descriptors.
        if desc_combo == 2:

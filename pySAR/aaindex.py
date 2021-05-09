@@ -20,8 +20,7 @@ from contextlib import closing
 from collections import defaultdict
 import itertools
 from difflib import get_close_matches
-
-from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+from .globals_ import DATA_DIR, OUTPUT_DIR, OUTPUT_FOLDER
 
 #look into and remove ('-') from get_encoding & get_amino_acids functions.
 #fix     def get_record_from_name(self, name): <- not returning anything
@@ -130,6 +129,8 @@ class AAIndex():
         # else:
         #parse AAIndex database file into JSON format
         self.aaindex_json = self.parse_aaindex_to_json()
+
+        self.categories = None
 
     def parse_aaindex_to_json(self):
         """
@@ -294,6 +295,7 @@ class AAIndex():
                     print('Error downloading or exporting AAIndex from the url {}.'.format(self.url))
             else:
                 pass    #AAIndex already in folder
+                print('AAIndex already exists in folder.')
         except:
             raise OSError('Save Directory does not exist: {}.'.format(save_dir))
 
@@ -354,7 +356,7 @@ class AAIndex():
             category_substring = category_substring.split(" ",1)
             aaindex_category[d[i][0]] = category_substring[0]
 
-        return aaindex_category
+        self.categories = aaindex_category
 
     def get_amino_acids(self):
         """
@@ -383,7 +385,7 @@ class AAIndex():
         one hot encoded array of the 20 canonical amino acids.
       """
       all_amino_acids = self.get_amino_acids()
-      values = np.array(all_amino_acids[1:])    #convert amino acids to np array 
+      values = np.array(all_amino_acids[1:])    #convert amino acids to np array
 
       #encode amino acids with value between 0 and n_classes-1.
       label_encoder = LabelEncoder()
@@ -481,13 +483,18 @@ class AAIndex():
 
         Returns
         -------
-        feature : dict
-            dict of full AAI database record.
+        feature : dict/None
+            dict of full AAI database record or None if not found.
         """
-        feature_names = self.get_record_names()
-        feature = ("\n".join(s for s in name if name.lower() in s.lower())).splitlines()
+        correct_index = 0
+        for index, value in self.aaindex_json.items():
+          if value['description'] != name:
+           continue
+          else:
+           correct_index = index
+           return self.aaindex_json[correct_index]
 
-        return feature
+        return None
 
     def get_values_from_record(self, index_code):
       """
@@ -574,8 +581,10 @@ class AAIndex():
       if index_code not in (self.get_record_codes()):
           raise ValueError('Record index {} not in AAI database'.format(index_code))
 
-      categories = self.parse_aaindex_to_category()
-      cat = categories[index_code]
+      if self.categories == None:
+          self.parse_aaindex_to_category()
+
+      cat = self.categories[index_code]
 
       return cat
 
@@ -596,6 +605,14 @@ class AAIndex():
     @aaindex_filename.setter
     def aaindex_filename(self, value):
         self._aaindex_filename = value
+
+    @property
+    def categories(self):
+        return self._categories
+
+    @categories.setter
+    def categories(self, value):
+        self._categories = value
 
 ################################################################################
 

@@ -13,14 +13,14 @@ import os
 from difflib import get_close_matches
 import json
 
-from globals import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-from aaindex import  AAIndex
-from model import Model
-from proDSP import ProDSP
-from evaluate import Evaluate
-import utils as utils
-from plots import plot_reg
-import descriptors as desc
+from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
+from .aaindex import  AAIndex
+from .model import Model
+from .proDSP import ProDSP
+from .evaluate import Evaluate
+from .utils import *
+from .plots import plot_reg
+from .descriptors import *
 
 class PySAR():
     """
@@ -116,7 +116,7 @@ class PySAR():
         self.algoritm = repr(self.model)
 
         #create output folder to store all model assets and results
-        utils.create_output_dir()
+        create_output_dir()
 
     def read_data(self):
         """
@@ -155,10 +155,10 @@ class PySAR():
                 - {} /n '.format(self.seq_col, self.data.columns))
 
         #remove any gaps found in sequences in dataset
-        self.data[self.seq_col] = utils.remove_gaps(self.data[self.seq_col])
+        self.data[self.seq_col] = remove_gaps(self.data[self.seq_col])
 
         #verify no invalid amino acids found in sequences, if so then raise error
-        invalid_seqs = utils.valid_sequence(self.get_seqs())
+        invalid_seqs = valid_sequence(self.get_seqs())
         if invalid_seqs!=None:
             raise ValueError('Invalid Amino Acids found in protein sequence \
                 dataset: {}'.format(invalid_seqs))
@@ -219,7 +219,7 @@ class PySAR():
                 temp_seq_vals = []
 
             #zero-pad encoding list so that sequences are all the same length
-            temp_all_seqs = utils.zero_padding(temp_all_seqs)
+            temp_all_seqs = zero_padding(temp_all_seqs)
 
             #convert list of lists into array
             temp_all_seqs = np.array(temp_all_seqs, dtype="float32")
@@ -249,7 +249,7 @@ class PySAR():
                     temp_all_seqs.append(temp_seq_vals)
                     temp_seq_vals = []
 
-                temp_all_seqs = utils.zero_padding(temp_all_seqs)
+                temp_all_seqs = zero_padding(temp_all_seqs)
 
                 temp_all_seqs =np.array(temp_all_seqs, dtype="float32")
 
@@ -294,7 +294,7 @@ class PySAR():
         """
         #validate AAI indices are present in the input parameter
         if indices == None or indices == "":
-            raise ValueError('AAI indices input parameter cannot be None or empty')
+            raise ValueError('AAI indices input parameter cannot be None or empty.')
 
         self.aai_indices = indices
 
@@ -358,7 +358,7 @@ class PySAR():
         plot_reg(Y_test, Y_pred, eval.r2)
 
         #save results of encoding to output folder specified by OUTPUT_FOLDER
-        utils.save_results(aai_df, 'aai_encoding')
+        save_results(aai_df, 'aai_encoding')
 
         #reset aai_indices instance variable
         # self.aai_indices = ""
@@ -514,7 +514,7 @@ class PySAR():
         plot_reg(Y_test, Y_pred, eval.r2)
 
         #save results of encoding to output folder
-        utils.save_results(desc_df, 'desc_encoding')
+        save_results(desc_df, 'desc_encoding')
 
         #reset descriptors instance variable
         # self.descriptors = ""
@@ -620,9 +620,9 @@ class PySAR():
         if isinstance(self.descriptors, list):
             for i in range(0,len(self.descriptors)):
                 desc_group += desc_group + ', '+ \
-                    descr.descriptor_groups['_'+self.descriptors[i]]
+                    descr.descriptor_groups[self.descriptors[i]]
         else:
-            desc_cat = descr.descriptor_groups['_'+self.descriptors]
+            desc_cat = descr.descriptor_groups[self.descriptors]
 
         #set output dataframe columns
         aai_desc_df['Index'] = str(self.aai_indices)
@@ -636,14 +636,14 @@ class PySAR():
         aai_desc_df['MAE'] = eval.mae
         aai_desc_df['Explained Var'] = eval.explained_var
 
-        #plot regression plot for predictive model
-        plot_reg(Y_test, Y_pred, eval.r2)
-
         #print out results from encoding
         self.output_results(aai_desc_df)
 
+        #plot regression plot for predictive model
+        plot_reg(Y_test, Y_pred, eval.r2)
+
         #save results of encoding to output folder
-        utils.save_results(aai_desc_df, 'aai_desc_encoding')
+        save_results(aai_desc_df, 'aai_desc_encoding')
 
         return aai_desc_df
 

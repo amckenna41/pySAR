@@ -5,8 +5,10 @@
 import os
 import sys
 import numpy as np
-from aaindex import AAIndex
-from globals import DATA_DIR, OUTPUT_FOLDER, OUTPUT_DIR
+# from aaindex import AAIndex
+import pySAR.aaindex as aaindex
+import pySAR.globals_ as _globals
+
 import unittest
 import requests
 import urllib.request
@@ -17,7 +19,7 @@ class AAIndexTests(unittest.TestCase):
     def setUp(self):
         """ Inititalise AAIndex object and test directory variable. """
 
-        self.aaindex = AAIndex()
+        self.aaindex = aaindex.AAIndex()
         self.TEST_DIR = "tests/test_data"
 
     @unittest.skip("Don't want to overload the FTP server each time tests are run.")
@@ -189,6 +191,20 @@ class AAIndexTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             feature_vals = self.aaindex.get_record_from_code(feature7)
 
+    def test_get_record_from_name(self):
+
+        feature1 = 'YUTK870101'
+        # Unfolding Gibbs energy in water, pH7.0 (Yutani et al., 1987)
+        feature2 = 'ZIMJ680103'
+# Polarity (Zimmerman et al., 1968)
+        feature3 = 'ROSM880103'
+# Loss of Side chain hydropathy by helix formation (Roseman, 1988)
+
+        error_feature1 = 'blahblahblah'
+        error_feature2 = 'not a record name'
+        error_feature3 = 'also not a record name'
+
+
     def test_record_codes(self):
         """ Test Case to check that correct feature/record codes are in the parsed JSON
         of all AAI records. Also testing that random erroneous feature codes are
@@ -235,6 +251,7 @@ class AAIndexTests(unittest.TestCase):
         feature4 = 'WOLS870102'
         err_feature1 = "blahblahblah"
         err_feature2 = "12345"
+        err_feature3 = 100.902
 #1.)
         cat1 = self.aaindex.get_category_from_record(feature1)
         cat2 = self.aaindex.get_category_from_record(feature2)
@@ -255,6 +272,9 @@ class AAIndexTests(unittest.TestCase):
 
         with (self.assertRaises(ValueError)):
             cat6 = self.aaindex.get_category_from_record(err_feature2)
+
+        with (self.assertRaises(TypeError)):
+            cat7 = self.aaindex.get_category_from_record(err_feature3)
 
     def test_aaindex_names(self):
         """ Test Case to check that the correct names/description is returned for each index. """

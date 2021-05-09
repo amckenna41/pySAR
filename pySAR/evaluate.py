@@ -157,7 +157,7 @@ class Evaluate():
         """
         return explained_variance_score(self.Y_true, self.Y_pred, multioutput=multioutput)
 
-    def max_error(self):
+    def max_error_(self):
         """
         Calculates the maximum residual error between observed and predicted
         values.
@@ -167,7 +167,7 @@ class Evaluate():
         max_error : float
             A positive floating point value (the best value is 0.0).
         """
-        return max_error(self.Y_true, self.Y_pred)
+        return float(max_error(self.Y_true, self.Y_pred))
 
     def mean_poisson_deviance(self):
         """

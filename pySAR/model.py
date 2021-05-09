@@ -20,8 +20,7 @@ import inspect
 import os
 import pickle
 
-from evaluate import Evaluate
-
+from .evaluate import Evaluate
 
 class Model():
     """
