@@ -10,7 +10,6 @@ unittest.TestLoader.sortTestMethodsUsing = None
 import random
 
 from pySAR.PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, PseudoAAC
-# from pySAR.descriptors import D
 import pySAR.descriptors as descr
 import pySAR.utils as utils
 

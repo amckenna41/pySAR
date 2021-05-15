@@ -22,8 +22,6 @@ import itertools
 from difflib import get_close_matches
 from .globals_ import DATA_DIR, OUTPUT_DIR, OUTPUT_FOLDER
 
-#look into and remove ('-') from get_encoding & get_amino_acids functions.
-#fix     def get_record_from_name(self, name): <- not returning anything
 class AAIndex():
     """
             Python parser for AAindex1: Amino Acid Index Database
@@ -513,7 +511,7 @@ class AAIndex():
       """
       #stripping input of whitespace
       try:
-          index_code.strip()
+          index_code = index_code.strip()
       except:
         raise TypeError('Input parameter {} is not of correct datatype string, got {}' \
             .format(index_code, type(index_code)))
@@ -543,7 +541,7 @@ class AAIndex():
       """
       #stripping input of whitespace
       try:
-          index_code.strip()
+          index_code = index_code.strip()
       except:
         raise TypeError('Input parameter {} is not of correct datatype string, got {}' \
             .format(index_code, type(index_code)))
@@ -572,7 +570,7 @@ class AAIndex():
       """
       #stripping input of whitespace
       try:
-          index_code.strip()
+          index_code = index_code.strip()
       except:
         raise TypeError('Input parameter {} is not of correct datatype string, got {}' \
             .format(index_code, type(index_code)))
@@ -622,7 +620,7 @@ class AAIndex():
         )
 
     def __repr__(self):
-        return (self.aaindex_json)
+        return (json.dumps(self.aaindex_json, indent=4, sort_keys=True))
 
     def __sizeof__(self):
         """return size of AAI database file"""

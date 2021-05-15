@@ -1,10 +1,10 @@
 
-![alt text](https://raw.githubusercontent.com/amckenna41/pySAR/main/pySAR.png)
+![alt text](https://raw.githubusercontent.com/amckenna41/pySAR/main/images/pySAR.png)
 
 # pySAR <a name="TOP"></a>
-![PyPI](https://img.shields.io/pypi/v/pySAR)
+[![PyPI](https://img.shields.io/pypi/v/pySAR)](https://pypi.org/project/pySAR/)
 [![pytest](https://github.com/amckenna41/pySAR/workflows/Building%20and%20Testing%20%F0%9F%90%8D/badge.svg)](https://github.com/amckenna41/pySAR/actions?query=workflowBuilding%20and%20Testing%20%F0%9F%90%8D)
-![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)
+[![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
 [![PythonV](https://img.shields.io/pypi/pyversions/pySAR?logo=2)](https://pypi.org/project/pySAR/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 [![Build](https://img.shields.io/github/workflow/status/amckenna41/pySAR/Deploy%20to%20PyPI%20%F0%9F%93%A6)](https://github.com/amckenna41/pySAR/actions)
@@ -139,6 +139,7 @@ Output DataFrame showing the 4 predictive models built using the PLS algorithm, 
 Calculate the protein descriptor values for a dataset of protein sequences from the 15 available descriptors in the <em>descriptors</em> module. Use each descriptor as a feature set in the building of the predictive models used to predict the activity value of unseen sequences. By default, function will look for a file called 'descriptors.csv' that contains the pre-calculated descriptor values for a dataset, this filename can be changed according to the <em>descriptors_csv</em> input parameter, if file is not found then all descriptor values will be calculated for the dataset.
 ```python
 from pySAR.encoding import *
+
 #create instance of Encoding class using AdaBoost algorithm, using 100 estimators & a learning rate of 1.5
 encoding = Encoding(dataset="dataset.txt", activity="activity_col",algorithm="AdaBoost",   
        parameters={"n_estimators":100,"learning_rate":1.5}, descriptors_csv="descriptors.csv")
@@ -230,9 +231,9 @@ Directories
 -----------
 * `/pySAR/PyBioMed` - package partially forked from https://github.com/gadsbyfly/PyBioMed, used in
 the calculation of the protein descriptors.
-* `/Results` - stores all calculated results that were generated for the research article, studying the SAR for a thermostability dataset.
-* `/pySAR/tests` - unit and integration tests for pySAR.
-* `/pySAR/data` - all required data and datasets are stored in this folder.
+* `/Results` - stores the associated research paper created alongside the software. Also includes all results generated from the research as well as the article's supplementary materials.
+* `/tests` - unit and integration tests for pySAR.
+* `/data` - all required data and datasets are stored in this folder.
 
 
 Tests

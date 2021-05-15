@@ -154,6 +154,9 @@ class Descriptors():
         self.amp_pseudo_aa_composition = pd.DataFrame()
         self.all_descriptors = pd.DataFrame()
 
+        #get shape of descriptors
+        self.shape = self.aa_descriptors.shape
+
         #try importing descriptors csv with pre-calculated descriptor values,
         #   if not found then calculate all descriptors if all_desc is true
         self.desc_dataset = os.path.join(DATA_DIR, desc_dataset)
@@ -946,6 +949,13 @@ class Descriptors():
             dataframe of descriptor values, calculated from the descriptor
             instances' protein sequences. None returned if no matching descriptor found.
         """
+        #remove any detected whitespace from input parameter
+        try:
+          descriptor = descriptor.strip()
+        except:
+          raise TypeError('Input parameter {} is not of correct datatype string, got {}' \
+            .format(descriptor, type(descriptor)))
+
         #validate input descriptor is a valid available descriptor, get its closest match
         desc_matches = get_close_matches(descriptor,self.valid_descriptors(),cutoff=0.4)
         if desc_matches!=[]:

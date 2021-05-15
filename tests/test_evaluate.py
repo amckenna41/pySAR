@@ -15,11 +15,9 @@ class EvaluateTests(unittest.TestCase):
     def setUp(self):
         """ Create dummy data to test evaluate class. """
 
-        # self.a = np.random.ranf(10, size=100)
         self.a = np.random.ranf(size=100).reshape((-1,1))
         self.a_ = np.random.ranf(size=100).reshape((-1,1))
         self.b = np.random.ranf(size =80).reshape((-1,1))
-        # self.b = np.array.randint
         self.c = np.array([1,2,3,4,5,6,7,8,9,10]).reshape((-1,1))
         self.d = np.array([10,9,8,7,6,5,4,3,2,1]).reshape((-1,1))
         self.e = np.random.randint(20, size=10).reshape((-1,1))

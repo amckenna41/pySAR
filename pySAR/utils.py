@@ -233,5 +233,3 @@ def save_results(results, name):
     else:
         raise TypeError('Results Object must be of type: dict, pd.Series or \
             pd.DataFrame, got object of type {}'.format(type(results)))
-
-#def convert fasta_to_seq(fasta)

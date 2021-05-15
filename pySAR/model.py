@@ -403,6 +403,14 @@ class Model():
 ######################          Getters & Setters          ######################
 
     @property
+    def model(self):
+        return self._model
+
+    @model.setter
+    def model(self, val):
+        self._model = val
+
+    @property
     def test_split(self):
         return self._test_split
 
@@ -458,6 +466,9 @@ class Model():
 
     def __repr__(self):
         return type(self.model).__name__
+
+    def __eq__(self, other):
+        return self.model == other.model
 
     def __sizeof__(self):
         """ Get size of sklearn model """

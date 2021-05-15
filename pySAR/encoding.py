@@ -117,6 +117,11 @@ class Encoding(PySAR):
             dataframe of calculated metric values from generated predictive models
             encoded using indices in the AAI for the AAI encoding strategy.
         """
+        #setting DSP params to None if not using them
+        if !(use_dsp):
+            spectrum = None
+            window = None
+            filter_ = None
 
         #initialise dataframe to store all output results of AAI encoding
         aaindex_metrics_df = pd.DataFrame(columns=['Index','Category','R2', 'RMSE',
@@ -449,6 +454,12 @@ class Encoding(PySAR):
             dataframe of calculated metric values from generated predictive models
             encoded using AAI indices + descriptors encoding strategy.
         """
+        #setting DSP params to None if not using them
+        if !(use_dsp):
+            spectrum = None
+            window = None
+            filter_ = None
+
         #create dataframe to store output results from models
         aai_desc_metrics_df = pd.DataFrame(columns=['Index','Category', 'Descriptor',\
             'Descriptor Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])

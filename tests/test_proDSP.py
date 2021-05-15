@@ -6,12 +6,9 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-# from aaindex import AAIndex
 import pySAR.aaindex as aaindex
 import pySAR.proDSP as proDSP_
 import pySAR.pySAR as pysar
-# from proDSP import ProDSP
-# from pySAR import PySAR
 import pySAR
 import unittest
 import requests
@@ -60,10 +57,13 @@ class ProDSPTests(unittest.TestCase):
         self.assertEqual(proDsp.num_seqs, self.pySAR.num_seqs)
         self.assertEqual(proDsp.signal_len, self.pySAR.seq_len)
         self.assertEqual(proDsp.fft_power.shape, encoded_seq1.shape)
+        self.assertTrue(proDsp.fft_power.dtype, 'float64')
         self.assertEqual(proDsp.fft_real.shape, encoded_seq1.shape)
+        self.assertEqual(proDsp.fft_real.dtype, 'float64')
         self.assertEqual(proDsp.fft_abs.shape, encoded_seq1.shape)
+        self.assertEqual(proDsp.fft_abs.dtype, 'float64')
         self.assertEqual(proDsp.fft_imag.shape, encoded_seq1.shape)
-        # self.assertTrue(proDsp.spectrum_encoding == proDSP.fft_power)
+        self.assertEqual(proDsp.fft_imag.dtype, 'float64')
         self.assertTrue(proDsp.spectrum_encoding.any() == proDsp.fft_power.any())
         self.assertEqual(proDsp.fft_freqs.shape,encoded_seq1.shape)
 #2.)
@@ -127,11 +127,7 @@ class ProDSPTests(unittest.TestCase):
 
     def test_max_freq(self):
         """ Testing max frequency functionality. """
-
 #1.)
         test_aaindices1 = "COHE430101"
         encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)
         proDsp = proDSP_.ProDSP(encoded_seq1)
-
-# proDSP.fft.dtype == dtype('complex128')
-# proDSP.rfft.dtype == dtype('complex128')

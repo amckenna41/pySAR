@@ -263,7 +263,7 @@ class PySAR():
 
             return encoded_seqs
 
-    def encode_aai(self,spectrum=None, indices=None, window=None, filter_=None,use_dsp=True):
+    def encode_aai(self,indices=None,spectrum=None, window=None, filter_=None,use_dsp=True):
         """
         Encode using AAI indices. If multiple indices input then calculate each
         and concatenate them. Build predictive model from AAI feature data. The
@@ -492,9 +492,9 @@ class PySAR():
         if isinstance(self.descriptors, list):
             for i in range(0,len(self.descriptors)):
                 desc_group += desc_group + ', '+ \
-                    descr.descriptor_groups['_'+self.descriptors[i]]
+                    descr.descriptor_groups[self.descriptors[i]]
         else:
-            desc_cat = descr.descriptor_groups['_'+self.descriptors]
+            desc_cat = descr.descriptor_groups[self.descriptors]
 
         #set results Series variables
         desc_df['Descriptor'] = descriptor
@@ -505,6 +505,10 @@ class PySAR():
         desc_df['RPD'] = eval.rpd
         desc_df['MAE'] = eval.mae
         desc_df['Explained Var'] = eval.explained_var
+
+        #ensure aai indices attribute doesn't show up in output results
+        if self.aai_indices != None:
+            self.aai_indices = None
 
         #print out results from encoding
         self.output_results(desc_df)
@@ -656,7 +660,7 @@ class PySAR():
             dictionary or Series of metrics and their associated values.
         """
         print('\n#############################################################')
-        print('######################## Results ############################\n')
+        print('######################## Results ############################')
         print('#############################################################\n')
         print('####################### Parameters ##########################\n')
         print('# Dataset -> {}\n# Dataset Size -> {}\n# Sequence Length -> {} \

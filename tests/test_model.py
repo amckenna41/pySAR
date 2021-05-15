@@ -17,6 +17,7 @@ warnings.warn = warn
 
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRegressor
+from sklearn.linear_model import Lasso
 from sklearn.svm import SVR
 from pySAR.model import *
 
@@ -200,21 +201,51 @@ class ModelTests(unittest.TestCase):
         for k, v in model.model.get_params().items():
             self.assertIn(k, list(svr_model.get_params()))
 #5.)
+        ada_parameters = {"n_estimators":150, "learning_rate":1.2,"loss":"square"}
+        model = Model(algorithm="AdaBoost",parameters=ada_parameters)
+        ada_model = AdaBoostRegressor(n_estimators=150, learning_rate=1.2, loss="square")
 
+        for k, v in model.model.get_params().items():
+            self.assertIn(k, list(ada_model.get_params()))
 #6.)
+        bagging_parameters = {"n_estimators":50, "max_samples":1.5,"max_features":2}
+        model = Model(algorithm="Bagging",parameters=bagging_parameters)
+        bagging_model = BaggingRegressor(n_estimators=50, max_samples=1.5, max_features="square")
 
+        for k, v in model.model.get_params().items():
+            self.assertIn(k, list(bagging_model.get_params()))
 #7.)
+        lasso_parameters = {"alpha":1.5, "max_iter":500,"tol":0.004}
+        model = Model(algorithm="lasso",parameters=lasso_parameters)
+        lasso_model = Lasso(alpha=1.5, max_iter=500, tol=0.004)
 
-    def test_hyperparamter_tuning(self):
-        pass
+        for k, v in model.model.get_params().items():
+            self.assertIn(k, list(lasso_model.get_params()))
 
     def test_copy(self):
+        """ Testing model copy function. """
+#1.)
+        pls_parameters = {"n_components":20,"scale":False, "max_iter":200}
+        model = Model(algorithm="PLSReg",parameters=pls_parameters)
+        model_copy = model.copy()
+
+        self.assertTrue(model_copy == model.model)
+#2.)
+        svr_parameters = {"kernel":"poly", "degree":5,"coef0":1}
+        model = Model(algorithm="SVR",parameters=svr_parameters)
+        model_copy = model.copy()
+
+        self.assertTrue(model_copy == model.model)
+
+    def test_hyperparamter_tuning(self):
         pass
 
     def tearDown(self):
 
         del self.dummy_X
+        del self.dummy_X_2
         del self.dummy_Y
+        del self.dummy_Y_2
 
 if __name__ == '__main__':
     #run all model tests

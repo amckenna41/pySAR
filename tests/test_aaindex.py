@@ -5,7 +5,6 @@
 import os
 import sys
 import numpy as np
-# from aaindex import AAIndex
 import pySAR.aaindex as aaindex
 import pySAR.globals_ as _globals
 
@@ -13,7 +12,6 @@ import unittest
 import requests
 import urllib.request
 
-#test whitespace functionality
 class AAIndexTests(unittest.TestCase):
 
     def setUp(self):
