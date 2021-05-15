@@ -155,7 +155,7 @@ class Descriptors():
         self.all_descriptors = pd.DataFrame()
 
         #get shape of descriptors
-        self.shape = self.aa_descriptors.shape
+        self.shape = self.all_descriptors.shape
 
         #try importing descriptors csv with pre-calculated descriptor values,
         #   if not found then calculate all descriptors if all_desc is true
