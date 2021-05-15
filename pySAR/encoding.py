@@ -118,7 +118,7 @@ class Encoding(PySAR):
             encoded using indices in the AAI for the AAI encoding strategy.
         """
         #setting DSP params to None if not using them
-        if !(use_dsp):
+        if not (use_dsp):
             spectrum = None
             window = None
             filter_ = None
