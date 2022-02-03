@@ -23,7 +23,6 @@ Table of Contents
   * [Requirements](#requirements)
   * [Installation](#installation)
   * [Usage](#usage)
-  
   * [Directory Folders](#directories)
   * [Tests](#tests)
   * [Open Issues](#Issues)
@@ -237,7 +236,7 @@ Output results showing AAI index and its category, the protein descriptor and it
 
 Research Article
 ----------------
-The research article that accompanied this software is: "Comparative study on the utility of protein spectra and protein descriptors in the analysis of sequence activity relationships". This research article is uploaded to the repository as pySAR_research.pdf
+The research article that accompanied this software is: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as pySAR_research.pdf
 
 Directories
 -----------
@@ -249,11 +248,6 @@ the calculation of the protein descriptors.
 
 Known Issues
 -----
-* asdsd
-* awdad
-* fsf
-* fsf
-
 Tests
 -----
 To run all tests, from the main pySAR folder run:
