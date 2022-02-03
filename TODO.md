@@ -1,0 +1,34 @@
+TO DO List:
+
+- [ ] Add Config files instead of individual parameters in function
+- [ ] Add Manifest file
+- [ ] Add License & Releases
+- [ ] Add distance matrices to SOCNum
+- [ ] Add coveralls
+- [ ] Change descriptor functions to accept sequences themselves.
+- [ ] Add references for all descriptors
+- [ ] Look over and add some encoding unit tests.
+- [ ] Update version in init
+- [ ] Look into pssm: https://nanx.me/protr/reference/extractPSSM.html
+- [ ] Change AAP parameter in descriptors.
+- [ X ] Split up CTD to C, T and D.
+- [ X ] Add lag arg to Autocorrelation descriptors.
+- [ ] Descriptors accewpt AAI code for property names.
+- [ ] Add DPC and TPC lists to files.
+- [ ] Correct supplementary_materials
+- [ ] Add example comments to func definitions
+- [ ] Incorpate AAI 2 & 3
+- [ ] Installation from source in readme
+- [ ] Parse descriptors into embedded JSON format
+- [ ] Seperate pySAR and descriptors into different softwares??
+- [X] Change ProDSP to pyDSP
+- [ ] Update comments in funcs to that of DCBLSTM_PSP
+- [ ] Add config file to README
+- [ ] Change Explained Var to Explained Variance
+- [ ] Add : to parameters in functions 
+- [ ] Change descriptor comments to account for each descriptor func working per sequence. 
+- [ ] Change workflow name from deploy_to_testpypi -> deploy_testpypi
+- [ ] Look at rename some functions in AAIndex file
+- [ ] Move parse functions to bottom of file
+- [ ] Change lambda (key word) to lamda
+- [ ] Remove parameter instances of class Object in comments?

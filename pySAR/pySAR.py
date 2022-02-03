@@ -10,17 +10,19 @@ import itertools
 import pickle
 import io
 import os
+import sys
 from difflib import get_close_matches
 import json
+from json import JSONDecodeError
 
 from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
 from .aaindex import AAIndex
 from .model import Model
-from .proDSP import ProDSP
+from .pyDSP import PyDSP
 from .evaluate import Evaluate
 from .utils import *
 from .plots import plot_reg
-from .descriptors import Descriptors
+from .descriptors_ import Descriptors
 
 class PySAR():
     """
@@ -42,74 +44,88 @@ class PySAR():
 
     Attributes
     ----------
-    dataset : str (default = "")
-        full path to dataset or name of dataset if it is stored in DATA_DIR.
-    seq_col : str (default = "sequence")
-        name of column in dataset that stores the protein sequences. By default
-        the class will look for a column called 'sequence'.
-    activity : str (default = "")
-        name of activity column in dataset.
-    algorithm : str (default = "")
-        name of regression model to use for building the predictive models, class
-        will accept full name or approximate name of model e.g "PLSReg", "plsregg" and
-        "PLSRegression" will all build a PlsRegression model.
-    parameters : dict (default = {})
-        dictionary of parameters to use for the predictive model. By default the
-        default parameters of the model will be used.
-    test_split : float (default = 0.2)
-        specifies the proportion of the dataset to use for testing. By default a
-        80:20 split will be used, meaning 80% of the data will be used for training
-        and 20% for testing.
-    descriptors_csv : str (default = "descriptors.csv")
-        csv file storing the pre-calculated descriptor values for the sequences
-        in the dataset. By default the class will look for a file named
-        "descriptors.csv" in the DATA_DIR and will use its contents as the
-        descriptor features, instead of having to recalculate all descriptors for the dataset.
-
+        :config_file (str): path to configuration file.
+        
     Methods
     -------
     read_data():
+        read dataset of protein sequences.
+    preprocessing():
+        pre-process / clean protein sequence dataset.
+    get_aai_encoding(indices):
+        get AAI encoding for ues for user inputted index/indices.
+    aai_encoding(indices=None, spectrum=None, window=None, filter_=None, convolution=None, use_dsp=True):
+        get encoded protein sequences according to user inputted index/indices, applying DSP if applicable. 
+    get_descriptor_encoding(descriptors):
+        calculate 
 
-    preprocessing()
-
-    get_aai_encoding()
-
-    aai_encoding()
-
-    desc_encoding()
-
+***
     aai_desc_encoding()
 
     output_results()
     """
-    def __init__(self,dataset="",seq_col="sequence", activity="",algorithm="",\
-        parameters={},test_split=0.2, descriptors_csv="descriptors.csv"):
+    def __init__(self, config_file):
 
-        self.dataset = dataset
-        self.seq_col = seq_col
-        self.activity = activity
-        self.algorithm = algorithm
-        self.parameters = parameters
-        self.test_split = test_split
-        self.descriptors_csv = descriptors_csv
-        self.aai_indices = None
-        self.descriptors = None
+        self.config_file = config_file
+        self.params = {}
+        #open json config file
+        try:
+            if not os.path.isfile(self.config_file):
+                raise OSError('JSON config file not found at path: {}.'.format(config_file))
+            with open(self.config_file) as f:
+                self.params = json.load(f)
+        except JSONDecodeError as e:
+            print('Error getting config JSON file: {}.'.format(self.config_file))
+            sys.exit()
 
-        #create instance of AAIndex class
-        self.aaindex = AAIndex()
+        #dataset parameters
+        self.dataset = self.params["dataset"][0]["dataset"]
+        self.sequence_col = self.params["dataset"][0]["sequence_col"]
+        self.activity = self.params["dataset"][0]["activity"]
+
+        #model parameters
+        self.algoritm = self.params["model"][0]["algoritm"]
+        algorithm = self.params["model"][0]["algoritm"]
+        self.parameters = self.params["model"][0]["parameters"]
+        self.test_split = self.params["model"][0]["test_split"]
+
+        #aaindex parameters
+        self.aaindex_filename = self.params["aaindex"][0]["aaindex_filename"]
+
+        #descriptor parameters
+        self.descriptors_csv = self.params["descriptors"][0]["descriptors_csv"]
+        self.all_desc = self.params["descriptors"][0]["descriptors"]["all_desc"]
+        self.all_descriptors = self.params["descriptors"][0]["descriptors"]
+        self.descriptor_params = self.params["descriptor_parameters"]
 
         #import and read dataset
         self.data = self.read_data()
 
+        #array of protein sequences
+        self.sequences = self.data[self.sequence_col]
+
         #pre-process dataset and protein sequences
-        self.preprocessing()                            #Reorder these??
+        self.preprocessing()
 
         #get number of rows and cols of dataset
-        self.num_seqs = len(self.data[self.seq_col])
-        self.seq_len = len(max(self.data[self.seq_col],key=len))
+        self.num_seqs = len(self.data[self.sequence_col])
+        self.seq_len = len(max(self.data[self.sequence_col],key=len))
+
+        #create instance of AAIndex class
+        self.aaindex = AAIndex(aaindex_filename=self.aaindex_filename)
+
+        #create instance of Descriptors class
+        self.descriptor = Descriptors(self.config_file, protein_seqs = self.data[self.sequence_col])
+
+        #pyDSP parameters
+        self.use_dsp = self.params["pyDSP"][0]["use_dsp"]
+        self.spectrum = self.params["pyDSP"][0]["spectrum"]
+        self.window = self.params["pyDSP"][0]["window"]
+        self.filter = self.params["pyDSP"][0]["filter"]
+        self.convolution = self.params["pyDSP"][0]["convolution"]
 
         #create instance of model class of type specified by algorithm
-        self.model = Model(algorithm=self.algorithm, parameters=self.parameters)
+        self.model = Model(algorithm, parameters=self.parameters, test_split=self.test_split)
 
         #updating algoritm attribute
         self.algoritm = repr(self.model)
@@ -119,42 +135,48 @@ class PySAR():
 
     def read_data(self):
         """
-        Read in dataset according to name from 'dataset' attribute. By default
-        the dataset should be stored in DATA_DIR.
-
+        Description:
+            Read in dataset according to name from 'dataset' attribute. By default
+            the dataset should be stored in DATA_DIR.
+        Args:
+            :self (PySAR object): instance of PySAR class.
+        Returns:
+            None
         """
-        dataset_file = os.path.join(DATA_DIR,self.dataset)
-
         #read in dataset csv if found in path, if not raise error
-        if not (os.path.isfile(dataset_file)):
+        if not (os.path.isfile(os.path.join(DATA_DIR,self.dataset))):
             if not (os.path.isfile(self.dataset)):
-                raise OSError('Dataset filepath is not correct: {}'.format(self.dataset))
-            dataset_file = self.dataset
+                raise OSError('Dataset filepath is not correct: {}'.format(os.path.join(DATA_DIR,self.dataset)))
 
+        #read in dataset csv
         try:
-            data = pd.read_csv(dataset_file, sep=",", header=0)
+            data = pd.read_csv(os.path.join(DATA_DIR,self.dataset), sep=",", header=0)
             return data
         except:
-            raise IOError('Error opening dataset file: {}'.format(dataset_file))
+            raise IOError('Error opening dataset file: {}'.format(self.dataset))
 
     def preprocessing(self):
         """
-        Pre-process protein sequences in dataset. Validate column names, check
-        for invalid amino acids in sequences and remove any NAN or +/- infinity values.
-
+        Description:
+            Pre-process protein sequences in dataset. Validate column names, check
+            for invalid amino acids in sequences and remove any NAN or +/- infinity values.
+        Args:
+            :self (PySAR object): instance of PySAR class.
+        Returns:
+            None
         """
         #get closest match for sequence column name in dataset
-        seq_col_matches = get_close_matches(self.seq_col,self.data.columns, cutoff=0.4)
+        sequence_col_matches = get_close_matches(self.sequence_col,self.data.columns, cutoff=0.4)
 
         #set sequence col to the first match found, else raise error
-        if seq_col_matches!=[]:
-            self.seq_col = seq_col_matches[0]
+        if sequence_col_matches!=[]:
+            self.sequence_col = sequence_col_matches[0]
         else:
             raise ValueError('Sequence Column ({}) not present in dataset columns \
-                - {} /n '.format(self.seq_col, self.data.columns))
+                - {} /n '.format(self.sequence_col, self.data.columns))
 
         #remove any gaps found in sequences in dataset
-        self.data[self.seq_col] = remove_gaps(self.data[self.seq_col])
+        self.data[self.sequence_col] = remove_gaps(self.data[self.sequence_col])
 
         #verify no invalid amino acids found in sequences, if so then raise error
         invalid_seqs = valid_sequence(self.get_seqs())
@@ -176,21 +198,16 @@ class PySAR():
         self.data[self.activity].replace([np.inf,-np.inf], np.nan)
         self.data[self.activity].fillna(0,inplace=True)
 
-    def get_aai_enoding(self, indices=None):
+    def get_aai_encoding(self, indices=None):
         """
-        Get AAI index encoding values for index specified by indices for each amino
-        acid in each of the protein sequences in dataset. If multiple indices
-        specified then encode protein sequences with each index and concatenate.
-
-        Parameters
-        ----------
-        indices : str/list (default = None)
-            string or list of AAI indices.
-
-        Returns
-        -------
-        encoded_seqs : np.ndarray
-            array of the encoded protein sequences in dataset.
+        Description:
+            Get AAI index encoding values for index specified by indices for each amino
+            acid in each of the protein sequences in dataset. If multiple indices
+            specified then encode protein sequences with each index and concatenate.
+        Args:
+            :indices : str/list (default = None) : string or list of AAI indices.
+        Returns:
+            encoded_seqs : np.ndarray : array of the encoded protein sequences in dataset.
         """
         #validate AAI indices are present in the input parameter, if not raise error
         if indices == None or indices == "":
@@ -209,8 +226,8 @@ class PySAR():
             temp_all_seqs = []
 
             #iterate through each protein sequence and amino acid, getting the AAI index encoding value
-            for protein in range(0, len(self.data[self.seq_col])):
-                for aa in self.data[self.seq_col][protein]:
+            for protein in range(0, len(self.data[self.sequence_col])):
+                for aa in self.data[self.sequence_col][protein]:
                     temp_seq_vals.append(encoded_aai[aa])
 
                 #append encoding and reset temp array
@@ -234,15 +251,15 @@ class PySAR():
             encoded_aai_ = np.zeros((self.num_seqs, self.seq_len))
 
             #if multiple indices used then calcualte AAI index encoding for each and
-            #   then concatenate after each calculation
+            #then concatenate after each calculation
             for ind in range(0,len(indices)):
                 encoded_aai = self.aaindex.get_record_from_code(indices[ind])['values']
 
                 temp_seq_vals = []
                 temp_all_seqs = []
 
-                for protein in range(0, len(self.data[self.seq_col])):
-                    for aa in self.data[self.seq_col][protein]:
+                for protein in range(0, len(self.data[self.sequence_col])):
+                    for aa in self.data[self.sequence_col][protein]:
                         temp_seq_vals.append(encoded_aai[aa])
 
                     temp_all_seqs.append(temp_seq_vals)
@@ -263,7 +280,8 @@ class PySAR():
 
             return encoded_seqs
 
-    def encode_aai(self,indices=None,spectrum=None, window=None, filter_=None,use_dsp=True):
+    def encode_aai(self,indices=None, spectrum=None, window=None, filter_=None,
+        convolution=None, use_dsp=True):
         """
         Encode using AAI indices. If multiple indices input then calculate each
         and concatenate them. Build predictive model from AAI feature data. The
@@ -300,21 +318,24 @@ class PySAR():
         #if input spectrum is none or empty, raise error.
         if use_dsp:
             if spectrum == None or spectrum == "":
-                raise ValueError('Spectrum cannot be None or empty, got {}'.format(spectrum))
+                spectrum = self.spectrum
+                if spectrum == None or spectrum == "":
+                    raise ValueError('Spectrum cannot be None or empty, got {}'.format(spectrum))
 
         #pandas series to store all output results
         aai_df = pd.Series(index=['Index','Category','R2', 'RMSE', 'MSE', 'RPD',
-            'MAE', 'Explained Var'],dtype='object')
+            'MAE', 'Explained Variance'],dtype='object')
 
         #get AAI index encodings specified by indices input parameter
         encoded_seqs = self.get_aai_enoding(indices)
 
-        #if use_dsp true then get protein spectra from AAI indices using ProDSP class
-        #   else use the AAI indices encoding's themselves as the feature data (X)
+        #if use_dsp true then get protein spectra from AAI indices using PyDSP class
+        #else use the AAI indices encoding's themselves as the feature data (X)
         if use_dsp:
-            proDSP = ProDSP(encoded_seqs, spectrum=spectrum, window=window, filter_=filter_)
-            proDSP.encode_seqs()
-            X = pd.DataFrame(proDSP.spectrum_encoding)
+            pyDSP = PyDSP(encoded_seqs, spectrum=spectrum, window=window,
+                filter_=filter_, convolution=convolution)
+            pyDSP.encode_seqs()
+            X = pd.DataFrame(pyDSP.spectrum_encoding)
         else:
             X = pd.DataFrame(encoded_seqs)
 
@@ -348,7 +369,7 @@ class PySAR():
         aai_df['MSE'] = eval.mse
         aai_df['RPD'] = eval.rpd
         aai_df['MAE'] = eval.mae
-        aai_df['Explained Var'] = eval.explained_var
+        aai_df['Explained Variance'] = eval.explained_var
 
         #print out results from encoding
         self.output_results(aai_df)
@@ -383,11 +404,11 @@ class PySAR():
             inputted descriptor.
         """
         #raise error if no descriptors specified in input
-        if descriptors == None or descriptors == "":
+        if descriptors == None or descriptors == "" or descriptors == []:
             raise ValueError('No descriptors have been input.')
 
         #create instance of Descriptors class using data in instance variable
-        descr = Descriptors(self.data[self.seq_col])
+        descr = Descriptors(self.config_file, protein_seqs = self.data[self.sequence_col])
 
         #get closest valid available descriptors from input descriptor parameter,
         #   if a list of descriptors passed in as the input parameter then get
@@ -465,11 +486,25 @@ class PySAR():
         self.descriptors = descriptor
 
         #create instance of Descriptors class using data in instance variable
-        descr = Descriptors(self.data[self.seq_col])
+        descr = Descriptors(self.config_file, protein_seqs = self.data[self.sequence_col])
 
         #pandas series to store all output results
         desc_df = pd.Series(index=['Descriptor','Group','R2', 'RMSE', 'MSE',
             'RPD', 'MAE', 'Explained Var'],dtype='object')
+
+        # if isinstance(descriptors, list):
+        #     for de in range(0,len(descriptors)):
+        #         desc_matches = get_close_matches(descriptors[de],
+        #             descr.valid_descriptors(),cutoff=0.4)
+        #         descriptors[de] = desc_matches[0]
+        #         if descriptors[de] == []:
+        #             raise ValueError('No approximate descriptor found from one entered: {}'.format(de))
+        # else:
+        #     desc_matches = get_close_matches(descriptors,descr.valid_descriptors(),cutoff=0.4)
+        #     descriptors = desc_matches[0]
+        #     if descriptors == []:
+        #         raise ValueError('No approximate descriptor found from one entered: {}'.format(descriptors))
+
 
         X = self.get_descriptor_encoding(descriptors = self.descriptors)
 
@@ -568,7 +603,7 @@ class PySAR():
         self.descriptors = descriptors
 
         #create instance of Descriptors class using data in instance variable
-        descr = Descriptors(self.data[self.seq_col])
+        descr = Descriptors(self.descriptors_csv, protein_seqs = self.data[self.sequence_col])
 
         #create output results Series
         aai_desc_df = pd.Series(index=['Index','Category','Descriptor',
@@ -618,6 +653,7 @@ class PySAR():
             index_cat = self.aaindex.get_category_from_record(self.aai_indices)
 
         desc_group = ""
+        desc_cat = ""
 
         #get groups for all descriptors in self.desciptors
         if isinstance(self.descriptors, list):
@@ -685,10 +721,10 @@ class PySAR():
 
         Returns
         -------
-        self.data[self.seq_col] : pd.Series
+        self.data[self.sequence_col] : pd.Series
             pandas series of all protein sequences in the dataset.
         """
-        return self.data[self.seq_col]
+        return self.data[self.sequence_col]
 
     def get_activity(self):
         """
@@ -712,12 +748,20 @@ class PySAR():
         self._dataset = val
 
     @property
-    def seq_col(self):
-        return self._seq_col
+    def sequences(self):
+        return self._sequences
 
-    @seq_col.setter
-    def seq_col(self, val):
-        self._seq_col = val
+    @sequences.setter
+    def sequences(self, val):
+        self._sequences = val
+
+    @property
+    def sequence_col(self):
+        return self._sequence_col
+
+    @sequence_col.setter
+    def sequence_col(self, val):
+        self._sequence_col = val
 
     @property
     def activity(self):

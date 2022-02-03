@@ -1,14 +1,11 @@
-
 ################################################################################
-################                  Globals                      #################
+##############                 Global Variables                  ###############
 ################################################################################
 
-from datetime import date
-import time
 import os
 from datetime import datetime
 
-#data dir is the default directory used to store all data required for project
+#data dir is the default directory used to store all data required for pySAR
 global DATA_DIR
 DATA_DIR = 'data'
 
@@ -16,7 +13,7 @@ DATA_DIR = 'data'
 global OUTPUT_DIR
 OUTPUT_DIR = 'outputs'
 
-#current datetime appended to output assets to uniquely identify them
+#current datetime appended to output assets & directories to uniquely identify them
 global CURRENT_DATETIME
 CURRENT_DATETIME = str(datetime.date(datetime.now())) + \
     '_' + str((datetime.now().strftime('%H:%M')))

@@ -1,0 +1,101 @@
+{
+    "dataset": [
+      {
+        "dataset": "absorption.txt",
+        "sequence_col": "sequence",
+        "activity": "peak"
+      }
+  
+    ],
+  
+    "model": [
+      {
+        "algoritm": "plsregression",
+        "parameters": "",
+        "test_split": 0.2
+      }
+  
+    ],
+    
+    "descriptors":
+      [
+        {
+          "descriptors_csv": "descriptors.csv",
+          "descriptors": {
+            "all_desc": 0,
+            "aa_composition": 1,
+            "dipeptide_comp": 1,
+            "tripeptide_comp": 1,
+            "normalized_moreaubroto_autocorrelation": 1,
+            "moran_autocorrelation": 1,
+            "geary_autocorrelation": 1,
+            "composition": 1,
+            "transition": 1,
+            "distribution": 1,
+            "conjoint_triad": 1,
+            "seq_order_coupling_number": 1,
+            "quasi_seq_order": 1,
+            "pseudo_aa_composition": 1,
+            "amphiphilic_pseudo_aa_composition": 1
+  
+        }
+  
+        }
+      ],
+    
+    "descriptor_parameters":[{
+  
+      "normalized_moreaubroto_autocorrelation":[{
+        "lag":30,
+        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+          "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
+      }],
+      "moran_autocorrelation":[{
+        "lag":30,
+        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+          "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
+      }],
+      "geary_autocorrelation":[{
+        "lag":30,
+        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+          "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
+      }],
+      "composition":[{
+        "property":"hydrophobicity"
+      }],
+      "transition":[{
+        "property":"hydrophobicity"
+      }],
+      "distribution":[{
+        "property":"hydrophobicity"
+      }],
+      "seq_order_coupling_number":[{
+        "maxlag":30,
+        "distance_matrix":"schneider-wrede-physicochemical-distance-matrix.json"
+      }],
+      "quasi_seq_order":[{
+        "maxlag":30,
+        "weight":0.1,
+        "distance_matrix":"schneider-wrede-physicochemical-distance-matrix.json"
+      }],
+      "pseudo_aa_composition":[{
+        "lambda":30,
+        "weight":0.05,
+        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+          "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
+      }]
+  
+        }],
+
+    "pyDSP":[
+      {
+        "use_dsp": 1,
+        "spectrum": "power",
+        "window": "hamming",
+        "filter": null,
+        "convolution": null
+      }
+    ]
+  
+  }
+  

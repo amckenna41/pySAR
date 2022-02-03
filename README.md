@@ -1,5 +1,8 @@
 
-![alt text](https://raw.githubusercontent.com/amckenna41/pySAR/main/images/pySAR.png)
+
+<p align="center">
+<img src="images/pySAR.png" alt="logo" width="400"/>
+</p>
 
 # pySAR <a name="TOP"></a>
 [![PyPI](https://img.shields.io/pypi/v/pySAR)](https://pypi.org/project/pySAR/)
@@ -20,9 +23,12 @@ Table of Contents
   * [Requirements](#requirements)
   * [Installation](#installation)
   * [Usage](#usage)
+  
   * [Directory Folders](#directories)
   * [Tests](#tests)
+  * [Open Issues](#Issues)
   * [Contact](#contact)
+  * [References](#references)
 
 Introduction
 ------------
@@ -48,10 +54,11 @@ Install the latest version of pySAR using pip:
 pip3 install pySAR
 ```
 
-Install by cloning repository:
+Installation from source:
 ```bash
 git clone https://github.com/amckenna41/pySAR.git
 python3 setup.py install
+cd pySAR
 ```
 
 
@@ -61,28 +68,33 @@ Usage
 ### Generate all protein descriptors
 Prior to evaluating the various available properties and features at which to encode a set of protein sequences, it is reccomened that you pre-calculate all the available descriptors in one go, saving them to a csv for later that pySAR will then import from. Output values are stored in dataset set by <em>desc_dataset</em> input parameter. Output will be of the shape N x 9920, where N is the number of protein sequences in the dataset and 9920 is the total number of features calculated from all 15 descriptors. Setting <em>all_desc</em> parameter to True means all descriptors will be calculated, by default this is False.
 ```python
-from pySAR.descriptors import *
+from pySAR.descriptors_ import *
 
+""" 
+config_file:
+  
+
+"""
 #calculating all descriptor values and storing in file named 'descriptors.csv'
-#     all_desc = True means that all descriptors will be calculated, False by default.
-desc = Descriptor(protein_seqs=array_of_pro_sequences, desc_dataset="descriptors.csv",
-    all_desc=True)
+desc = Descriptors(desc_config)
+
 
 ```
 ### Get record from AAIndex database
 The AAIndex class offers diverse functionalities for obtaining any element from any record in the database. Each record is stored in json format in a class attribute called <em>aaindex_json</em>. You can search for a particular record by its index code, description or reference. You can also get the index category, and importantly its associated amino acid values.
+
 ```python
-import pySAR.aaindex as aaindex   #import aaindex module from pySAR
+import pySAR.aaindex as aai   #import aaindex module from pySAR
 
 #create AAIndex object
-aai = aaindex.AAIndex()
+aaindex = aai.AAIndex()
 
-record = aai.get_record_from_code('CHOP780206')   #get full AAI record
-category = aai.get_category_from_record('CHOP780206') #get record's category
-values = aai.get_values_from_record('CHOP780206')    #get amino acid values from record
-refs = aai.get_ref_from_record('CHOP780206')      #get references from record
-num_record = aai.get_num_records()                #get total number of records
-record_names = aai.get_record_names()             #get list of all record names
+record = aaindex.get_record_from_code('CHOP780206')   #get full AAI record
+category = aaindex.get_category_from_record('CHOP780206') #get record's category
+values = aaindex.get_values_from_record('CHOP780206')    #get amino acid values from record
+refs = aaindex.get_ref_from_record('CHOP780206')      #get references from record
+num_record = aaindex.get_num_records()                #get total number of records
+record_names = aaindex.get_record_names()             #get list of all record names
 
 ```
 
@@ -235,6 +247,12 @@ the calculation of the protein descriptors.
 * `/tests` - unit and integration tests for pySAR.
 * `/data` - all required data and datasets are stored in this folder.
 
+Known Issues
+-----
+* asdsd
+* awdad
+* fsf
+* fsf
 
 Tests
 -----
@@ -248,10 +266,22 @@ To run tests for specific module, from the main pySAR folder run:
 python -m unittest tests.MODULE_NAME -v
 ```
 
+License
+-----------
+Distributed under the MIT License. See `LICENSE` for more details.  
+
 Contact
 -------
 If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab.
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/adam-mckenna-7a5b22151/)
 
+References
+----------
+[1]
+[2]
+[3]
+
+<br>
 [Back to top](#TOP)
 
 <!-- |Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png -->

@@ -1,14 +1,12 @@
-
-
 ################################################################################
 #################                    Model                     #################
 ################################################################################
 
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
-from sklearn.linear_model import Lasso, LinearRegression
+from sklearn.linear_model import Lasso, LinearRegression, Ridge, SGDRegressor
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRegressor
+from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRegressor, GradientBoostingRegressor
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import GridSearchCV, train_test_split
@@ -29,43 +27,51 @@ class Model():
 
     Attributes
     ----------
-    algorithm : str
-        sklearn regression algorithm to build and fit model with.
-    parameters : dict (default = {})
-        parameters to use for building regression model, by default the models'
-        default parameters are used.
-    test_split : float (default = 0.2)
-        size of the test data.
+    :algorithm : str
+        sklearn regression algorithm to build and fit model with. Value can be 
+        an approximate representation of model name, for example: 'plsreg' will 
+        initialiase an instance of the PLSRegression model.
+    :parameters : dict (default = {})
+        parameters to use for building regression model, by default it set to {}, meaning
+        all of the models' default parameters are used.
+    :test_split : float (default = 0.2)
+        proportion of the test data to use for building model
 
     Methods
     -------
     get_model():
-
+        build model using inputtted parameters.
     train_test_split(X, Y, scale = True, test_size = 0.2,random_state=None, shuffle=True):
-
+        get train test split of dataset.
     fit():
-
+        fit model.
     predict():
-
+        predict activity values using model and test data.
     save(save_folder):
-
+        save fitted model to save_folder.
     copy():
-
+        make copy of model
     hyperparameter_tuning(parameters, metric='r2', cv=5):
-
+        complete hyperparameter tuning of model and its associated parameters.
     model_fitted():
-
+        return if model has been fitted (true or false)
     """
-    def __init__(self, algorithm,parameters={}):
+    def __init__(self, algorithm, parameters={}, test_split=0.2):
 
         self.algorithm = algorithm
-        self.parameters = parameters
-        self.test_split = None
+
+        #if no parameters input to 
+        if (parameters == [] or parameters == ""):
+            self.parameters = {}
+        else:
+            self.parameters = parameters
+
+        self.test_split = test_split
 
         #list of valid models available to use for this class
         self.valid_models = ['PlsRegression','RandomForestRegressor','AdaBoostRegressor',\
-                            'BaggingRegressor','DecisionTreeRegressor','LinearRegression',\
-                            'Lasso','SVR','KNeighborsRegressor', 'KNN']
+                            'BaggingRegressor','DecisionTreeRegressor', 'GBR', 
+                            'LinearRegression', 'Lasso', 'Ridge', 'SVR','SGD', 'KNeighborsRegressor', 'KNN']
 
         #get closest match of valid model from the input algorithm parameter value
         model_matches = get_close_matches(self.algorithm.lower(),[item.lower() \
@@ -85,13 +91,16 @@ class Model():
     def get_model(self):
         """
         Create instance of model type specifed by input 'algorithm' argument. If
-        parameters input 'parameters' = {} then default parameters are used else set
-        the parameters of the model to the values specified in the 'parameters' input
-        parameter.
+        input 'parameters' = {} then default parameters of sklearn model are used else set
+        the parameters of the model to the values specified in the 'parameters' input.
+
+        Parameters
+        ----------
+        :self (Model object) : instance of Model class.
 
         Returns
         -------
-        model : sklearn.model
+        :model : sklearn.model
             instantiated regression model with default or user-specified parameters.
         """
         if self.algorithm.lower() == 'plsregression':
@@ -103,7 +112,7 @@ class Model():
 
             #use default model parameters if user input parameters is empty, else
             #   use user-specified parameters.
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = PLSRegression(**self.parameters)
             else:
                 model = PLSRegression()
@@ -113,7 +122,7 @@ class Model():
             model_params = set(dir(RandomForestRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
 
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = RandomForestRegressor(**self.parameters)
             else:
                 model = RandomForestRegressor()
@@ -123,7 +132,7 @@ class Model():
             model_params = set(dir(AdaBoostRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
 
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = AdaBoostRegressor(**self.parameters)
             else:
                 model = AdaBoostRegressor()
@@ -133,7 +142,7 @@ class Model():
             model_params = set(dir(BaggingRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
 
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = BaggingRegressor(**self.parameters)
             else:
                 model = BaggingRegressor()
@@ -143,7 +152,7 @@ class Model():
             model_params = set(dir(DecisionTreeRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
 
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = DecisionTreeRegressor(**self.parameters)
             else:
                 model = DecisionTreeRegressor()
@@ -153,7 +162,7 @@ class Model():
             model_params = set(dir(LinearRegression()))
             parameters = [i for i in model_params if i in self.parameters]
 
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = LinearRegression(**self.parameters)
             else:
                 model = LinearRegression()
@@ -163,17 +172,47 @@ class Model():
             model_params = set(dir(Lasso()))
             parameters = [i for i in model_params if i in self.parameters]
 
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = Lasso(**self.parameters)
             else:
                 model = Lasso()
+
+        elif self.algorithm.lower() == 'ridge':
+
+            model_params = set(dir(Ridge()))
+            parameters = [i for i in model_params if i in self.parameters]
+
+            if parameters != {} or parameters !=[]:
+                model = Ridge(**self.parameters)
+            else:
+                model = Ridge()
+
+        elif self.algorithm.lower() == 'sgd':
+
+            model_params = set(dir(SGDRegressor()))
+            parameters = [i for i in model_params if i in self.parameters]
+
+            if parameters != {} or parameters !=[]:
+                model = SGDRegressor(**self.parameters)
+            else:
+                model = SGDRegressor()
+
+        elif self.algorithm.lower() == 'gbr':
+
+            model_params = set(dir(GradientBoostingRegressor()))
+            parameters = [i for i in model_params if i in self.parameters]
+
+            if parameters != {} or parameters !=[]:
+                model = GradientBoostingRegressor(**self.parameters)
+            else:
+                model = GradientBoostingRegressor()
 
         elif self.algorithm.lower() == 'svr':
 
             model_params = set(dir(SVR()))
             parameters = [i for i in model_params if i in self.parameters]
 
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = SVR(**self.parameters)
             else:
                 model = SVR()
@@ -184,7 +223,7 @@ class Model():
             model_params = set(dir(KNeighborsRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
 
-            if parameters != {}:
+            if parameters != {} or parameters !=[]:
                 model = KNeighborsRegressor(**self.parameters)
             else:
                 model = KNeighborsRegressor()
@@ -194,29 +233,30 @@ class Model():
 
         return model
 
-    def train_test_split(self, X, Y, scale = True, test_size = 0.2,
-        random_state=None, shuffle=True):
+    def train_test_split(self, X, Y, scale=True, test_size=0.2, random_state=None, shuffle=True):
         """
         Split the X and Y input features and labels into random train and test
         subsets. By default a 80:20 split will be used, whereby 80% of the data
         will be used for training and 20% for testing. By default the input will
         be scaled first such that the mean is removed and features scaled to unit
-        variance. By default data is shuffled before the split and random is None.
+        variance. By default data is shuffled before the split and random state is None.
 
         Parameters
         ----------
-        X : np.ndarray
+        :self (Model object)
+            instance of Model class.
+        :X : np.ndarray
             array of feaure data.
-        Y : np.ndarray
+        :Y : np.ndarray
             array of observed label values.
-        scale : bool (default = True)
+        :scale : bool (default = True)
             if true then scale the features such that they are standardised.
-        test_size : float (default = 0.2)
+        :test_size : float (default = 0.2)
             proportion of the total dataset to use for testing.
-        random_state : float (default = None)
+        :random_state : float (default = None)
             Controls the shuffling applied to the data before applying the split.
             Popular integer random seeds are 0 and 42.
-        shuffle : bool (default = True)
+        :shuffle : bool (default = True)
             Whether or not to shuffle the data before splitting.
 
         Returns
@@ -226,7 +266,8 @@ class Model():
         """
         #validate that X and Y arrays are of the same size
         if (len(X)!=len(Y)):
-            raise ValueError('X and Y input parameters must be of the same length.')
+            raise ValueError('X and Y input parameters must be of the same length, \
+                X: {}, Y: {}'.format(len(X), len(Y)))
 
         #reshape input arrays to 2D arrays
         if (X.ndim!=2):
@@ -240,7 +281,7 @@ class Model():
 
         self.test_split = test_size     #setting test_size attribute
 
-        #scale X
+        #scale training data X
         if scale:
             X = StandardScaler().fit_transform(X)
 
@@ -258,11 +299,16 @@ class Model():
 
     def fit(self):
         """
-        Fit model to training data and target values X and Y.
+        Fit model to training data and labels.
+
+        Parameters
+        ----------
+        :self : (Model object) 
+            instance of Model class.
 
         Returns
         -------
-        self.model_fit : np.ndarray
+        :self.model_fit : np.ndarray
             fitted sklearn model of type specified by algorithm attribute.
         """
         self.model_fit = self.model.fit(self.X_train, self.Y_train)
@@ -272,9 +318,14 @@ class Model():
         """
         Predict the target values of unseen test data using the model.
 
+        Parameters
+        ----------
+        :self : (Model object)
+            instance of Model class.
+
         Returns
         -------
-        self.model_fit.predict(self.X_test) : np.ndarray
+        :self.model_fit.predict(self.X_test) : np.ndarray
             array of predicted target values for unseen test data.
         """
         return self.model_fit.predict(self.X_test)
@@ -285,7 +336,9 @@ class Model():
 
         Parameters
         ----------
-        save_folder : str
+        :self : (Model object)
+            instance of Model class.
+        :save_folder : str
             folder to save model to.
         """
         save_path = os.path.join(save_folder, 'model.pkl')
@@ -294,22 +347,26 @@ class Model():
             with open(save_path, 'wb') as file:
                 pickle.dump(self.model, file)
         except (IOError, OSError, pickle.PickleError, pickle.UnpicklingError):
-            print("Error pickling model with path: {} ".format(save_path))
+            print("Error pickling model with path: {} .".format(save_path))
 
-    def hyperparameter_tuning(self, parameters, metric='r2', cv=5):
+    def hyperparameter_tuning(self, parameters, metric='r2', cv=5, n_jobs=None):
         """
         Hyperparamter tuning of model to find its optimal arrangment of parameters
         using a Grid Search.
 
         Parameters
         ----------
-        parameters : dict
+        :self : (Model object)
+            instance of Model class.
+        :parameters : dict
             dictionary of parameter names and their values.
-        metric : str (default = r2)
+        :metric : str (default = r2)
             scoring metric used to evaluate the performance of the cross-validated
             model on the test set.
-        cv : int (default = 5)
+        :cv : int (default = 5)
             Determines the cross-validation splitting strategy.
+        :n_jobs : int (default = None)
+            Number of jobs to run in parallel. None means 1 job.
 
         Returns
         -------
@@ -331,8 +388,8 @@ class Model():
         if not (isinstance(cv, int)) or (cv<5 or cv>10):
             cv = 5
 
-        #iterate through all parameter names to check if they are correct for model
-        #   if parameter not found in model params then delete from dictionary
+        #iterate through all parameter names to check if they are correct for model,
+        #  if parameter not found in model params then delete from dictionary
         for p in list(parameters.keys()):
             if p not in (list(self.model.get_params().keys())):
                 del parameters[p]
@@ -340,7 +397,7 @@ class Model():
         #grid search of hyperparameter space for model
         model_copy = self.copy()
         grid_search = GridSearchCV(estimator=model_copy, param_grid=parameters,\
-            n_jobs=-1, cv=cv, scoring=metric,error_score=0)
+            cv=cv, scoring=metric, n_jobs=n_jobs, verbose=2, error_score=0)
 
         #fit X and Y to best model found in grid search
         grid_result = grid_search.fit(self.X_train, self.Y_train)
@@ -350,7 +407,7 @@ class Model():
         std_test = grid_result.cv_results_['std_test_score']
         params = grid_result.cv_results_['params']
 
-        #predict values of unseen test data
+        #predict values of unseen test data using best found model
         best_model_pred = grid_result.predict(self.X_test)
 
         #create instance of Evaluate class and calculate metrics from best model
@@ -366,10 +423,10 @@ class Model():
         print('# Model Type -> {}'.format(repr(self)))
         print('# Scoring Metric -> {}'.format(metric))
         print('# CV -> {}'.format(cv))
-        print('# Test Split -> {}'.format(self.test_size))
+        print('# Test Split -> {}'.format(self.test_split))
 
         print('########################## Metrics ###########################\n')
-        print('# Best Score -> {}'.format(grid_result.best_score_))
+        print('# Best Score (R2) -> {}'.format(grid_result.best_score_))
         print('# RMSE: {} '.format(eval.rmse))
         print('# MSE: {} '.format(eval.mse))
         print('# MAE: {}'.format(eval.mae))
@@ -381,9 +438,14 @@ class Model():
         """
         Make a copy of the sklearn model stored in self.model instance variable.
 
+        Parameters
+        ----------
+        :self : (Model object)
+            instance of Model class.
+
         Returns
         -------
-        model_copy : sklearn.model
+        :model_copy : sklearn.model
             deep copy of model.
         """
         model_copy = self.model
@@ -393,9 +455,14 @@ class Model():
         """
         Return if model has been fitted, true or false.
 
+        Parameters
+        ----------
+        :self : (Model object)
+            instance of Model class.
+
         Returns
         -------
-        True/False : bool
+        :True/False : bool
             true if model (self.model) has been fitted, false if not.
         """
         return (self.model_fit != None)

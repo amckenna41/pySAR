@@ -1,4 +1,3 @@
-
 ################################################################################
 #################             Utilities Modules                #################
 ################################################################################
@@ -45,7 +44,7 @@ def valid_sequence(sequences):
     invalid_indices = []
 
     #iterate through all sequences, validating that there are no invalid values
-    #   present in the sequences, if there are then append to list of invalid indices
+    #present in the sequences, if there are then append to list of invalid indices
     try:
         for seq in range(0,len(sequences)):
             for aa in range(0,len(sequences[seq])):
@@ -55,7 +54,7 @@ def valid_sequence(sequences):
         print('Error parsing sequences in datasets.')
 
     #if no invalid values found in sequences return None, else return list of
-    #   dicts containing invalid index and invalid values
+    #dicts containing invalid index and invalid values
     if invalid_indices == []:
         return None
     else:

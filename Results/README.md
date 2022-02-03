@@ -9,4 +9,4 @@ Directories
 * `/One Descriptor` - results from encoding sequences using 15 protein descriptors (15 total results).
 * `/Two Descriptors` - results from encoding sequences using all combinations of two protein descriptors (105 total results).
 * `/Three Descriptors` - results from encoding sequences using all combinations of three protein descriptors (455 total results).
-* '/supplementary_materials.pdf' - pdf of supplementary tables and figures mentioned in the research article.
+* `/supplementary_materials.pdf` - pdf of supplementary tables and figures mentioned in the research article.
