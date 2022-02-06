@@ -99,26 +99,31 @@ class Descriptors():
     [10]: Kuo-Chen Chou. Using amphiphilic pseudo amino acid composition to predict enzyme
           subfamily classes. Bioinformatics, 2005,21,10-19.
     """
-    def __init__(self, desc_config, protein_seqs = None):
+    def __init__(self, desc_config="", protein_seqs = None):
 
         self.desc_config = desc_config
         self.protein_seqs = protein_seqs
         self.parameters = {}
 
-        #open and read json config file
-        if (os.path.isfile(self.desc_config)):
-            try:
-                with open(self.desc_config) as f:
-                    self.parameters = json.load(f)
-            except JSONDecodeError as e:
-                print('Error getting config JSON file: {}.'.format(self.desc_config))
-                sys.exit()
-        else:
-            self.parameters = desc_config
+        desc_config_filepath = ""
+        #open json config file
+        try:
+            if os.path.isfile(self.desc_config):
+                desc_config_filepath = self.desc_config
+            elif os.path.isfile(os.path.join('config', self.desc_config)):
+                desc_config_filepath = os.path.join('config', self.desc_config)
+            else:
+                raise OSError('JSON config file not found at path: {}.'.format(desc_config_filepath))
+            with open(desc_config_filepath) as f:
+                self.parameters = json.load(f)
+        except JSONDecodeError as e:
+            print('Error getting config JSON file: {}.'.format(desc_config_filepath))
+            sys.exit()
 
         #set descriptor parameters
         self.desc_config = self.parameters["descriptors"]
         self.desc_parameters = self.parameters["descriptor_parameters"]
+        self.all_desc = self.desc_config[0]["descriptors"]["all_desc"]
         
         if (protein_seqs is not None):
 
@@ -172,7 +177,7 @@ class Descriptors():
         else:
             #if all_desc parameter true then calculate all descriptor values and store
             #  in their respective attributes
-            if (self.desc_config[0]["descriptors"]["all_desc"]):
+            if (self.all_desc):
                 self.all_descriptors = self.get_all_descriptors()
                 #save all calculated descriptor values for next time
                 self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.desc_config["descriptors_csv"]), index=0)
@@ -523,9 +528,9 @@ class Descriptors():
             return self.ctd
 
         #calculate descriptor value
-        self.ctd = ctd(self.protein_seqs)
+        self.ctd = ctd_(self.protein_seqs)
 
-        return ctd_df
+        return self.ctd
 
     def get_conjoint_triad(self):
         """

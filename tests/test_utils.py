@@ -41,7 +41,7 @@ class UtilsTest(unittest.TestCase):
         self.all_test_datasets = [self.test_dataset1, self.test_dataset2, self.test_dataset3,
                 self.test_dataset4]
 
-        #set global vars to create temp test data foldersi
+        #set global vars to create temp test data folders
         _globals.OUTPUT_DIR = os.path.join('tests',_globals.OUTPUT_DIR)
         _globals.OUTPUT_FOLDER = os.path.join('tests',_globals.OUTPUT_FOLDER)
 

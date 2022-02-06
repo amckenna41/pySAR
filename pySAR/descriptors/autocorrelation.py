@@ -248,8 +248,6 @@ def moran_autocorrelation(
 
     return result_df
 
-# **is above correct? - producing all 0's
-
 def geary_autocorrelation(
     sequence, lag=30, properties=["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
     "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]

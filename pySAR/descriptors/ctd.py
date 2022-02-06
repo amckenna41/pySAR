@@ -3,6 +3,7 @@
 ################################################################################
 
 import pandas as pd
+import math
 
 """
 References
@@ -41,20 +42,20 @@ _polarizability = {"1": "GASDT", "2": "CPNVEQIL", "3": "KMHFRYW"}
 
 all_properties = {}
 
-#convert sequence str to number from selected property
 def str_to_num(sequence, property):
     """
+    Convert sequences str to number from input physiochemical property.
 
     Parameters
     ----------
-    sequence : str
+    :sequence : str
         input protein sequence in str form.
-    property : dict
+    :property : dict
         dictionary of values fof specified physiochemical property.
 
     Returns
     -------
-    aaindex_metrics_df : pd.DataFrame
+    :aaindex_metrics_df : pd.DataFrame
         dataframe of calculated metric values from generated predictive models
         encoded using indices in the AAI for the AAI encoding strategy.
     """
@@ -67,17 +68,18 @@ def str_to_num(sequence, property):
 
 def composition(sequence, property=_hydrophobicity):
     """
+    Calculate composition physiochemical/structural descriptor.
 
     Parameters
     ----------
-    sequence : str
+    :sequence : str
         input protein sequence in str form.
-    property : dict (default = _hydrophocity)
+    :property : dict (default = _hydrophocity)
         dictionary of values of specified physiochemical property.
 
     Returns
     -------
-    aaindex_metrics_df : pd.DataFrame
+    :aaindex_metrics_df : pd.DataFrame
         dataframe of calculated metric values from generated predictive models
         encoded using indices in the AAI for the AAI encoding strategy.
     """
@@ -89,22 +91,23 @@ def composition(sequence, property=_hydrophobicity):
     result[property_name + '_C_2'] = round(float(seq.count("2"))/len(sequence), 3)
     result[property_name + '_C_3'] = round(float(seq.count("3"))/len(sequence), 3)
     result_df = pd.Series(data=(list(result.values())), index=list(result.keys()))
-
+    
     return result_df
 
 def transition(sequence, property=_hydrophobicity):
     """
+    Calculate transition physiochemical/structural descriptor.
 
     Parameters
     ----------
-    sequence : str
+    :sequence : str
         input protein sequence in str form.
-    property : dict (default = _hydrophocity)
+    :property : dict (default = _hydrophocity)
         dictionary of values of specified physiochemical property.
 
     Returns
     -------
-    aaindex_metrics_df : pd.DataFrame
+    :aaindex_metrics_df : pd.DataFrame
         dataframe of calculated metric values from generated predictive models
         encoded using indices in the AAI for the AAI encoding strategy.
     """
@@ -127,24 +130,24 @@ def transition(sequence, property=_hydrophobicity):
 
 def distribution(sequence, property=_hydrophobicity):
     """
+    Calculate distribution physiochemical/structural descriptor.
 
     Parameters
     ----------
-    sequence : str
+    :sequence : str
         input protein sequence in str form.
-    property : dict (default = _hydrophocity)
+    :property : dict (default = _hydrophocity)
         dictionary of values of specified physiochemical property.
 
     Returns
     -------
-    aaindex_metrics_df : pd.DataFrame
+    :aaindex_metrics_df : pd.DataFrame
         dataframe of calculated metric values from generated predictive models
         encoded using indices in the AAI for the AAI encoding strategy.
     """
-
+    result = {}
     seq = str_to_num(sequence, property)
     property_name = [ k for k,v in locals().iteritems() if v == property][0]
-
 
     for key, value in property.items():
        num = seq.count(key)
@@ -184,35 +187,33 @@ def distribution(sequence, property=_hydrophobicity):
     return result_df
 
 
-def ctd():
+def ctd_(sequence, property=_hydrophobicity):
+    """
+    Calculate Composition, transition and distribution (CTD) features of protein sequences.
+    Composition is the number of amino acids of a particular property (e.g., hydrophobicity)
+    divided by the total number of amino acids in a protein sequence. Transition
+    characterizes the percent frequency with which amino acids of a particular
+    property is followed by amino acids of a different property. Distribution
+    measures the chain length within which the first, 25%, 50%, 75%, and 100% of
+    the amino acids of a particular property are located, respectively [6].
+    CTD functionality in the PyBioMed package uses the properties:
+    Polarizability, Solvent Accessibility, Secondary Structure, Charge,
+    Polarity, Normalized VDWV, Hydrophobicity. The output will be of shape
+    N x 147 where N is the number of protein sequences. 21/147 will be
+    composition, 21/147 will be transition and the remaining 105 are distribution.
 
-            Calculate Composition, transition and distribution (CTD) features of protein sequences.
-        Composition is the number of amino acids of a particular property (e.g., hydrophobicity)
-        divided by the total number of amino acids in a protein sequence. Transition
-        characterizes the percent frequency with which amino acids of a particular
-        property is followed by amino acids of a different property. Distribution
-        measures the chain length within which the first, 25%, 50%, 75%, and 100% of
-        the amino acids of a particular property are located, respectively [6].
-        CTD functionality in the PyBioMed package uses the properties:
-        Polarizability, Solvent Accessibility, Secondary Structure, Charge,
-        Polarity, Normalized VDWV, Hydrophobicity. The output will be of shape
-        N x 147 where N is the number of protein sequences. 21/147 will be
-        composition, 21/147 will be transition and the remaining 105 are distribution.
+    Returns
+    -------
+    :ctd_df : pd.DataFrame
+        dataframe of CTD descriptor values for all protein sequences. DataFrame will
+        be of the shape N x 147, where N is the number of protein sequences and
+        147 is the number of features calculated from the descriptors.
+    """
 
-        Returns
-        -------
-        ctd_df : pd.DataFrame
-            dataframe of CTD descriptor values for all protein sequences. DataFrame will
-            be of the shape N x 147, where N is the number of protein sequences and
-            147 is the number of features calculated from the descriptors.
+    comp = composition()
+    trans = transition()
+    distr = distribution()
 
+    ctd = pd.concat([comp, trans, distr], axis=1)
 
-                    if self.compositon.empty:
-            self.compositon = self.get_composition()
-        if self.transition.empty:
-            self.transition = self.get_transition()
-        if self.distribution.empty:
-            self.distribution = self.get_distribution()
-
-        ctd_df = [self.compositon, self.transition, self.distribution]
-        self.ctd = pd.concat(ctd_df, axis = 1)
+    return ctd

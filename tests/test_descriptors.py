@@ -8,16 +8,20 @@ import os
 import unittest
 unittest.TestLoader.sortTestMethodsUsing = None
 import random
+import json
+from json import JSONDecodeError
 
-from pySAR.PyBioMed.PyBioMed.PyProtein import AAComposition, Autocorrelation, CTD, ConjointTriad, QuasiSequenceOrder, PseudoAAC
-import pySAR.descriptors as descr
+import pySAR.descriptors_ as descr
+from pySAR.descriptors import *
 import pySAR.utils as utils
 
 class DescriptorTests(unittest.TestCase):
 
     def setUp(self):
-        """ Import the 4 test datasets used for testing the descriptor methods. """
-
+        """ 
+        Import the 4 test datasets and 4 config files used for testing the descriptor methods. 
+        """
+        #import datasets
         try:
             self.test_dataset1 = pd.read_csv(os.path.join('tests','test_data','test_thermostability.txt'),sep=",", header=0)
         except:
@@ -39,22 +43,54 @@ class DescriptorTests(unittest.TestCase):
         self.all_test_datasets = [self.test_dataset1, self.test_dataset2, self.test_dataset3,
                 self.test_dataset4]
 
+        #import config files
+        config_filepath = os.path.join('tests','test_config')
+        try:
+            with open(os.path.join(config_filepath,'test_thermostability.json')) as f:
+                self.test_params1 = json.load(f)
+        except JSONDecodeError as e:
+            print('Error getting config JSON file: {}.'.format(config_filepath))
+            sys.exit()
+        try:
+            with open(os.path.join(config_filepath,'test_enantioselectivity.json')) as f:
+                self.test_params2 = json.load(f)
+        except JSONDecodeError as e:
+            print('Error getting config JSON file: {}.'.format(config_filepath))
+            sys.exit()
+        try:
+            with open(os.path.join(config_filepath,'test_absorption.json')) as f:
+                self.test_params3 = json.load(f)
+        except JSONDecodeError as e:
+            print('Error getting config JSON file: {}.'.format(config_filepath))
+            sys.exit()
+        try:
+            with open(os.path.join(config_filepath,'test_localization.json')) as f:
+                self.test_params4 = json.load(f)
+        except JSONDecodeError as e:
+            print('Error getting config JSON file: {}.'.format(config_filepath))
+            sys.exit()
+
+        #append all configs to a list
+        self.all_configs = [self.test_params1, self.test_params2, self.test_params3,
+                self.test_params4]
+        self.all_config_files = ["test_thermostability.json", "test_enatioselectivity.json",
+            "test_absorption.json", "test_localization.json"]
+
     def test_descriptor(self):
-        """ Test descriptor initialisation process. Verify the initial input parameters
-        and descriptor attributes are correct. """
+        """ 
+        Test descriptor initialisation process. Verify the initial input parameters
+        and descriptor attributes are correct. 
+        """
 
         #testing on all 4 datasets
-        for dataset in range(0,len(self.all_test_datasets)):
-            desc = descr.Descriptors(self.all_test_datasets[dataset]['sequence'], desc_dataset="")
-        # desc = Descriptors(self.test_dataset1['sequence'], desc_dataset="")
+        # for dataset in range(0,len(self.all_test_datasets)):
+        for dataset in range(0,len(self.all_configs)):
+            desc = descr.Descriptors(self.all_configs[dataset])
 #1.)
             #verify num_seqs descriptors attribute is correct
             # self.assertEqual(desc.num_seqs, len(self.test_dataset1['sequence']),
             self.assertEqual(desc.num_seqs, len(self.all_test_datasets[dataset]['sequence']),
                 'num_seqs attribute not equal to the number of sequences found.')
-
-            #verify all_desc attribute is at its default of False
-            self.assertFalse(desc.all_desc, 'all_desc parameter should initially be False.')
 
             #verify that all input sequences dont have any gaps/missing amino acids
             for seq in desc.protein_seqs:

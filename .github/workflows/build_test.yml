@@ -36,10 +36,35 @@ jobs:
         pip3 install coverage
         pip3 install pytest
         pip3 install pytest-cov
-        git clone https://github.com/TravisToolbox/bandit
-        ./bandit/install.sh
+        pip3 install bandit
+        pip3 install safety
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         python3 setup.py install
+
+    #package vulnerability check
+    - name: Package safety check
+      run: |
+       echo "Running package safety check"
+       python3 -m safety check > package_safety_output.txt
+       cat package_safety_output.txt
+      continue-on-error: true
+
+    #run Bandit security check for any known vulnerabilities in code
+    - name: Bandit
+      run: |
+       echo "Running Bandit"
+       python3 -m bandit -r . > bandit_output.txt
+       cat bandit_output.txt
+      continue-on-error: true
+
+  # - pytest --cov-report term --cov=pySAR tests/
+    - name: Lint with flake8
+      run: |
+        echo "Testing using flake8..."
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     # unit tests using pytest, unittest, flake8 and bandit frameworks
     - name: Testing with unittest
@@ -51,187 +76,9 @@ jobs:
       run: |
         echo "Testing using pytest..."
         python3 -m pytest tests/
-
-  # - pytest --cov-report term --cov=pySAR tests/
-    - name: Lint with flake8
-      run: |
-        echo "Testing using flake8..."
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-    - name: Testing for vulnerabilities with bandit
-      run: |
-        echo "Running security checks with Bandit..."
-
-    # - name: Python security check using Bandit
-    #   uses: Joel-hanson/bandit-report-artifacts@V1
-    # - name: Bandit Check
-    #   uses: jpetrucciani/bandit-check@1.6.2
-    #     run: |
-    #       echo "Testing using bandit..."
-    #   with:
-    #     continue-on-error: true
+        
     - name: Coverage Report
       run: |
         echo "Running coverage report..."
         pytest --cov-report term --cov=pySAR tests/
     # coveralls
-
-
-
-
-
-
-
-#save outputs from bandit to Google Storage bucket
-#https://cloud.google.com/storage/docs/gsutil_install#deb
-#https://stackoverflow.com/questions/33898687/automating-gsutil-commands
-#jq -R -s -c 'split("\n")' < just_lines.txt
-#https://stackoverflow.com/questions/43373176/store-json-directly-in-bash-script-with-variables/43373520
-#
-# name: Protein Structure Prediction using Deep Convolutional LSTM's
-#
-# on:
-#   push:
-#     branches: [ master ]
-#   pull_request:
-#     branches: [ master ]
-#
-#   workflow_dispatch:
-#
-# jobs:
-#   build:
-#
-#     runs-on: ubuntu-latest
-#
-#     strategy:
-#       matrix:
-#         python-version: [3.6, 3.7, 3.8, 3.9]   #testing on multiple python versions
-#
-#     steps:
-#      - uses: actions/checkout@v2
-#      - name: Set up Python ${{ matrix.python-version }}
-#        env:
-#          SERVICE_AC: ${{ secrets.SERVICE_ACCOUNT }}
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: ${{ matrix.python-version }}
-#      - name: Set current date as env variable
-#        run: echo "NOW=$(date +'%Y-%m-%d_%H:%M')" >> $GITHUB_ENV
-#      - name: Echo current date
-#        run: echo $NOW
-#      - name: Install dependencies
-#        run: |
-#         echo "Installing Dependancies"
-#         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-#         python -m pip install --upgrade pip
-#         pip install flake8 pytest
-#         pip3 install codecov
-#         pip3 install coverage
-#         pip3 install pytest
-#         pip3 install pytest-cov
-#         pip3 install bandit
-#      - name: Bandit
-#        run: |
-#         echo "Running Bandit"
-#         python3 -m bandit -r psp > test.txt
-#        continue-on-error: true
-#      - name:
-#        run: |
-#         cat test.txt
-#         echo "FInish"
-#      - name: Decrypting Service Account
-#        env:
-#         PASSPHRASE: ${{ secrets.PASSPHRASE }}
-#        run: |
-#         ./.github/scripts/decrypt_secret.sh
-#         cat $HOME/secrets/my_secret.json
-#
-#       # echo ${{ secrets.SERVICE_ACCOUNT }}
-#       # touch service_account.json
-#       # 'echo "${{secrets.SERVICE_ACCOUNT}}" >> service_account.json'
-#       # cat service_account.json
-#      - name: Install GCP Dependancies
-#        run: |
-#         echo "Installing all GCP Dependancies"
-#         echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-#         sudo apt-get install apt-transport-https ca-certificates gnupg
-#         curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
-#         sudo apt-get update && sudo apt-get install google-cloud-sdk
-#         gcloud auth activate-service-account --key-file=$HOME/secrets/my_secret.json
-#         gsutil
-#      - name: Upload to GCP
-#        run: |
-#         echo "Uploading artifacts to GCP"
-#         gsutil cp test.txt gs://bandit/${{ secrets.BUCKET_NAME }}/
-#      - name: Lint with flake8
-#        run: |
-#         echo "Running flake8"
-#         # stop the build if there are Python syntax errors or undefined names
-#         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics > flake8_output.txt
-#         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-#         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics >> flake8_output.txt
-#         gsutil cp flake8_output.txt gs://bandit/${{ secrets.BUCKET_NAME }}/
-#        continue-on-error: true
-#      - name: Run Dummy Model
-#        run: |
-#         echo "Running dummy psp model"
-#         cd psp
-#         python3 main.py -config "config/dummy.json"
-#
-
-
-# jobs:
-#   my-job:
-#     name: My Job
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#       - name: Decrypt large secret
-#         run: ./.github/scripts/decrypt_secret.sh
-#         env:
-#           PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
-#       # This command is just an example to show your secret being printed
-#       # Ensure you remove any print statements of your secrets. GitHub does
-#       # not hide secrets that use this workaround.
-#       - name: Test printing your secret (Remove this step in production)
-#         run: cat $HOME/secrets/my_secret.json
-
-
-    # DIR="/etc/httpd/"
-    # if [ -d "$DIR" ]; then
-    #   ### Take action if $DIR exists ###
-    #   echo "Installing config files in ${DIR}..."
-    # else
-    #   ###  Control will jump here if $DIR does NOT exists ###
-    #   echo "Error: ${DIR} not found. Can not continue."
-    #   exit 1
-    # fi         //python3 -m bandit -r /psp > bandit_output_${{ env.NOW }}.txt //touch 'bandit_output_'$(date +'%Y-%m-%d_%H:%M')
-
-
-
-    # - name: Testing with unittest
-    #   run: |
-    #     echo "Testing using unittest..."
-    #     python3 -m unittest discover
-    # - name: Test with pytest
-    #   run: |
-    #     echo "Running dataset tests"
-    #     pytest psp.tests.test_datasets
-    # - name: Coverage Report
-    #   run: |
-    #     echo "Running coverage report..."
-    #     pytest --cov-report term --cov=DCBLSTM_PSP tests/
-    # - name: Testing for vulnerabilities with bandit
-    #   run: |
-    #     echo "Running security checks with Bandit..."
-    # - name: Python security check using Bandit
-    #   uses: Joel-hanson/bandit-report-artifacts@V1
-    # - name: Bandit Check
-    #   uses: jpetrucciani/bandit-check@1.6.2
-    #     run: |
-    #       echo "Testing using bandit..."
-    #   with:
-    #     continue-on-error: true

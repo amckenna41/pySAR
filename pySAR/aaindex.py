@@ -96,8 +96,6 @@ class AAIndex():
         return total number of records in AAI database.
     get_record_names():
         return list of all descriptions for all records in AAI database.
-    get_record_from_code(code):
-        return whole record from user input index/accession number.
     get_record_from_name():
         return AAI record from its description.
     get_values_from_record(code):
@@ -499,36 +497,54 @@ class AAIndex():
 
        return desc
 
-    def get_record_from_name(self, name):
+    def get_record_from_name(self, description, all_matches=False):
         """
         Return full AAI database record details from its description. Search
         through the descriptions/names of all records in the database, returning
-        record that matches name input parameter.
+        record that matches name input parameter. All matches can be returned or
+        just the most relevant one, by default just the first match is found, this
+        can be changed using the all_matches input param.
 
         Parameters
         ----------
-        : name : str
+        : description : str
             AAI database record feature name/description.
+        : all_matches : bool (default=false)
+            if set to true, all found matches in database returned else if false only the
+            first found match is returned.
 
         Returns
         -------
-        : matches : list
-            list of all matching AAI records found that match 'name' parameter, depending 
-            on closeness function.
+        : matches : list(dict)
+            closest found AAIndex record that matches user input description parameter,
+            according to closeness function OR all found relevant AAIndex records.
         """
         matches = []
+        all_desc = []
 
-        #iterate through all records in AAI finding matching records with name
+        #iterate through all records in AAI finding matching records with description
         for index, value in self.aaindex_json.items():
             
-            #use closeness function to calculate whether name mostly matches record name
-            record_matches = get_close_matches(name, value['description'], cutoff=0.4)
+            all_desc.append(value['description'])
 
-            #if match found then append whole record to matches array, else continue
-            if (record_matches!=[]):
-                matches.append(self.aaindex_json[index])
-            else:
-                continue
+        #use closeness function to calculate whether description mostly matches record description
+        record_matches = get_close_matches(description, all_desc, cutoff=0.5)
+
+        #if no matches found, return empty list
+        if (record_matches==[]):
+            return []
+        #else iterate through all records in AAI, finding one with most matching description to
+        #the input parameter, using the closeness function. Return most found record or all 
+        #records, depending on all_matches parameter.
+        else:
+            for index, value in self.aaindex_json.items():
+                if not all_matches:
+                    if (record_matches[0] == value['description']):
+                        matches.append(self.aaindex_json[index])
+                else:
+                    for i in range(0,len(record_matches)):
+                        if (record_matches[i] == value['description']):
+                            matches.append(self.aaindex_json[index])    
 
         return matches
 
@@ -627,77 +643,73 @@ class AAIndex():
 
 ######################          Getters & Setters          ######################
 
-        @property
-        def url(self):
-            return self._url
+    @property
+    def url(self):
+        return self._url
 
-        @url.setter
-        def url(self, value):
-            self._url = value
+    @url.setter
+    def url(self, value):
+        self._url = value
 
-        @property
-        def aaindex_filename(self):
-            return self._aaindex_filename
+    @property
+    def aaindex_filename(self):
+        return self._aaindex_filename
 
-        @aaindex_filename.setter
-        def aaindex_filename(self, value):
-            self._aaindex_filename = value
+    @aaindex_filename.setter
+    def aaindex_filename(self, value):
+        self._aaindex_filename = value
 
-        @property
-        def categories(self):
-            return self._categories
+    @property
+    def categories(self):
+        return self._categories
 
-        @categories.setter
-        def categories(self, value):
-            self._categories = value
+    @categories.setter
+    def categories(self, value):
+        self._categories = value
 
 ################################################################################
 
-        def __str__(self):
-            return "AAIndex1 Database, with {} records - stored in {} ".format(
-            self.get_num_records(),self.aaindex_filename)
+    def __repr__(self):
+        return (json.dumps(self.aaindex_json, indent=4, sort_keys=True))
 
-        def __repr__(self):
-            return (json.dumps(self.aaindex_json, indent=4, sort_keys=True))
+    def __sizeof__(self):
+        """ Return size of AAI database file """
+        return os.path.getsize(os.path.isfile(os.path.join(DATA_DIR,self.aaindex_filename)))
 
-        def __sizeof__(self):
-            """ Return size of AAI database file """
-            return os.path.getsize(os.path.isfile(os.path.join(DATA_DIR,self.aaindex_filename)))
+    def __getitem__(self, record_code):
+        """
+        Return full AAI database record details from its feature/index code/Accession number.
 
-        def __getitem__(self, record_code):
-            """
-            Return full AAI database record details from its feature/index code/Accession number.
+        Parameters
+        ----------
+        : record_code : str
+            AAI database record feature index/Accession number.
 
-            Parameters
-            ----------
-            : record_code : str
-                AAI database record feature index/Accession number.
+        Returns
+        -------
+        : record : dict
+            dict of AAI database record.
 
-            Returns
-            -------
-            : record : dict
-                dict of AAI database record.
+        Usage
+        -----
+            aaindex = AAIndex()
+            full_record = aaindex['ZIMJ680105']
+        """
+        #stripping input of whitespace
+        try:
+            record_code = record_code.strip()
+        except:
+            raise TypeError('Input parameter {} is not of correct datatype string, got {}' \
+                .format(record_code, type(record_code)))
 
-            Usage
-            -----
-                aaindex = AAIndex()
-                full_record = aaindex['ZIMJ680105']
-            """
-            #stripping input of whitespace
-            try:
-                record_code = record_code.strip()
-            except:
-                raise TypeError('Input parameter {} is not of correct datatype string, got {}' \
-                    .format(record_code, type(record_code)))
+        #check that inputted record_code/Accession num does exist in the AAI database
+        if record_code not in (self.record_codes()):
+            raise ValueError('Record Index ({}) not found in AAIndex'.format(record_code))
+        
+        #get full record from parsed JSON
+        record = self.aaindex_json[record_code]
 
-            #check that inputted record_code/Accession num does exist in the AAI database
-            if record_code not in (self.record_codes()):
-                raise ValueError('Record Index ({}) not found in AAIndex'.format(record_code))
-            
-            #get full record from parsed JSON
-            record = self.aaindex_json[record_code]
-
-            return record
+        return record
 
 #Not Finished... 
 class AAIndex2():

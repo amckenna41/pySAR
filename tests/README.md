@@ -19,7 +19,7 @@ To run all unittests, make sure you are in the pySAR directory and from a termin
 ```python
 python -m unittest discover tests -v
 
-#-v produce a more verbose and useful output
+#-v produces a more verbose and useful output
 ```
 
 To run a module's specific unittests, make sure you are in the pySAR directory and from a terminal/cmd-line run:

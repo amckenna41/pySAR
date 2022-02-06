@@ -64,7 +64,7 @@ class Encoding(PySAR):
         with the protein descriptors from the descriptors module.
     """
 
-    def __init__(self, config_file):
+    def __init__(self, config_file=""):
 
         self.config_file = conf= config_file
 
@@ -110,7 +110,7 @@ class Encoding(PySAR):
 
         #initialise dataframe to store all output results of AAI encoding
         aaindex_metrics_df = pd.DataFrame(columns=['Index','Category','R2', 'RMSE',
-            'MSE', 'RPD', 'MAE', 'Explained Var'])
+            'MSE', 'RPD', 'MAE', 'Explained Variance'])
 
         #lists to store results for each predictive model
         aa_list = []
@@ -126,17 +126,20 @@ class Encoding(PySAR):
 
         #if no indices passed into aai_list then use all indices by default
         if aai_list == None or aai_list == [] or aai_list == "":
-            all_indices = self.aaindex.get_record_codes()
+            all_indices = self.aaindex.record_codes()
         elif isinstance(aai_list, str):   #if single descriptor input, cast to list
             all_indices = [aai_list]
         else:
             all_indices = aai_list
 
         print('\n#######################################################################################\n')
-        print('Encoding using {} AAI combination(s) with the parameters:\n\n# Spectrum -> {}\n# Window Function -> {} \
-            \n# Filter -> {}\n# Convolution -> {}\n# Algorithm -> {}\n# Parameters -> {}\n# Test Split -> {}\n'.format(len(all_indices), self.spectrum,\
-            self.window, self.filter, self.convolution, repr(self.model), self.model.model.get_params(), self.test_split))
-        print('#######################################################################################\n')
+        print('Encoding using {} AAI combination(s) with the parameters:\n\n# Algorithm -> {}\n# Parameters -> {} \
+            \n# Test Split -> {}'.format(len(all_indices), repr(self.model), self.model.model.get_params(), self.test_split))
+        if (self.use_dsp):
+            print('# Using DSP -> {}\n# Spectrum -> {}\n# Window Function -> {}\n# Filter -> {}\n# Convolution -> {}'.format(
+                self.use_dsp, self.spectrum, self.window, self.filter, self.convolution
+            ))
+        print('\n#######################################################################################\n')
 
         #set the proportion of iterations to actually complete -> mainly used for testing
         cutoff_index = int(len(all_indices) * cutoff_index)
@@ -162,7 +165,7 @@ class Encoding(PySAR):
 
             #generate protein spectra from pyDSP class if use_dsp is true
             if self.use_dsp:
-                pyDSP = PyDSP(self.config_file)
+                pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
                 pyDSP.encode_seqs()
                 X = pd.DataFrame(pyDSP.spectrum_encoding)
             else:
@@ -207,7 +210,7 @@ class Encoding(PySAR):
         aaindex_metrics_['MSE'] = mse_
         aaindex_metrics_['RPD'] = rpd_
         aaindex_metrics_['MAE'] = mae_
-        aaindex_metrics_['Explained Var'] = explained_var_
+        aaindex_metrics_['Explained Variance'] = explained_var_
 
         #sort output dataframe by sort_by parameter, sorted by R2 by default
         if (sort_by not in aaindex_metrics_df.columns):
@@ -254,7 +257,7 @@ class Encoding(PySAR):
         """
         #create dataframe to store output results from models
         desc_metrics_df = pd.DataFrame(columns=['Descriptor','Group','R2', 'RMSE',
-            'MSE', 'RPD', 'MAE', 'Explained Var'])
+            'MSE', 'RPD', 'MAE', 'Explained Variance'])
 
         #lists to store results for each predictive model
         descriptor = []
@@ -271,6 +274,7 @@ class Encoding(PySAR):
         #if no descriptors passed into desc_list then use all descriptors by default,
         #   get list of  all descriptors according to desc_combo value
         desc = Descriptors(self.config_file)
+        # print('ctd here', desc.ctd)
         if desc_list == None or desc_list == [] or desc_list == "":
             # desc = Descriptors(self.config_file)
             all_descriptors = desc.all_descriptors_list(desc_combo)
@@ -327,7 +331,9 @@ class Encoding(PySAR):
 
             #get protein activity values
             Y  = self.get_activity()
-
+            print(descr)
+            print(X)
+            # print(Y.shape)
             '''
             If using the PlsRegression algorithm and there is only 1 feature (1-dimension)
             in the feature data X then create a new PLSReg model with the n_components
@@ -341,7 +347,6 @@ class Encoding(PySAR):
               X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X,Y,test_size=self.test_split)
               model_fit = tmp_model.fit()
               Y_pred = tmp_model.predict()
-
             else:
               X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X,Y,test_size=self.test_split)
               model_fit = self.model.fit()
@@ -382,7 +387,7 @@ class Encoding(PySAR):
         desc_metrics_df_['MSE'] = mse_
         desc_metrics_df_['RPD'] = rpd_
         desc_metrics_df_['MAE'] = mae_
-        desc_metrics_df_['Explained Var'] = explained_var_
+        desc_metrics_df_['Explained Variance'] = explained_var_
 
         #sort output dataframe by sort_by parameter, sorted by R2 by default
         if (sort_by not in desc_metrics_df_.columns):
@@ -447,7 +452,7 @@ class Encoding(PySAR):
 
         #create dataframe to store output results from models
         aai_desc_metrics_df = pd.DataFrame(columns=['Index','Category', 'Descriptor',\
-            'Descriptor Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Var'])
+            'Descriptor Group','R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Variance'])
 
         #lists to store results for each predictive model
         index_ = []
@@ -522,7 +527,7 @@ class Encoding(PySAR):
 
             #generate protein spectra from pyDSP class if use_dsp is true
             if use_dsp:
-                pyDSP = PyDSP(self.config_file)
+                pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
                 pyDSP.encode_seqs()
                 X_aai = pd.DataFrame(pyDSP.spectrum_encoding)
             else:
@@ -614,7 +619,7 @@ class Encoding(PySAR):
         aai_desc_metrics_df_['MSE'] = mse_
         aai_desc_metrics_df_['RPD'] = rpd_
         aai_desc_metrics_df_['MAE'] = mae_
-        aai_desc_metrics_df_['Explained Var'] = explained_var_
+        aai_desc_metrics_df_['Explained Variance'] = explained_var_
 
         #sort output dataframe by sort_by parameter, sorted by R2 by default
         if (sort_by not in aai_desc_metrics_df_.columns):

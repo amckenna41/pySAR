@@ -2,9 +2,6 @@
 #############                   Composition                       ##############
 ################################################################################
 
-if ()properties == str:
-        properties = [preoprties]
-if properties is == "" or properties == [] then rasie error.
 import re
 import pandas as pd
 
@@ -98,9 +95,9 @@ def DipeptideComposition(sequence):
         for j in aminoAcids:
             dipep = i + j
             dipepComposition[dipep] = round(
-                float(sequence.count(dipep)) / len(seqeuence-1) * 100, 2
+                float(sequence.count(dipep)) / len(sequence-1) * 100, 2
             )
-        dipepComposition[aa] = round(float(sequence.count(aa)) / len(seqeuence) *100, 3)
+        # dipepComposition[i] = round(float(sequence.count(i)) / len(sequence) *100, 3)
 
     #convert resultant descriptor values into a Series
     dipepComposition_df = pd.Series(data=(list(dipepComposition.values())), index=list(dipepComposition.keys()))
@@ -159,17 +156,17 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
     Similar to the quasi-sequence order descriptor, the pseudo amino acid descriptor is
     made up of a 50-dimensional vector in which the first 20 components are a weighted
     sum of the amino acid composition and 30 are physiochemical square correlations as
-    dictated by the lambda and properties parameters. This generates an output of 
-    [(20 + lambda), 1] - 50 x 1. By default, the physiochemical properties used are 
+    dictated by the lamda and properties parameters. This generates an output of 
+    [(20 + lamda), 1] - 50 x 1. By default, the physiochemical properties used are 
     hydrophobicity (ARGP820101) and hydrophillicity (KUHL950101) indices, with a 
-    lambda of 30 and weight of 0.05.
+    lamda of 30 and weight of 0.05.
 
     Parameters 
     ----------
     :sequence : str
         protein sequence in str form.
-    :lambda : int (default = 30)
-        lambda parameter that reflects the rank correlation and should be a non-negative
+    :lamda : int (default = 30)
+        lamda parameter that reflects the rank correlation and should be a non-negative
         integer and not larger than the length of the protein sequence.
     :weight : float (default = 0.05)
         weighting factor allowing for weights to be added to the additioanl descriptor
@@ -182,7 +179,7 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
     -------
     :pseudoAAComp_df : pd.Series
         pandas Series of pseudo amino acid composition for protein sequence. Series will
-        be of the shape [(20 + lambda),1] - 50 x 1, where 50 is the number of features calculated 
+        be of the shape [(20 + lamda),1] - 50 x 1, where 50 is the number of features calculated 
         from the descriptor. 
 
     References
@@ -191,7 +188,7 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
          composition. Proteins, 43(3), 246–255. https://doi.org/10.1002/prot.1035
     """
 
-    #set lambda to its default value if <0, > sequence len or not an int
+    #set lamda to its default value if <0, > sequence len or not an int
     if ((lamda < 0) or (lamda > len(sequence)) or not isinstance(lamda, int)):
         lamda = 30
 
@@ -214,7 +211,7 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
 
     #calculate pseudo AAC for sequence
     rightpart = 0.0
-    for i in range(lambda):
+    for i in range(lamda):
         rightpart = rightpart + sequenceOrderCorrelationFactor(
             sequence, i + 1, aai_properties
         )
@@ -233,7 +230,7 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
     ##### Pseudo AAC 2 ####
     #calculate pseudo AAC for sequence 
     rightpart = []
-    for i in range(lambda):
+    for i in range(lamda):
         rightpart.append(sequenceOrderCorrelationFactor(sequence, i + 1, aai_properties))
 
     #applying weighting factor to components
@@ -332,14 +329,14 @@ def sequenceOrderCorrelationFactor(sequence, k=1, properties=[]):
 
 #     pass
 
-# def amphiphilicPseudoAAC(sequence, lambda=30, weight=0.5, properties=["ARGP820101", "KUHL950101"]):
+# def amphiphilicPseudoAAC(sequence, lamda=30, weight=0.5, properties=["ARGP820101", "KUHL950101"]):
 #     """
 
 #     """
 
-#     #set lambda to its default value if <0, > sequence len or not an int
-#     if ((lambda < 0) or (lambda > len(sequence)) or not isinstance(lambda, int)):
-#         lambda = 30
+#     #set lamda to its default value if <0, > sequence len or not an int
+#     if ((lamda < 0) or (lamda > len(sequence)) or not isinstance(lamda, int)):
+#         lamda = 30
 
 #     #keys of dicts should be AA not properties
 #     aai_properties = {}

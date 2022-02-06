@@ -1,4 +1,4 @@
-#PySAR: Configuration files for training
+# PySAR: Configuration files for training
 
 * `thermostability.json` - configuration file for using pySAR with the thermostability dataset in the /data folder.
 * `absorption.json` - configuration file for using pySAR with the absorption example dataset in the /example_datasets folder.

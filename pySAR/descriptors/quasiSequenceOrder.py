@@ -2,7 +2,6 @@
 ###############              Quasi Sequence Order                ###############
 ################################################################################
 
-//Double check outputs being returned as Series and not DF's
 import os
 import json
 from . import composition
