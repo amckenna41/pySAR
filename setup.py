@@ -52,11 +52,13 @@ setup(name='pySAR',
           'scipy',
           'delayed',
           'scikit-learn==0.24.1',
-          'requests',
+          'requests>=2.25',
+          'urllib3>=1.26'
           'matplotlib',
           'seaborn',
           'tqdm',
           'pytest'
+
       ],
      # packages=find_packages(), #create Manifest file to ignore results folder in dist
      packages=find_packages(exclude=["Results"]),
