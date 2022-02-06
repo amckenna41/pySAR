@@ -4,7 +4,7 @@
 <img src="images/pySAR.png" alt="logo" width="400"/>
 </p>
 
-# pySAR <a name="TOP"></a>
+# pySAR #
 [![PyPI](https://img.shields.io/pypi/v/pySAR)](https://pypi.org/project/pySAR/)
 [![pytest](https://github.com/amckenna41/pySAR/workflows/Building%20and%20Testing%20%F0%9F%90%8D/badge.svg)](https://github.com/amckenna41/pySAR/actions?query=workflowBuilding%20and%20Testing%20%F0%9F%90%8D)
 [![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
@@ -433,18 +433,17 @@ If you have any questions or comments, please contact amckenna41@qub.ac.uk or ra
 
 References
 ----------
-\[1\]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6888668/
-\[2\]: https://www.nature.com/articles/s41598-018-35033-y#MOESM1 
-\[3\]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2982887/
-\[4\]: https://www.nature.com/articles/s41592-019-0496-6
-\[5\]: https://pubs.acs.org/doi/10.1021/acs.jcim.0c00073
+\[1\]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6888668/ <br>
+\[2\]: https://www.nature.com/articles/s41598-018-35033-y#MOESM1 <br>
+\[3\]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2982887/ <br>
+\[4\]: https://www.nature.com/articles/s41592-019-0496-6 <br>
+\[5\]: https://pubs.acs.org/doi/10.1021/acs.jcim.0c00073 <br>
 \[6\]: https://arxiv.org/abs/2010.03516
 
 <br>
 [Back to top](#TOP)
 
 <!-- |Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png -->
-
 
 [python]: https://www.python.org/downloads/release/python-360/
 [numpy]: https://numpy.org/
