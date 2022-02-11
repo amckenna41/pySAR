@@ -70,20 +70,22 @@ class Model():
 
         #list of valid models available to use for this class
         self.valid_models = ['PlsRegression','RandomForestRegressor','AdaBoostRegressor',\
-                            'BaggingRegressor','DecisionTreeRegressor', 'GBR', 
+                            'BaggingRegressor','DecisionTreeRegressor', 'GBR', 'GradientBoostingRegressor', 
                             'LinearRegression', 'Lasso', 'Ridge', 'SVR','SGD', 'KNeighborsRegressor', 'KNN']
 
         #get closest match of valid model from the input algorithm parameter value
         model_matches = get_close_matches(self.algorithm.lower(),[item.lower() \
-            for item in self.valid_models], cutoff=0.4)
+            for item in self.valid_models], cutoff=0.5)
+
+        print(model_matches[0])
+        print(model_matches[0] in self.valid_models)
 
         #if algorithm is a valid model then set it to self.algorithm, else raise error
         if model_matches!=[]:
             self.algorithm = model_matches[0]
         else:
-            raise ValueError('Input algorithm {} not found in available valid \
-                models {}.'.format(self.algorithm, self.valid_models))
-
+            raise ValueError('Input algorithm {} not found in available valid models {}.'.format(
+                    self.algorithm, self.valid_models))
         #create instance of algorithm object
         self.model = self.get_model()
         self.model_fit = None
@@ -103,7 +105,7 @@ class Model():
         :model : sklearn.model
             instantiated regression model with default or user-specified parameters.
         """
-        if self.algorithm.lower() == 'plsregression':
+        if self.algorithm.lower().strip() == 'plsregression':
 
             #get parameters of sklearn model and check that user inputted
             #  parameters are available in the model, only use those that are valid.
@@ -117,7 +119,7 @@ class Model():
             else:
                 model = PLSRegression()
 
-        elif self.algorithm.lower() == 'randomforestregressor':
+        elif self.algorithm.lower().strip() == 'randomforestregressor':
 
             model_params = set(dir(RandomForestRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -127,7 +129,7 @@ class Model():
             else:
                 model = RandomForestRegressor()
 
-        elif self.algorithm.lower() == 'adaboostregressor':
+        elif self.algorithm.lower().strip() == 'adaboostregressor':
 
             model_params = set(dir(AdaBoostRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -137,7 +139,7 @@ class Model():
             else:
                 model = AdaBoostRegressor()
 
-        elif self.algorithm.lower() == 'baggingregressor':
+        elif self.algorithm.lower().strip() == 'baggingregressor':
 
             model_params = set(dir(BaggingRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -147,7 +149,7 @@ class Model():
             else:
                 model = BaggingRegressor()
 
-        elif self.algorithm.lower() == 'decisiontreeregressor':
+        elif self.algorithm.lower().strip() == 'decisiontreeregressor':
 
             model_params = set(dir(DecisionTreeRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -157,7 +159,7 @@ class Model():
             else:
                 model = DecisionTreeRegressor()
 
-        elif self.algorithm.lower() == 'linearregression':
+        elif self.algorithm.lower().strip() == 'linearregression':
 
             model_params = set(dir(LinearRegression()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -167,7 +169,7 @@ class Model():
             else:
                 model = LinearRegression()
 
-        elif self.algorithm.lower() == 'lasso':
+        elif self.algorithm.lower().strip() == 'lasso':
 
             model_params = set(dir(Lasso()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -177,7 +179,7 @@ class Model():
             else:
                 model = Lasso()
 
-        elif self.algorithm.lower() == 'ridge':
+        elif self.algorithm.lower().strip() == 'ridge':
 
             model_params = set(dir(Ridge()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -187,7 +189,7 @@ class Model():
             else:
                 model = Ridge()
 
-        elif self.algorithm.lower() == 'sgd':
+        elif self.algorithm.lower().strip() == 'sgd':
 
             model_params = set(dir(SGDRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -197,7 +199,9 @@ class Model():
             else:
                 model = SGDRegressor()
 
-        elif self.algorithm.lower() == 'gbr':
+        elif self.algorithm.lower().strip() == 'gbr' or \
+            self.algorithm.lower().strip() == 'gradientboost' or \
+            self.algorithm.lower().strip() == 'gradientboostregressor':
 
             model_params = set(dir(GradientBoostingRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -207,7 +211,7 @@ class Model():
             else:
                 model = GradientBoostingRegressor()
 
-        elif self.algorithm.lower() == 'svr':
+        elif self.algorithm.lower().strip() == 'svr':
 
             model_params = set(dir(SVR()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -217,8 +221,8 @@ class Model():
             else:
                 model = SVR()
 
-        elif self.algorithm.lower() == 'knn' or \
-           self.algorithm.lower() == 'kneighborsregressor':
+        elif self.algorithm.lower().strip() == 'knn' or \
+           self.algorithm.lower().strip() == 'kneighborsregressor':
 
             model_params = set(dir(KNeighborsRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
@@ -529,7 +533,7 @@ class Model():
 
     def __str__(self):
         return "Model of type {} using {} parameters, model fit = {}".format(
-            type(self.model).__name__, self.parameters, self.modelFitted())
+            type(self.model).__name__, self.parameters, self.model_fitted())
 
     def __repr__(self):
         return type(self.model).__name__

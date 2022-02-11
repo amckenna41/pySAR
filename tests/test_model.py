@@ -36,12 +36,13 @@ class ModelTests(unittest.TestCase):
 
         test_models = ['PLSRegression','RandomForestRegressor','AdaBoostRegressor',\
                             'BaggingRegressor','DecisionTreeRegressor','LinearRegression',\
-                            'Lasso','SVR','KNeighborsRegressor']
+                            'Lasso','SVR','KNeighborsRegressor', 'GradientBoostingRegressor', 'Ridge']
 
         #iterate through all available algorithms and test them
         for test_mod in range(0,len(test_models)):
 
             model = Model(test_models[test_mod])
+            print(model)
 #1.)
             #checking model object is of the correct sklearn model datatype
             self.assertEqual(type(model.model).__name__, test_models[test_mod],
@@ -55,8 +56,8 @@ class ModelTests(unittest.TestCase):
             self.assertEqual(model.parameters,{},
                 'Default Parameters attribute should be an empty dict, but got {}'.format(model.parameters))
 #4.)        #verify test split attribute is = 0.2, its default value
-            self.assertEqual(model.test_split, None,
-                'Default test split attribute should be None, but got {}'.format(model.test_split))
+            self.assertEqual(model.test_split, 0.2,
+                'Default test split attribute should be 0.2, but got {}'.format(model.test_split))
 #5.)        #verify that input model type is a valid model for the class
             self.assertTrue(model.algorithm in [item.lower() \
                 for item in model.valid_models],
@@ -117,7 +118,7 @@ class ModelTests(unittest.TestCase):
             bad_model = Model('abcdefg')
 
         with self.assertRaises(ValueError):
-            bad_model = Model('rand')
+            bad_model = Model('notamodel')
 
         with self.assertRaises(ValueError):
             bad_model = Model('123')

@@ -22,11 +22,12 @@ from .model import Model
 from .pyDSP import PyDSP
 from .evaluate import Evaluate
 from .utils import *
-from .descriptors.autocorrelation import *
-from .descriptors.composition import *
-from .descriptors.conjointTriad import *
-from .descriptors.ctd import *
-from .descriptors.quasiSequenceOrder import *
+from .descriptors.autocorrelation import moran_autocorrelation, geary_autocorrelation, norm_moreaubroto_autocorrelation
+from .descriptors.composition import AAComposition, DipeptideComposition, TripeptideComposition, \
+    sequenceOrderCorrelationFactor, pseudoAAC
+from .descriptors.conjointTriad import conjoint_triad
+from .descriptors.ctd import ctd_composition, ctd_transition, ctd_distribution, ctd_
+from .descriptors.quasiSequenceOrder import quasi_sequence_order
 
 class Descriptors():
     """
@@ -121,12 +122,28 @@ class Descriptors():
             sys.exit()
 
         #set descriptor parameters
-        self.desc_config = self.parameters["descriptors"]
-        self.desc_parameters = self.parameters["descriptor_parameters"]
-        self.all_desc = self.desc_config[0]["descriptors"]["all_desc"]
+        self.dataset_parameters = self.parameters["dataset"][0]
+        self.descr_config = self.parameters["descriptors"]
+        self.descr_parameters = self.parameters["descriptor_parameters"]
+        self.all_desc = self.descr_config[0]["descriptors"]["all_desc"]
         
-        if (protein_seqs is not None):
+        if (self.protein_seqs is None or self.protein_seqs == ""): 
 
+            #open dataset and read protein seqs if protein_seqs is empty/None
+            if os.path.isfile(self.dataset_parameters["dataset"]):
+                dataset_filepath = self.dataset_parameters["dataset"]
+            elif os.path.isfile(os.path.join(DATA_DIR, self.dataset_parameters["dataset"])):
+                dataset_filepath = os.path.join(DATA_DIR, self.dataset_parameters["dataset"])
+            else:
+                raise OSError('Dataset file not found at path: {}.'.format(dataset_filepath))
+
+            #read in dataset csv
+            try:
+                data = pd.read_csv(dataset_filepath, sep=",", header=0)
+                self.protein_seqs = data[self.dataset_parameters["sequence_col"]]
+            except:
+                raise IOError('Error opening dataset file: {}'.format(dataset_filepath))
+        else: 
             #if 1 protein sequence (1 string) input then convert to pandas Series object
             if isinstance(self.protein_seqs, str):
               self.protein_seqs = pd.Series(self.protein_seqs)
@@ -137,18 +154,18 @@ class Descriptors():
                 raise ValueError('The full dataset must not be passed in, only the \
                     columns containing the protein sequences.')
 
-            #remove any gaps from protein sequences
-            self.protein_seqs = remove_gaps(self.protein_seqs)
+        #remove any gaps from protein sequences
+        self.protein_seqs = remove_gaps(self.protein_seqs)
 
-            #validate that all input protein sequences are valid and only contain
-            #  valid amino acids, if not then raise ValueError
-            invalid_seqs = valid_sequence(self.protein_seqs)
-            if invalid_seqs!=None:
-                raise ValueError('Invalid Amino Acids found in protein sequence \
-                    dataset: {}'.format(invalid_seqs))
+        #validate that all input protein sequences are valid and only contain
+        #  valid amino acids, if not then raise ValueError
+        invalid_seqs = valid_sequence(self.protein_seqs)
+        if invalid_seqs!=None:
+            raise ValueError('Invalid Amino Acids found in protein sequence \
+                dataset: {}'.format(invalid_seqs))
 
-            #get the total number of inputted protein sequences
-            self.num_seqs = len(self.protein_seqs)
+        #get the total number of inputted protein sequences
+        self.num_seqs = len(self.protein_seqs)
 
         #initialise all descriptor attributes to empty dataframes
         self.aa_composition = pd.DataFrame()
@@ -158,7 +175,7 @@ class Descriptors():
         self.moran_autocorrelation = pd.DataFrame()
         self.geary_autocorrelation = pd.DataFrame()
         self.ctd = pd.DataFrame()
-        self.composition = pd.DataFrame()
+        self.comp = pd.DataFrame()
         self.transition = pd.DataFrame()
         self.distribution = pd.DataFrame()
         self.conjoint_triad = pd.DataFrame()
@@ -170,7 +187,7 @@ class Descriptors():
 
         #try importing descriptors csv with pre-calculated descriptor values,
         #  if not found then calculate all descriptors if all_desc is true
-        if os.path.isfile((os.path.join(DATA_DIR, self.desc_config[0]["descriptors_csv"]))):
+        if os.path.isfile((os.path.join(DATA_DIR, self.descr_config[0]["descriptors_csv"]))):
             self.import_descriptors()
             #get the total number of inputted protein sequences
             self.num_seqs = self.all_descriptors.shape[0]
@@ -180,7 +197,7 @@ class Descriptors():
             if (self.all_desc):
                 self.all_descriptors = self.get_all_descriptors()
                 #save all calculated descriptor values for next time
-                self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.desc_config["descriptors_csv"]), index=0)
+                self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.descr_config["descriptors_csv"]), index=0)
 
         #create dictionary of descriptors and their associated groups
         keys = self.all_descriptors_list()
@@ -208,12 +225,12 @@ class Descriptors():
         None
         """
         #verify descriptors csv exists
-        if not (os.path.isfile(os.path.join(DATA_DIR, self.desc_config[0]["descriptors_csv"]))):
-            raise OSError('Descriptors csv file does not exist, at filepath: {}'.format(self.desc_config["descriptors_csv"]))
+        if not (os.path.isfile(os.path.join(DATA_DIR, self.descr_config[0]["descriptors_csv"]))):
+            raise OSError('Descriptors csv file does not exist, at filepath: {}'.format(self.descr_config["descriptors_csv"]))
 
         #import descriptors csv as dataframe
         try:
-            descriptor_df = pd.read_csv(os.path.join(DATA_DIR, self.desc_config[0]["descriptors_csv"]))
+            descriptor_df = pd.read_csv(os.path.join(DATA_DIR, self.descr_config[0]["descriptors_csv"]))
         except IOError:
             print('Error reading descriptor file: {}.'.format(descriptor_file))
 
@@ -250,8 +267,9 @@ class Descriptors():
         self.ctd =  descriptor_df.iloc[:,ctd_dim[0]:ctd_dim[1]]
 
         composition_dim = (ctd_dim[1], ctd_dim[1]+21)
-        self.composition = descriptor_df.iloc[:,composition_dim[0]:composition_dim[1]]
-
+        print(composition_dim)
+        self.comp = descriptor_df.iloc[:,composition_dim[0]:composition_dim[1]]
+    
         transition_dim = (composition_dim[1], composition_dim[1]+21)
         self.transition = descriptor_df.iloc[:,transition_dim[0]:transition_dim[1]]
 
@@ -443,22 +461,29 @@ class Descriptors():
 
         Returns
         -------
-        :composition : pd.Series
-            pandas Series of C_CTD values for protein sequence. Output will
-            be of the shape 21 x 1, where 21 is the number of features calculated from
+        :composition : pd.DataFrame
+            pandas dataframe of C_CTD values for protein sequence. Output will
+            be of the shape N x M x 1, where 21 is the number of features calculated from
             the descriptor.
         """
         print('\nGetting Composition (CTD) Descriptors...')
         print('#########################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.composition.empty:
-            return self.composition
+        if not self.comp.empty:
+            return self.comp
 
-        #calculate descriptor value
-        self.composition = composition(self.protein_seqs)
+        #initialise dataframe
+        comp_df = pd.DataFrame()
 
-        return self.composition
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            comp_seq = ctd_composition(seq)
+            comp_df = pd.concat([comp_df, comp_seq])
+
+        self.comp = comp_df
+
+        return self.comp
 
     def get_transition(self):
         """ 
@@ -479,8 +504,15 @@ class Descriptors():
         if not self.transition.empty:
             return self.transition
 
-        #calculate descriptor value
-        self.transition = transition(self.protein_seqs)
+        #initialise dataframe
+        transition_df = pd.DataFrame()
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            transition_seq = ctd_transition(seq)
+            transition_df = pd.concat([transition_df, transition_seq])
+
+        self.transition = transition_df
 
         return self.transition
 
@@ -503,8 +535,15 @@ class Descriptors():
         if not self.distribution.empty:
             return self.distribution
 
-        #calculate descriptor value
-        self.distribution = distribution(self.protein_seqs)
+        #initialise dataframe
+        distribution_df = pd.DataFrame()
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            distribution_seq = ctd_distribution(seq)
+            distribution_df = pd.concat([distribution_df, distribution_seq])
+
+        self.distribution = distribution_df
 
         return self.distribution
 
@@ -733,7 +772,7 @@ class Descriptors():
         elif desc == 'composition':
             if (getattr(self, desc).empty):
               self.get_composition()
-            desc_encoding = self.composition
+            desc_encoding = self.comp
         elif desc == 'transition':
             if (getattr(self, desc).empty):
               self.get_transition()
@@ -860,7 +899,7 @@ class Descriptors():
         all_desc = [
             self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
             self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
-            self.geary_autocorrelation, self.composition, self.transition,
+            self.geary_autocorrelation, self.comp, self.transition,
             self.distribution, self.ctd, self.conjoint_triad, self.seq_order_coupling_number,
             self.quasi_seq_order, self.pseudo_aa_composition, self.amp_pseudo_aa_composition
             ]
