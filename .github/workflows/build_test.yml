@@ -68,18 +68,18 @@ jobs:
       continue-on-error: true
 
     # unit tests using pytest, unittest, flake8 and bandit frameworks
-    - name: Testing with unittest
-      run: |
-        echo "Testing using unittest..."
-        python3 -m unittest discover
+    # - name: Testing with unittest
+    #   run: |
+    #     echo "Testing using unittest..."
+    #     python3 -m unittest discover
 
-    - name: Test with pytest
-      run: |
-        echo "Testing using pytest..."
-        python3 -m pytest tests/
+    # - name: Test with pytest
+    #   run: |
+    #     echo "Testing using pytest..."
+    #     python3 -m pytest tests/
         
-    - name: Coverage Report
-      run: |
-        echo "Running coverage report..."
-        pytest --cov-report term --cov=pySAR tests/
+    # - name: Coverage Report
+    #   run: |
+    #     echo "Running coverage report..."
+    #     pytest --cov-report term --cov=pySAR tests/
     # coveralls

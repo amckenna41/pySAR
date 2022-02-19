@@ -84,13 +84,15 @@ class PyDSP():
         config_filepath = ""
         #read protein seqs from dataset if not input as parameter,
         # parse DSP parameters from config file
+        if not isinstance(dsp_config, str) or dsp_config is None:
+            raise TypeError('JSON config file must be a filepath of type string')
+        if os.path.isfile(self.dsp_config):
+            config_filepath = self.dsp_config
+        elif os.path.isfile(os.path.join('config', self.dsp_config)):
+            config_filepath = os.path.join('config', self.dsp_config)
+        else:
+            raise OSError('JSON config file not found at path: {}.'.format(config_filepath))
         try:
-            if os.path.isfile(self.dsp_config):
-                config_filepath = self.dsp_config
-            elif os.path.isfile(os.path.join('config', self.dsp_config)):
-                config_filepath = os.path.join('config', self.dsp_config)
-            else:
-                raise OSError('JSON config file not found at path: {}.'.format(config_filepath))
             with open(config_filepath) as f:
                 self.parameters = json.load(f)
         except JSONDecodeError as e:

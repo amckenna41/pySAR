@@ -31,8 +31,8 @@ def conjoint_triad(sequence):
 
     Returns
     -------
-    :ct_df : pd.Series
-        pandas Series of CTriad descriptor values for all protein sequences. Series
+    :ct_df : pd.Dataframe
+        pandas Dataframe of CTriad descriptor values for all protein sequences. Dataframe
         will be of the shape 343 x 1, where 343 is the number of features calculated 
         from the descriptor for a sequence.
 
@@ -48,7 +48,6 @@ def conjoint_triad(sequence):
     for i in aa_triads:
         for j in aa_triads[i]:
             _aa_triads[j] = i
-            print(_aa_triads)
 
     protein_num = sequence
     for i in _aa_triads:
@@ -61,6 +60,7 @@ def conjoint_triad(sequence):
                 temp = str(i) + str(j) + str(k)
                 con_triad[temp] = protein_num.count(temp)
 
-    con_triad_df = pd.Series(data=(list(con_triad.values())), index=list(con_triad.keys()))
+    #transform descriptor values to dataframe
+    con_triad_df = pd.DataFrame([list(con_triad.values())], columns=list(con_triad.keys()))
 
-    return con_triad
+    return con_triad_df

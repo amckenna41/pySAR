@@ -2,8 +2,8 @@
     "dataset": [
       {
         "dataset": "localization.txt",
-        "sequence_col": "log_GFP",
-        "activity": "peak"
+        "sequence_col": "sequence",
+        "activity": "log_GFP"
       }
   
     ],
@@ -32,6 +32,7 @@
             "composition": 1,
             "transition": 1,
             "distribution": 1,
+            "ctd": 1,
             "conjoint_triad": 1,
             "seq_order_coupling_number": 1,
             "quasi_seq_order": 1,
@@ -69,14 +70,18 @@
       "distribution":[{
         "property":"hydrophobicity"
       }],
+      "ctd":[{
+        "property":"hydrophobicity",
+        "all": 1
+      }],
       "seq_order_coupling_number":[{
-        "maxlag":30,
-        "distance_matrix":"schneider-wrede-physicochemical-distance-matrix.json"
+        "lag":30,
+        "distance_matrix":"schneider-wrede-physiochemical-distance-matrix.json"
       }],
       "quasi_seq_order":[{
-        "maxlag":30,
+        "lag":30,
         "weight":0.1,
-        "distance_matrix":"schneider-wrede-physicochemical-distance-matrix.json"
+        "distance_matrix":"schneider-wrede-physiochemical-distance-matrix.json"
       }],
       "pseudo_aa_composition":[{
         "lambda":30,

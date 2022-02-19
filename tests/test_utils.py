@@ -7,6 +7,7 @@ import sys
 import shutil
 import unittest
 import numpy as np
+# np.warnings.filterwarnings('error', category=np.VisibleDeprecationWarning)
 import pandas as pd
 
 import pySAR.globals_ as _globals
@@ -146,7 +147,7 @@ class UtilsTest(unittest.TestCase):
     def test_zero_padding(self):
         """ Test zero padding utility function that pads an array or list with 0's. """
 
-        seq1 = np.array([[1, 2, 3, 4, 5], [6, 7, 8]])
+        seq1 = np.array([[1, 2, 3, 4, 5], [6, 7, 8]], dtype=object)
         seq2 = [["A", "B", "C"], ["D", "E", "F","G"],["H"]]
         seq3 = np.random.randint(10,90,(4,5,2))
 #1.)

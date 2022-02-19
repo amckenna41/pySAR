@@ -69,16 +69,13 @@ class Model():
         self.test_split = test_split
 
         #list of valid models available to use for this class
-        self.valid_models = ['PlsRegression','RandomForestRegressor','AdaBoostRegressor',\
-                            'BaggingRegressor','DecisionTreeRegressor', 'GBR', 'GradientBoostingRegressor', 
-                            'LinearRegression', 'Lasso', 'Ridge', 'SVR','SGD', 'KNeighborsRegressor', 'KNN']
+        self.valid_models = ['plsregression','randomforestregressor','adaboostregressor',\
+                            'baggingregressor','decisiontreeregressor', 'gbr', 'gradientboostingregressor', 
+                            'linearregression', 'lasso', 'ridge', 'svr', 'sgd', 'kneighborsregressor', 'knn']
 
         #get closest match of valid model from the input algorithm parameter value
-        model_matches = get_close_matches(self.algorithm.lower(),[item.lower() \
+        model_matches = get_close_matches(self.algorithm.lower().strip(),[item.lower().strip() \
             for item in self.valid_models], cutoff=0.5)
-
-        print(model_matches[0])
-        print(model_matches[0] in self.valid_models)
 
         #if algorithm is a valid model then set it to self.algorithm, else raise error
         if model_matches!=[]:
@@ -201,8 +198,7 @@ class Model():
 
         elif self.algorithm.lower().strip() == 'gbr' or \
             self.algorithm.lower().strip() == 'gradientboost' or \
-            self.algorithm.lower().strip() == 'gradientboostregressor':
-
+            self.algorithm.lower().strip() == 'gradientboostingregressor':
             model_params = set(dir(GradientBoostingRegressor()))
             parameters = [i for i in model_params if i in self.parameters]
 
@@ -353,7 +349,7 @@ class Model():
         except (IOError, OSError, pickle.PickleError, pickle.UnpicklingError):
             print("Error pickling model with path: {} .".format(save_path))
 
-    def hyperparameter_tuning(self, parameters, metric='r2', cv=5, n_jobs=None):
+    def hyperparameter_tuning(self, parameters={}, metric='r2', cv=5, n_jobs=None):
         """
         Hyperparamter tuning of model to find its optimal arrangment of parameters
         using a Grid Search.
@@ -362,7 +358,7 @@ class Model():
         ----------
         :self : (Model object)
             instance of Model class.
-        :parameters : dict
+        :parameters : dict (default = {})
             dictionary of parameter names and their values.
         :metric : str (default = r2)
             scoring metric used to evaluate the performance of the cross-validated
@@ -374,9 +370,7 @@ class Model():
 
         Returns
         -------
-        metrics_df: pd.DataFrame
-            dataframe of best results and the associated parameters from the
-            hyperparameter tuning process.
+        None
         """
         #input parameters parameter must be a dict, if not raise error
         if not isinstance(parameters, dict):
@@ -437,7 +431,7 @@ class Model():
         print('# RPD {}'.format(eval.rpd))
         print('# Variance {}\n'.format(eval.explained_var))
         print('###############################################################')
-
+        
     def copy(self):
         """
         Make a copy of the sklearn model stored in self.model instance variable.

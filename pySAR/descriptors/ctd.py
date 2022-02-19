@@ -124,16 +124,14 @@ def ctd_composition(sequence, property=ctd_properties[nameof(_hydrophobicity)]):
         dataframe of calculated composition values for sequence using
         selected physiochemical property.
     """
-    print(property)
     seq = str_to_num(sequence, property)
-    # property_name = [ k for k,v in locals().items() if v == property][0]
     result = {}
-
-    print(seq)
-    result[property["name"] + '_CTD_C_1'] = round(float(seq.count("1"))/len(sequence), 3)
+    
+    #calculate descriptor values, append to result dict
+    result[property["name"] + '_CTD_C_1'] = round(float(seq.count("1"))/len(sequence), 3) 
     result[property["name"] + '_CTD_C_2'] = round(float(seq.count("2"))/len(sequence), 3)
     result[property["name"] + '_CTD_C_3'] = round(float(seq.count("3"))/len(sequence), 3)
-    # result_df = pd.Series(data=(list(result.values())), index=list(result.keys()))
+
     #transform values and columns to DataFrame
     result_df = pd.DataFrame([list(result.values())], columns=list(result.keys()))
 
@@ -156,11 +154,10 @@ def ctd_transition(sequence, property=ctd_properties[nameof(_hydrophobicity)]):
         dataframe of calculated transition values for sequence using
         selected physiochemical property.
     """
-
     seq = str_to_num(sequence, property)
-    # property_name = [ k for k,v in locals().items() if v == property][0]
     result = {}
 
+    #calculate descriptor values, append to result dict
     result[property["name"] + "_CTD_T_12"] = round(
         float(seq.count("12") + seq.count("21")) / (len(sequence)-1), 3)
     result[property["name"] + "_CTD_T_13"] = round(
@@ -192,7 +189,6 @@ def ctd_distribution(sequence, property=ctd_properties[nameof(_hydrophobicity)])
     """
     result = {}
     seq = str_to_num(sequence, property)
-    # property_name = [ k for k,v in locals().items() if v == property][0]
     
     #iterate through sequence, calculating distribution descriptor values using property
     for key, value in property.items():
@@ -263,21 +259,22 @@ def ctd_(sequence, property=ctd_properties[nameof(_hydrophobicity)], all_ctd=Tru
     trans_df = pd.DataFrame()
     distr_df = pd.DataFrame()
 
+    #if using single property, calculate each of the CTD descriptors individually
     if not all_ctd:
-        comp = ctd_composition(sequence, property=property)
-        trans = ctd_transition(sequence, property=property)
-        distr = ctd_distribution(sequence, property=property)
+        comp_df = ctd_composition(sequence, property=property)
+        trans_df = ctd_transition(sequence, property=property)
+        distr_df = ctd_distribution(sequence, property=property)
     else:
+        #if using all calculable properties, calculate CTD descriptors for each property
         for prop in ctd_properties:
-            print('here')
-            print(prop)
             comp = ctd_composition(sequence, property=ctd_properties[prop])
-            comp_df.append(comp)
+            comp_df = pd.concat([comp_df, comp], axis=1)
             trans = ctd_transition(sequence, property=ctd_properties[prop])
-            trans_df.append(trans)  
+            trans_df = pd.concat([trans_df, trans], axis=1)
             distr = ctd_distribution(sequence, property=ctd_properties[prop])
-            distr_df.append(distr) 
+            distr_df = pd.concat([distr_df, distr], axis=1)
 
-    ctd = pd.concat([comp, trans, distr], axis=1)
-
+    #concatenate all descriptors
+    ctd = pd.concat([comp_df, trans_df, distr_df], axis=1)
+    
     return ctd

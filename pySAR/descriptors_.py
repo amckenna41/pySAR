@@ -14,7 +14,6 @@ import json
 from json import JSONDecodeError
 import sys
 from tqdm import tqdm
-from sklearn.preprocessing import StandardScaler
 
 from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
 from .aaindex import  AAIndex
@@ -27,7 +26,7 @@ from .descriptors.composition import AAComposition, DipeptideComposition, Tripep
     sequenceOrderCorrelationFactor, pseudoAAC
 from .descriptors.conjointTriad import conjoint_triad
 from .descriptors.ctd import ctd_composition, ctd_transition, ctd_distribution, ctd_
-from .descriptors.quasiSequenceOrder import quasi_sequence_order
+from .descriptors.quasiSequenceOrder import quasi_sequence_order, seq_order_coupling_number
 
 class Descriptors():
     """
@@ -108,13 +107,15 @@ class Descriptors():
 
         desc_config_filepath = ""
         #open json config file
+        if not isinstance(desc_config, str) or desc_config is None:
+            raise TypeError('JSON config file must be a filepath of type string')
+        if os.path.isfile(self.desc_config):
+            desc_config_filepath = self.desc_config
+        elif os.path.isfile(os.path.join('config', self.desc_config)):
+            desc_config_filepath = os.path.join('config', self.desc_config)
+        else:
+            raise OSError('JSON config file not found at path: {}.'.format(desc_config_filepath))
         try:
-            if os.path.isfile(self.desc_config):
-                desc_config_filepath = self.desc_config
-            elif os.path.isfile(os.path.join('config', self.desc_config)):
-                desc_config_filepath = os.path.join('config', self.desc_config)
-            else:
-                raise OSError('JSON config file not found at path: {}.'.format(desc_config_filepath))
             with open(desc_config_filepath) as f:
                 self.parameters = json.load(f)
         except JSONDecodeError as e:
@@ -127,32 +128,33 @@ class Descriptors():
         self.descr_parameters = self.parameters["descriptor_parameters"]
         self.all_desc = self.descr_config[0]["descriptors"]["all_desc"]
         
-        if (self.protein_seqs is None or self.protein_seqs == ""): 
+        if not isinstance(self.protein_seqs, pd.Series):
+            if (self.protein_seqs is None or self.protein_seqs == ""): 
+                dataset_filepath = ""
+                #open dataset and read protein seqs if protein_seqs is empty/None
+                if os.path.isfile(self.dataset_parameters["dataset"]):
+                    dataset_filepath = self.dataset_parameters["dataset"]
+                elif os.path.isfile(os.path.join(DATA_DIR, self.dataset_parameters["dataset"])):
+                    dataset_filepath = os.path.join(DATA_DIR, self.dataset_parameters["dataset"])
+                else:
+                    raise OSError('Dataset file not found at path: {}.'.format(dataset_filepath))
 
-            #open dataset and read protein seqs if protein_seqs is empty/None
-            if os.path.isfile(self.dataset_parameters["dataset"]):
-                dataset_filepath = self.dataset_parameters["dataset"]
-            elif os.path.isfile(os.path.join(DATA_DIR, self.dataset_parameters["dataset"])):
-                dataset_filepath = os.path.join(DATA_DIR, self.dataset_parameters["dataset"])
-            else:
-                raise OSError('Dataset file not found at path: {}.'.format(dataset_filepath))
+                #read in dataset csv
+                try:
+                    data = pd.read_csv(dataset_filepath, sep=",", header=0)
+                    self.protein_seqs = data[self.dataset_parameters["sequence_col"]]
+                except:
+                    raise IOError('Error opening dataset file: {}'.format(dataset_filepath))
+            else: 
+                #if 1 protein sequence (1 string) input then convert to pandas Series object
+                if isinstance(self.protein_seqs, str):
+                    self.protein_seqs = pd.Series(self.protein_seqs)
 
-            #read in dataset csv
-            try:
-                data = pd.read_csv(dataset_filepath, sep=",", header=0)
-                self.protein_seqs = data[self.dataset_parameters["sequence_col"]]
-            except:
-                raise IOError('Error opening dataset file: {}'.format(dataset_filepath))
-        else: 
-            #if 1 protein sequence (1 string) input then convert to pandas Series object
-            if isinstance(self.protein_seqs, str):
-              self.protein_seqs = pd.Series(self.protein_seqs)
-
-            #only the sequences should be passed in, not all columns in a dataset etc.
-            if isinstance(self.protein_seqs, pd.DataFrame) and \
-                len(self.protein_seqs.columns) > 1:
-                raise ValueError('The full dataset must not be passed in, only the \
-                    columns containing the protein sequences.')
+                #only the sequences should be passed in, not all columns in a dataset etc.
+                if isinstance(self.protein_seqs, pd.DataFrame) and \
+                    len(self.protein_seqs.columns) > 1:
+                    raise ValueError('The full dataset must not be passed in, only the \
+                        columns containing the protein sequences.')
 
         #remove any gaps from protein sequences
         self.protein_seqs = remove_gaps(self.protein_seqs)
@@ -192,8 +194,7 @@ class Descriptors():
             #get the total number of inputted protein sequences
             self.num_seqs = self.all_descriptors.shape[0]
         else:
-            #if all_desc parameter true then calculate all descriptor values and store
-            #  in their respective attributes
+            #if all_desc parameter true then calculate all descriptor values and store in their respective attributes
             if (self.all_desc):
                 self.all_descriptors = self.get_all_descriptors()
                 #save all calculated descriptor values for next time
@@ -252,22 +253,21 @@ class Descriptors():
 
         #dimension of autocorrelation descriptors depends on the max lag value and number of properties
         norm_moreaubroto_dim = (8420,
-            8420 + (self.desc_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["lag"]*len(self.desc_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["properties"])))
+            8420 + (self.descr_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["lag"]*len(self.descr_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["properties"])))
         self.normalized_moreaubroto_autocorrelation = descriptor_df.iloc[:,norm_moreaubroto_dim[0]:norm_moreaubroto_dim[1]]
 
         moran_auto_dim = (norm_moreaubroto_dim[1], norm_moreaubroto_dim[1] +
-            (self.desc_parameters[0]["moran_autocorrelation"][0]["lag"]*len(self.desc_parameters[0]["moran_autocorrelation"][0]["properties"])))
+            (self.descr_parameters[0]["moran_autocorrelation"][0]["lag"]*len(self.descr_parameters[0]["moran_autocorrelation"][0]["properties"])))
         self.moran_autocorrelation = descriptor_df.iloc[:,moran_auto_dim[0]: moran_auto_dim[1]]
 
         geary_auto_dim = (moran_auto_dim[1], moran_auto_dim[1] +
-            (self.desc_parameters[0]["geary_autocorrelation"][0]["lag"]*len(self.desc_parameters[0]["geary_autocorrelation"][0]["properties"])))
+            (self.descr_parameters[0]["geary_autocorrelation"][0]["lag"]*len(self.descr_parameters[0]["geary_autocorrelation"][0]["properties"])))
         self.geary_autocorrelation = descriptor_df.iloc[:,geary_auto_dim[0]:geary_auto_dim[1]]
 
         ctd_dim = (geary_auto_dim[1], geary_auto_dim[1]+147)
         self.ctd =  descriptor_df.iloc[:,ctd_dim[0]:ctd_dim[1]]
 
         composition_dim = (ctd_dim[1], ctd_dim[1]+21)
-        print(composition_dim)
         self.comp = descriptor_df.iloc[:,composition_dim[0]:composition_dim[1]]
     
         transition_dim = (composition_dim[1], composition_dim[1]+21)
@@ -281,7 +281,7 @@ class Descriptors():
 
         #dimension of SOCNum depends on the maximum lag value 
         seq_order_coupling_number_dim = (conjoint_triad_dim[1],
-            conjoint_triad_dim[1] + (self.desc_parameters[0]["seq_order_coupling_number"][0]["maxlag"])*2)
+            conjoint_triad_dim[1] + (self.descr_parameters[0]["seq_order_coupling_number"][0]["lag"])*2)
         self.seq_order_coupling_number = descriptor_df.iloc[:,seq_order_coupling_number_dim[0]:seq_order_coupling_number_dim[1]]
 
         quasi_seq_order_dim = (seq_order_coupling_number_dim[1], seq_order_coupling_number_dim[1] + 100)
@@ -316,8 +316,15 @@ class Descriptors():
         if not self.aa_composition.empty:
             return self.aa_composition
 
-        #calculate descriptor value
-        self.aa_composition = AAComposition(self.protein_seqs)
+        #initialise dataframe
+        aa_comp_df = pd.DataFrame()
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            aa_comp_seq = AAComposition(seq)
+            aa_comp_df = pd.concat([aa_comp_df, aa_comp_seq])
+
+        self.aa_composition = aa_comp_df
 
         return self.aa_composition
 
@@ -340,8 +347,15 @@ class Descriptors():
         if not self.dipeptide_composition.empty:
             return self.dipeptide_composition
 
-        #calculate descriptor value
-        self.dipeptide_composition = DipeptideComposition(self.protein_seqs) 
+        #initialise dataframe
+        dipeptide_comp_df = pd.DataFrame()
+        
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            dipeptide_comp_seq = DipeptideComposition(seq)
+            dipeptide_comp_df = pd.concat([dipeptide_comp_df, dipeptide_comp_seq])
+
+        self.dipeptide_composition = dipeptide_comp_df
 
         return self.dipeptide_composition
 
@@ -364,8 +378,15 @@ class Descriptors():
         if not self.tripeptide_composition.empty:
             return self.tripeptide_composition
 
-        #calculate descriptor value
-        self.tripeptide_composition = TripeptideComposition(self.protein_seqs)    
+        #initialise dataframe
+        tripeptide_comp_df = pd.DataFrame()
+        
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            tripeptide_comp_seq = TripeptideComposition(seq)
+            tripeptide_comp_df = pd.concat([tripeptide_comp_df, tripeptide_comp_seq])
+
+        self.tripeptide_composition = tripeptide_comp_df
 
         return self.tripeptide_composition
 
@@ -389,12 +410,19 @@ class Descriptors():
         if not self.normalized_moreaubroto_autocorrelation.empty:
             return self.normalized_moreaubroto_autocorrelation
 
-        lag = self.parameters["normalized_moreaubroto_autocorrelation"]["lag"]
-        properties = self.parameters["normalized_moreaubroto_autocorrelation"]["properties"]
+        #get descriptor-specific parameters from config file
+        lag = self.descr_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["lag"]
+        properties = self.descr_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["properties"]
 
-        #calculate descriptor value
-        self.normalized_moreaubroto_autocorrelation = norm_moreaubroto_autocorrelation(
-            self.protein_seqs, lag, properties)  
+        #initialise dataframe
+        norm_moreaubroto_df = pd.DataFrame()
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            norm_moreaubroto_seq = norm_moreaubroto_autocorrelation(seq, lag=lag, properties=properties)
+            norm_moreaubroto_df = pd.concat([norm_moreaubroto_df, norm_moreaubroto_seq])
+            
+        self.normalized_moreaubroto_autocorrelation = norm_moreaubroto_df
 
         return self.normalized_moreaubroto_autocorrelation
 
@@ -405,8 +433,8 @@ class Descriptors():
 
         Returns
         -------
-        :moran_autocorrelation : pd.Series
-            pandas Series of MAuto values for protein sequence. Output will
+        :moran_autocorrelation : pd.DataFrame
+            pandas Dataframe of MAuto values for protein sequence. Output will
             be of the shape N x 1, where N is the number of features calculated from
             the descriptor. By default, the shape will be 240 x 1 (30 features per 
             property - using 8 properties).
@@ -418,14 +446,22 @@ class Descriptors():
         if not self.moran_autocorrelation.empty:
             return self.moran_autocorrelation
 
-        lag = self.parameters["moran_autocorrelation"]["lag"]
-        properties = self.parameters["moran_autocorrelation"]["properties"]
+        #get descriptor-specific parameters from config file
+        lag = self.descr_parameters[0]["moran_autocorrelation"][0]["lag"]
+        properties = self.descr_parameters[0]["moran_autocorrelation"][0]["properties"]
 
-        #calculate descriptor value
-        self.moran_autocorrelation = moran_autocorrelation(self.protein_seqs, lag, properties) 
+        #initialise dataframe
+        moran_df = pd.DataFrame()
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            moran_seq = moran_autocorrelation(seq, lag=lag, properties=properties)
+            moran_df = pd.concat([moran_df, moran_seq])
+
+        self.moran_autocorrelation = moran_df
 
         return self.moran_autocorrelation 
-
+        
     def get_geary_autocorrelation(self):
         """
         Calculate Geary Autocorrelation (GAuto) of protein sequences using the
@@ -433,8 +469,8 @@ class Descriptors():
 
         Returns
         -------
-        :geary_autocorrelation : pd.Series
-            pandas Series of GAuto values for protein sequence. Output will
+        :geary_autocorrelation : pd.DataFrame
+            pandas Dataframe of GAuto values for protein sequence. Output will
             be of the shape N x 1, where N is the number of features calculated from
             the descriptor. By default, the shape will be 240 x 1 (30 features per 
             property - using 8 properties).
@@ -446,13 +482,21 @@ class Descriptors():
         if not self.geary_autocorrelation.empty:
             return self.geary_autocorrelation
 
-        lag = self.parameters["moran_autocorrelation"]["lag"]
-        properties = self.parameters["moran_autocorrelation"]["properties"]
+        #get descriptor-specific parameters from config file
+        lag = self.descr_parameters[0]["geary_autocorrelation"][0]["lag"]
+        properties = self.descr_parameters[0]["geary_autocorrelation"][0]["properties"]
 
-        #calculate descriptor value
-        self.geary_autocorrelation = geary_autocorrelation(self.protein_seqs, lag, properties) 
+        #initialise dataframe
+        geary_df = pd.DataFrame()
 
-        return self.geary_autocorrelation
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            geary_seq = geary_autocorrelation(seq, lag=lag, properties=properties)
+            geary_df = pd.concat([geary_df, geary_seq])
+
+        self.geary_autocorrelation = geary_df
+
+        return self.geary_autocorrelation 
 
     def get_composition(self):
         """ 
@@ -473,12 +517,15 @@ class Descriptors():
         if not self.comp.empty:
             return self.comp
 
+        #get descriptor-specific parameters from config file
+        property = self.descr_parameters[0]["composition"][0]["property"]
+
         #initialise dataframe
         comp_df = pd.DataFrame()
 
         #calculate descriptor value, concatenate descriptor values
         for seq in self.protein_seqs:
-            comp_seq = ctd_composition(seq)
+            comp_seq = ctd_composition(seq, property=property)
             comp_df = pd.concat([comp_df, comp_seq])
 
         self.comp = comp_df
@@ -504,12 +551,15 @@ class Descriptors():
         if not self.transition.empty:
             return self.transition
 
+        #get descriptor-specific parameters from config file
+        property = self.descr_parameters[0]["transition"][0]["property"]
+
         #initialise dataframe
         transition_df = pd.DataFrame()
 
         #calculate descriptor value, concatenate descriptor values
         for seq in self.protein_seqs:
-            transition_seq = ctd_transition(seq)
+            transition_seq = ctd_transition(seq, property=property)
             transition_df = pd.concat([transition_df, transition_seq])
 
         self.transition = transition_df
@@ -535,12 +585,15 @@ class Descriptors():
         if not self.distribution.empty:
             return self.distribution
 
+        #get descriptor-specific parameters from config file
+        property = self.descr_parameters[0]["distribution"][0]["property"]
+
         #initialise dataframe
         distribution_df = pd.DataFrame()
 
         #calculate descriptor value, concatenate descriptor values
         for seq in self.protein_seqs:
-            distribution_seq = ctd_distribution(seq)
+            distribution_seq = ctd_distribution(seq, property=property)
             distribution_df = pd.concat([distribution_df, distribution_seq])
 
         self.distribution = distribution_df
@@ -566,8 +619,19 @@ class Descriptors():
         if not self.ctd.empty:
             return self.ctd
 
-        #calculate descriptor value
-        self.ctd = ctd_(self.protein_seqs)
+        #get descriptor-specific parameters from config file
+        property = self.descr_parameters[0]["ctd"][0]["property"]
+        all_ctd = self.descr_parameters[0]["ctd"][0]["all"]
+
+        #initialise dataframe
+        ctd_df = pd.DataFrame()
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            ctd_seq = ctd_(seq, property=property, all_ctd=all_ctd)
+            ctd_df = pd.concat([ctd_df, ctd_seq])
+
+        self.ctd = ctd_df
 
         return self.ctd
 
@@ -590,8 +654,15 @@ class Descriptors():
         if not self.conjoint_triad.empty:
             return self.conjoint_triad
 
-        #calculate descriptor value
-        self.conjoint_triad = conjoint_triad(self.protein_seqs)            
+        #initialise dataframe
+        conjoint_triad_df = pd.DataFrame()
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            conjoint_triad_seq = conjoint_triad(seq)
+            conjoint_triad_df = pd.concat([conjoint_triad_df, conjoint_triad_seq])
+
+        self.conjoint_triad = conjoint_triad_df
 
         return self.conjoint_triad
 
@@ -606,7 +677,7 @@ class Descriptors():
             Series of SOCNum descriptor values for all protein sequences. Output
             will be of the shape N x M, where N is the number of protein sequences and
             M is the number of features calculated from the descriptor (calculated as
-            N * 2 where N = maxlag).
+            N * 2 where N = lag).
         """
         print('\nGetting Sequence Order Coupling Descriptors...')
         print('##############################################\n')
@@ -615,11 +686,19 @@ class Descriptors():
         if not self.seq_order_coupling_number.empty:
             return self.seq_order_coupling_number
 
-        lag = self.parameters["seq_order_coupling_number"]["lag"]
-        distance_matrix = self.parameters["seq_order_coupling_number"]["distance_matrix"]
+        #initialise dataframe
+        seq_order_coupling_number_df = pd.DataFrame()
 
-        #calculate descriptor value
-        self.seq_order_coupling_number = seq_order_coupling_number(self.protein_seqs, max_lag=lag, distance_matrix=distance_matrix)    
+        #get descriptor-specific parameters from config file
+        lag = self.descr_parameters[0]["seq_order_coupling_number"][0]["lag"]
+        distance_matrix = self.descr_parameters[0]["seq_order_coupling_number"][0]["distance_matrix"]
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            seq_order_coupling_number_seq = seq_order_coupling_number(seq, lag=lag, distance_matrix=distance_matrix)
+            seq_order_coupling_number_df = pd.concat([seq_order_coupling_number_df, seq_order_coupling_number_seq])
+
+        self.seq_order_coupling_number = seq_order_coupling_number_df
 
         return self.seq_order_coupling_number
 
@@ -638,18 +717,27 @@ class Descriptors():
         print('\nGetting Quasi Sequence Order Descriptors...')
         print('###########################################\n')
 
+
         #if attribute already calculated & not empty then return it
         if not self.quasi_seq_order.empty:
             return self.quasi_seq_order
 
-        lag = self.parameters["quasi_sequence_order"]["lag"]
-        weight = self.parameters["quasi_sequence_order"]["weight"]
-        distance_matrix = self.parameters["quasi_sequence_order"]["distance_matrix"]
+        #initialise dataframe
+        quasi_seq_order_df = pd.DataFrame()
 
-        #calculate descriptor value
-        self.quasi_seq_order = quasi_sequence_order(self.protein_seqs, max_lag=lag, weight=weight, distance_matrix=distance_matrix)    
+        #get descriptor-specific parameters from config file
+        lag = self.descr_parameters[0]["quasi_seq_order"][0]["lag"]
+        weight = self.descr_parameters[0]["quasi_seq_order"][0]["weight"]
+        distance_matrix = self.descr_parameters[0]["quasi_seq_order"][0]["distance_matrix"]
 
-        return self.quasi_seq_order 
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            quasi_seq_order_seq = seq_order_coupling_number(seq, lag=lag, distance_matrix=distance_matrix)
+            quasi_seq_order_df = pd.concat([quasi_seq_order_df, quasi_seq_order_seq])
+
+        self.quasi_seq_order = quasi_seq_order_df
+
+        return self.quasi_seq_order
 
     def get_pseudo_aa_composition(self):
         """
@@ -669,15 +757,23 @@ class Descriptors():
         if not self.pseudo_aa_composition.empty:
             return self.pseudo_aa_composition
 
-        lamda = self.parameters["pseudo_aa_composition"]["lambda"]
-        weight = self.parameters["pseudo_aa_composition"]["weight"]
-        properties = self.parameters["pseudo_aa_composition"]["properties"]
+        #initialise dataframe
+        pseudo_aacomp_df = pd.DataFrame()
 
-        #calculate descriptor value
-        self.pseudo_aa_composition = pseudoAAC(self.protein_seqs, lamda=lamda, weight=weight, properties=properties)      #set descriptor attribute
+        #get descriptor-specific parameters from config file
+        lamda = self.descr_parameters[0]["pseudo_aa_composition"][0]["lambda"]
+        weight = self.descr_parameters[0]["pseudo_aa_composition"][0]["weight"]
+        properties = self.descr_parameters[0]["pseudo_aa_composition"][0]["properties"]
+
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            pseudo_aacomp_seq = pseudoAAC(seq, lamda=lamda, weight=weight, properties=properties)
+            pseudo_aacomp_df = pd.concat([pseudo_aacomp_seq, pseudo_aacomp_seq])
+
+        self.pseudo_aa_composition = pseudo_aacomp_df
 
         return self.pseudo_aa_composition
-
+        
     def get_amp_pseudo_aa_composition(self):
         """
         Calculate Amphiphilic Pseudo Amino Acid Composition (APAAComp) of protein sequences 
@@ -696,6 +792,7 @@ class Descriptors():
         if not self.amp_pseudo_aa_composition.empty:
             return self.amp_pseudo_aa_composition
 
+        #get descriptor-specific parameters from config file
         lamda = self.parameters["amp_pseudo_aa_composition"]["lambda"]
         weight = self.parameters["amp_pseudo_aa_composition"]["weight"]
 
@@ -769,7 +866,7 @@ class Descriptors():
             if (getattr(self, desc).empty):
               self.get_ctd()
             desc_encoding = self.ctd
-        elif desc == 'composition':
+        elif desc == 'comp':
             if (getattr(self, desc).empty):
               self.get_composition()
             desc_encoding = self.comp
@@ -880,6 +977,15 @@ class Descriptors():
         if (getattr(self, "ctd").empty):
                 self.ctd = self.get_ctd()
 
+        if (getattr(self, "comp").empty):
+                self.ctd = self.get_composition()
+
+        if (getattr(self, "transition").empty):
+            self.ctd = self.get_transition()
+        
+        if (getattr(self, "distribution").empty):
+            self.ctd = self.get_distribution()
+
         if (getattr(self, "conjoint_triad").empty):
                 self.conjoint_triad = self.get_conjoint_triad()
 
@@ -892,8 +998,8 @@ class Descriptors():
         if (getattr(self, "pseudo_aa_composition").empty):
                 self.pseudo_aa_composition = self.get_pseudo_aa_composition()
 
-        if (getattr(self, "amp_pseudo_aa_composition").empty):
-                self.amp_pseudo_aa_composition = self.get_amp_pseudo_aa_composition()
+        # if (getattr(self, "amp_pseudo_aa_composition").empty):
+        #         self.amp_pseudo_aa_composition = self.get_amp_pseudo_aa_composition()
 
         #append all calculated descriptors to list
         all_desc = [
@@ -922,7 +1028,7 @@ class Descriptors():
         valid_desc = [
             'aa_composition', 'dipeptide_composition', 'tripeptide_composition',
             'normalized_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation',
-            'ctd', 'composition', 'transition', 'distribution', 'conjoint_triad',
+            'ctd', 'comp', 'transition', 'distribution', 'conjoint_triad',
             'seq_order_coupling_number','quasi_seq_order',
             'pseudo_aa_composition', 'amp_pseudo_aa_composition'
         ]
@@ -995,12 +1101,12 @@ class Descriptors():
         self._ctd = val
 
     @property
-    def composition(self):
-        return self._composition
+    def comp(self):
+        return self._comp
 
-    @composition.setter
-    def composition(self, val):
-        self._composition = val
+    @comp.setter
+    def comp(self, val):
+        self._comp = val
 
     @property
     def transition(self):

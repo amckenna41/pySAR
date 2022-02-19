@@ -59,7 +59,7 @@ class Evaluate():
         self.mae = self.mae_()
         self.rpd = self.rpd_()
         self.explained_var = self.explained_var_()
-        self.mean_poisson_deviance = self.mean_poisson_deviance_()
+        # self.mean_poisson_deviance = self.mean_poisson_deviance_()
         self.max_error = self.max_error_()
 
     def r2_(self, multioutput='uniform_average'):

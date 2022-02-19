@@ -79,14 +79,16 @@ class PySAR():
         self.params = {}
 
         config_filepath = ""
-        #open json config file
+        #open json config file       
+        if not isinstance(config_file, str) or config_file is None:
+            raise TypeError('JSON config file must be a filepath of type string.')
+        if os.path.isfile(self.config_file):
+            config_filepath = self.config_file
+        elif os.path.isfile(os.path.join('config', self.config_file)):
+            config_filepath = os.path.join('config', self.config_file)
+        else:
+            raise OSError('JSON config file not found at path: {}.'.format(config_filepath))
         try:
-            if os.path.isfile(self.config_file):
-                config_filepath = self.config_file
-            elif os.path.isfile(os.path.join('config', self.config_file)):
-                config_filepath = os.path.join('config', self.config_file)
-            else:
-                raise OSError('JSON config file not found at path: {}.'.format(config_filepath))
             with open(config_filepath) as f:
                 self.params = json.load(f)
         except JSONDecodeError as e:
@@ -360,7 +362,6 @@ class PySAR():
             #if input spectrum is none or empty, raise error.
             if self.spectrum == None or self.spectrum == "":
                 raise ValueError('Spectrum cannot be None or empty, got {}'.format(self.spectrum))
-            print('here', self.config_file)
             pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
             pyDSP.encode_seqs()
             X = pd.DataFrame(pyDSP.spectrum_encoding)
@@ -720,9 +721,7 @@ class PySAR():
         :results : dict/pd.Series
             dictionary or Series of metrics and their associated values.
         """
-        print('\n#############################################################')
-        print('######################## Results ############################')
-        print('#############################################################\n')
+        print('#############################################################')
         print('####################### Parameters ##########################\n')
         print('# Dataset -> {}\n# Dataset Size -> {}\n# Sequence Length -> {} \
             \n# Activity -> {}\n# AAI Indices -> {}'.format(self.dataset, self.num_seqs, \
@@ -735,6 +734,9 @@ class PySAR():
                 \n# Model Parameters -> {}\n# Test Split -> {}\n'.format(
                 self.descriptors, repr(self.model), self.model.model.get_params(), self.test_split
                 ))
+        print('\n#############################################################')
+        print('######################## Results ############################')
+        print('\n#############################################################\n')
 
         print('######################## Metrics ############################\n')
         print('# R2: {}'.format(results['R2']))

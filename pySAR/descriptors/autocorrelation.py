@@ -5,14 +5,14 @@
 from tqdm.auto import tqdm
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import Normalizer
 from sklearn import preprocessing
+import math
 
 from ..aaindex import *
 
 #list of amino acids
 aminoAcids = [
-    "-",
+    # "-",
     "A",
     "C",
     "D",
@@ -73,8 +73,8 @@ def norm_moreaubroto_autocorrelation(
 
     Returns
     -------
-    :norm_moreaubroto_autocorr_df : pd.Series
-        pandas Series of NMBAuto values for protein sequence. Output will
+    :norm_moreaubroto_autocorr_df : pd.Dataframe
+        pandas Dataframe of NMBAuto values for protein sequence. Output will
         be of the shape N x 1, where N is the number of features calculated from
         the descriptor. By default, the shape will be 240 x 1 (30 features per 
         property - using 8 properties).
@@ -88,7 +88,6 @@ def norm_moreaubroto_autocorrelation(
         of different protein descriptors in predicting protein functional families,”
         BMC Bioinformatics, vol. 8, p. 300, 2007.
     """
-
     #set default lag if invalid value input
     if (lag>=len(sequence) or (lag<0) or not (isinstance(lag, int))):
         lag=30
@@ -103,26 +102,30 @@ def norm_moreaubroto_autocorrelation(
     
     #initialise dicts to store AAI properties and values
     aai_properties = {}
-    aai_property_vals = {}
     aaindex = AAIndex()
+    for prop in properties:
+        aai_properties[prop] = {}
 
     #iterate through list of properties, getting property values from AAIndex
     for prop in properties:
 
         #get property values from AAIndex & reshape
-        temp_prop = np.array(list(aaindex.get_values_from_record(prop).values()))
-        temp_prop = temp_prop.reshape(-1,1)
-
-        #normalise property values
-        norm_prop = preprocessing.normalize(temp_prop)
+        aaindex[prop]['values'].pop('-', None)
+        prop_aminoacid_values = aaindex[prop]['values']
+     
+        #normalise property values, calculate mean and std dev
+        aai_property_vals = {}
+        for i, j in prop_aminoacid_values.items():
+            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
 
         aa_counter = 0
-        for i in range(0,len(norm_prop)):
-            aai_property_vals[aminoAcids[aa_counter]] = norm_prop[i]
+        #assign property and associated amino acid values to aai_property_vals array
+        for i, j in aai_property_vals.items():
+            aai_property_vals[aminoAcids[aa_counter]] = aai_property_vals[i]
             aa_counter+=1
-
         aai_properties[prop] = aai_property_vals
 
+    #store resultant autocorrelation values
     result = {}
 
     #iterate through list of properties, calculating autocorrelation values for the sequence, append to results dict
@@ -134,19 +137,17 @@ def norm_moreaubroto_autocorrelation(
 
             if len(sequence) - i == 0:
                 result["MoreauBrotoAuto_" + key + "_"+str(i)] = round(
-                    temp[0] / (len(sequence)), 3
+                    temp / (len(sequence)), 3
                 )
             else:
                 result["MoreauBrotoAuto_" + key + "_"+str(i)] = round(
-                    temp[0] / (len(sequence) - i), 3
+                    temp / (len(sequence) - i), 3
                 )
 
-    #result_df = pd.DataFrame(data=list(result.values()), columns=list(result.keys()))
-    #convert resultant descriptor values into a Series
-    result_df = pd.Series(data=(list(result.values())), index=list(result.keys()))
+    #transform values and columns to DataFrame
+    result_df = pd.DataFrame([list(result.values())], columns=list(result.keys()))
 
     return result_df
-
 
 def moran_autocorrelation(
     sequence, lag=30, properties=["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
@@ -163,8 +164,8 @@ def moran_autocorrelation(
 
     Returns
     -------
-    :moran_autocorr_df : pd.Series
-        pandas Series of MAuto values for protein sequence. Output will
+    :moran_autocorr_df : pd.DataFrame
+        pandas Dataframe of MAuto values for protein sequence. Output will
         be of the shape N x 1, where N is the number of features calculated from
         the descriptor. By default, the shape will be 240 x 1 (30 features per 
         property - using 8 properties).
@@ -192,25 +193,30 @@ def moran_autocorrelation(
 
     #initialise dicts to store AAI properties and values
     aai_properties = {}
-    aai_property_vals = {}
     aaindex = AAIndex()
+    for prop in properties:
+        aai_properties[prop] = {}
 
     #iterate through list of properties, getting property values from AAIndex
     for prop in properties:
 
         #get property values from AAIndex & reshape
-        temp_prop = np.array(list(aaindex.get_values_from_record(prop).values()))
-        temp_prop = temp_prop.reshape(-1,1)
+        aaindex[prop]['values'].pop('-', None)
+        prop_aminoacid_values = aaindex[prop]['values']
+     
+        #normalise property values, calculate mean and std dev
+        aai_property_vals = {}
+        for i, j in prop_aminoacid_values.items():
+            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
 
-        #normalise property values
-        norm_prop = preprocessing.normalize(temp_prop)
         aa_counter = 0
-
-        for i in range(0,len(norm_prop)):
-            aai_property_vals[aminoAcids[aa_counter]] = norm_prop[i]
+        #assign property and associated amino acid values to aai_property_vals array
+        for i, j in aai_property_vals.items():
+            aai_property_vals[aminoAcids[aa_counter]] = aai_property_vals[i]
             aa_counter+=1
         aai_properties[prop] = aai_property_vals
 
+    #store resultant autocorrelation values
     result = {}
 
     #iterate through list of properties, calculating autocorrelation values for the sequence, append to results dict
@@ -224,7 +230,8 @@ def moran_autocorrelation(
         for aa in sequence:
             cc.append(aai_properties[key][aa])
 
-        k = (np.std(cc, ddof=0)) **2
+        # k = (np.std(cc, ddof=0)) **2
+        k = (_std(cc,ddof=0)) ** 2
 
         for i in range(1,lag+1):
             temp = 0
@@ -236,15 +243,15 @@ def moran_autocorrelation(
 
             if len(sequence) - i == 0:
                 result["MoranAuto_" + key + "_"+str(i)] = round(
-                    temp[0] / ((len(sequence)) / k, 5)
+                    temp / ((len(sequence)) / k, 5)
                 )
             else:
                 result["MoranAuto_" + key + "_"+str(i)] = round(
-                    temp[0] / ((len(sequence) - i)/k), 5
+                    temp / ((len(sequence) - i)/k), 5
                 )
 
-    #convert resultant descriptor values into a Series
-    result_df = pd.Series(data=(list(result.values())), index=list(result.keys()))
+    #transform values and columns to DataFrame
+    result_df = pd.DataFrame([list(result.values())], columns=list(result.keys()))
 
     return result_df
 
@@ -292,26 +299,30 @@ def geary_autocorrelation(
         
     #initialise dicts to store AAI properties and values
     aai_properties = {}
-    aai_property_vals = {}
     aaindex = AAIndex()
+    for prop in properties:
+        aai_properties[prop] = {}
 
     #iterate through list of properties, getting property values from AAIndex
     for prop in properties:
 
         #get property values from AAIndex & reshape
-        temp_prop = np.array(list(aaindex.get_values_from_record(prop).values()))
-        temp_prop = temp_prop.reshape(-1,1)
+        aaindex[prop]['values'].pop('-', None)
+        prop_aminoacid_values = aaindex[prop]['values']
+     
+        #normalise property values, calculate mean and std dev
+        aai_property_vals = {}
+        for i, j in prop_aminoacid_values.items():
+            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
 
-        #normalise property values
-        norm_prop = preprocessing.normalize(temp_prop)
         aa_counter = 0
-
-        for i in range(0,len(norm_prop)):
-            aai_property_vals[aminoAcids[aa_counter]] = norm_prop[i]
+        #assign property and associated amino acid values to aai_property_vals array
+        for i, j in aai_property_vals.items():
+            aai_property_vals[aminoAcids[aa_counter]] = aai_property_vals[i]
             aa_counter+=1
-
         aai_properties[prop] = aai_property_vals
 
+    #store resultant autocorrelation values
     result = {}
 
     #iterate through list of properties, calculating autocorrelation values for the sequence, append to results dict
@@ -326,21 +337,38 @@ def geary_autocorrelation(
         for i in range(1,lag+1):
             temp = 0
 
-        for j in range(len(sequence)-i):
-            temp = (temp + (
-                aai_properties[key][sequence[j]] - aai_properties[key][sequence[j+i]]) **2
-            )
+            for j in range(len(sequence)-i):
+                temp = (temp + (
+                    aai_properties[key][sequence[j]] - aai_properties[key][sequence[j+i]]) **2
+                )
 
-        if len(sequence) - i == 0:
-            result["GAuto_" + key + "_"+str(i)] = round(
-                temp[0] / (2* (len(sequence))) / k,3
-            )
-        else:
-            result["GAuto_" + key + "_"+str(i)] = round(
-                temp[0] / (2* (len(sequence) -i))/k,3
-            )
+            if len(sequence) - i == 0:
+                result["GearyAuto_" + key + "_"+str(i)] = round(
+                    temp / (2* (len(sequence))) / k,3
+                )
+            else:
+                result["GearyAuto_" + key + "_"+str(i)] = round(
+                    temp / (2* (len(sequence) -i))/k,3
+                )
 
-    #convert resultant descriptor values into a Series
-    result_df = pd.Series(data=(list(result.values())), index=list(result.keys()))
+    #transform values and columns to DataFrame
+    result_df = pd.DataFrame([list(result.values())], columns=list(result.keys()))
 
     return result_df
+
+def _std(array, ddof=1):
+    """
+    Calculate the standard deviation of the array data.
+
+    Parameters
+    ----------
+    :array : np.array
+        numpy array of floats.
+
+    Returns
+    -------
+    :res : np.array
+        input array after standard deviation transformation.
+    """
+    return math.sqrt(sum([math.pow(i - sum(array) / len(array), 2) for i in array]) 
+        / (len(array) - ddof))

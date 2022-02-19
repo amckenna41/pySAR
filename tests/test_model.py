@@ -42,7 +42,6 @@ class ModelTests(unittest.TestCase):
         for test_mod in range(0,len(test_models)):
 
             model = Model(test_models[test_mod])
-            print(model)
 #1.)
             #checking model object is of the correct sklearn model datatype
             self.assertEqual(type(model.model).__name__, test_models[test_mod],
@@ -90,7 +89,7 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(model.algorithm, "adaboostregressor")
         self.assertEqual(repr(model), "AdaBoostRegressor")
 
-        model = Model('bagg')
+        model = Model('bagging')
         self.assertEqual(model.algorithm, "baggingregressor")
         self.assertEqual(repr(model), "BaggingRegressor")
 
@@ -113,6 +112,19 @@ class ModelTests(unittest.TestCase):
         model = Model('sv')
         self.assertEqual(model.algorithm, "svr")
         self.assertEqual(repr(model), "SVR")
+
+        model = Model('rid')
+        self.assertEqual(model.algorithm, "ridge")
+        self.assertEqual(repr(model), "Ridge")
+
+        model = Model('gbr')
+        self.assertEqual(model.algorithm, "gbr")
+        self.assertEqual(repr(model), "GradientBoostingRegressor")
+
+        model = Model('sg')
+        self.assertEqual(model.algorithm, "sgd")
+        self.assertEqual(repr(model), "SGDRegressor")
+
 #2.)
         with self.assertRaises(ValueError):
             bad_model = Model('abcdefg')
@@ -157,14 +169,13 @@ class ModelTests(unittest.TestCase):
         self.assertTrue(len(X_test) == 5)
         self.assertTrue(len(Y_test) == 5)
 
-
     def test_predict(self):
         """ Testing the prediction of values for unseen sequences using the trained model. """
 #1.)
         model = Model('knn')
         X_train, X_test, Y_train, Y_test = model.train_test_split(self.dummy_X_2, self.dummy_Y_2)
         model.fit()
-
+#2.)
         Y_pred = model.predict()
         self.assertIsInstance(Y_pred, np.ndarray)
         self.assertEqual(len(Y_pred), len(Y_test))
@@ -239,10 +250,24 @@ class ModelTests(unittest.TestCase):
         self.assertTrue(model_copy == model.model)
 
     def test_hyperparamter_tuning(self):
-        pass
+        """ Testing hyperparamter tuning function. """
+#1.)
+        model = Model(algorithm="PLSReg")
+        with self.assertRaises(TypeError):
+            model.hyperparameter_tuning(parameters='wrongType')
 
+        with self.assertRaises(UndefinedMetricWarning):
+            model.hyperparameter_tuning(metric='blahblah')
+#2.)
+        #get training and test dataset split
+        X_train, X_test, Y_train, Y_test = model.train_test_split(self.dummy_X, self.dummy_Y)
+
+        #fit predictive model and undertake hyperparameter tuning
+        model.fit()
+        model.hyperparameter_tuning()
+        
     def tearDown(self):
-
+        """ Delete any temp data used for tests. """
         del self.dummy_X
         del self.dummy_X_2
         del self.dummy_Y

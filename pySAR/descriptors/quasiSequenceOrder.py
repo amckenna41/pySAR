@@ -4,6 +4,13 @@
 
 import os
 import json
+import pandas as pd
+import math
+from json import JSONDecodeError
+import sys
+
+from pySAR.globals_ import DATA_DIR
+
 from . import composition
 
 #list of amino acids
@@ -30,33 +37,33 @@ aminoAcids = [
     "V",
 ]
 
-def seq_order_coupling_number(sequence, maxlag=30,
-    distance_matrix_path="..data/schneider-wrede-physicochemical-distance-matrix.json"):
+def seq_order_coupling_number(sequence, lag=30,
+    distance_matrix="schneider-wrede-physiochemical-distance-matrix.json"):
     """
     Calculate Sequence Order Coupling Number (SOCNum) features for the protein sequences.
     Sequence Order Coupling Number computes the dissimilarity between amino acid
     pairs. The distance between amino acid pairs is determined by d which varies
     between 1 to nlag. For each d, it computes the sum of the dissimilarities
     of all amino pairs. The number of output features can be calculated as N * 2,
-    where N = maxlag, by default this value is 30 so 60 features are output.
+    where N = lag, by default this value is 30 so 60 features are output.
 
     Parameters
     ----------
     :sequence : str
         protein sequence in str form.
-    :maxlag : int (default = 30)
-        maxlag is the maximum lag and the length of the protein should be larger
-        than maxlag. Default set to 30.
+    :lag : int (default = 30)
+        lag is the maximum lag and the length of the protein should be larger
+        than lag. Default set to 30.
     :distance_matrix_path : str (default = "schneider-wrede-physicochemical-distance-matrix")
         path to physiochemical distance matrix for calculating quasi sequence order.
 
     Returns
     -------
-    :seq_order_df : pd.Series
-        Series of SOCNum descriptor values for all protein sequences. Output
+    :seq_order_df : pd.Dataframe
+        Dataframe of SOCNum descriptor values for all protein sequences. Output
         will be of the shape N x M, where N is the number of protein sequences and
         M is the number of features calculated from the descriptor (calculated as
-        N * 2 where N = maxlag).
+        N * 2 where N = lag).
 
     References
     ----------
@@ -70,30 +77,41 @@ def seq_order_coupling_number(sequence, maxlag=30,
     by Artifical Neural Networks and Simulated Molecular Evolution: Do Novo Design
     of an Idealized Leader Cleavge Site. Biophys Journal, 1994, 66, 335-344.
     """
+    #get filepath to distance matrix json
+    if not (os.path.isfile(distance_matrix)):
+        if not (os.path.isfile(os.path.join('pySAR', DATA_DIR, distance_matrix))):
+            raise OSError('Distance Matrix json ({}) not found.'.format(os.path.join('pySAR', DATA_DIR, distance_matrix)))
+        else:
+            distance_matrix_path = os.path.join('pySAR', DATA_DIR, distance_matrix)
+    else:
+        distance_matrix_path = distance_matrix
+    
     #open distance matrix json if present
     try:
         with open(distance_matrix_path, "r") as f:
             distance_matrix = json.load(f)
-    except:
-        raise OSError('Distance Matrix json ({}) not found.'.format(distance_matrix_path))
+    except JSONDecodeError as e:
+        print('Error getting config JSON file: {}.'.format(distance_matrix_path))
+        sys.exit()
 
-    #calculate sequence order coupling number for proteins using maxlag and specificed
-    #physiochemical distance matrix
+    #set default lag if invalid value input
+    if (lag>=len(sequence) or (lag<0) or not (isinstance(lag, int))):
+        lag=30
+
     seq_order = {}
-    for i in range(maxlag):
-
+    #iterate through sequende, calculating the SOCNum using the selected distance matrix
+    for i in range(lag):
         tau = 0.0
-        for j in range(len(sequence - i+1)):
+        for j in range(len(sequence) - (i+1) ):
+            current_aa = sequence[j]
+            next_aa = sequence[j + (i+1)]
+            tau = round(tau + math.pow(distance_matrix[current_aa + next_aa], 2),3)
 
-            aa_1 = sequence[j]
-            aa_2 = sequence[j+(i+1)]
-            tau = tau + math.pow(distance_matrix[aa_1 + aa_2], 2)
+        #append SOCNum of current lag to seq_order dict
+        seq_order["tauSOCN" + str(i + 1)] = tau
 
-        tau = round(tau, 3)
-        seq_order["seq_order" + str(i+1)] = tau
-
-    #transform descriptor data into pandas Series
-    seq_order_df = pd.Series(data=(list(seq_order.values())), index=list(seq_order.keys()))
+    #transform descriptor data into pandas dataframe
+    seq_order_df = pd.DataFrame([list(seq_order.values())], columns=list(seq_order.keys()))
 
     return seq_order_df
 
@@ -111,18 +129,18 @@ def quasi_sequence_order(sequence, max_lag=30, weight=0.1,
 
     Parameters
     ----------
-    sequence : str
+    :sequence : str
         protein sequence in str form.
-    max_lag : int (default = 30)
+    :max_lag : int (default = 30)
         A value for a lag, the max value is equal to the length of shortest peptide minus one.
-    weight: float (default = 0.1)
+    :weight: float (default = 0.1)
         weighting factor
-    distance_matrix_path : str (default = "schneider-wrede-physicochemical-distance-matrix")
+    :distance_matrix_path : str (default = "schneider-wrede-physicochemical-distance-matrix")
         path to physiochemical distance matrix for calculating quasi sequence order.
 
     Returns
     -------
-    quasi_seq_order_df : pd.Series
+    :quasi_seq_order_df : pd.Dataframe
         dataframe of quasi-sequence-order descriptor values for the
         protein sequences, with output shape N x 100 where N is the number
         of sequences and 100 the number of calculated features.
@@ -147,16 +165,16 @@ def quasi_sequence_order(sequence, max_lag=30, weight=0.1,
     right_part = 0.0
 
     #calculate quasi sequence order using sequence order coupling number for
-    #proteins using maxlag and specificed physiochemical distance matrix
+    #proteins using lag and specificed physiochemical distance matrix
     for i in range(max_lag):
         rightpart = rightpart + seq_order_coupling_number(
             sequence, i + 1, distance_matrix_path
         )
 
-    aa_comp = AAComposition(sequence)
+    aa_comp = composition.AAComposition(sequence)
     temp = 1 + weight * rightpart
     for index, i in enumerate(aminoAcids):
-        result["Quasi_seq_order1_" + str(index + 1)] = round(aa_comp[i] / temp, 6)
+        result["quasi_seq_order1_" + str(index + 1)] = round(aa_comp[i] / temp, 6)
 
     right_part = []
     for i in range(max_lag):
@@ -166,7 +184,7 @@ def quasi_sequence_order(sequence, max_lag=30, weight=0.1,
 
     temp = 1 + weight * sum(right_part)
     for index in range(20, 20 + max_lag):
-        result["Quasi_seq_order2_" + str(index + 1)] = round(
+        result["quasi_seq_order2_" + str(index + 1)] = round(
             weight * right_part[index - 20] / temp, 6
         )
 

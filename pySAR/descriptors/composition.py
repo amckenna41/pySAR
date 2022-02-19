@@ -4,6 +4,8 @@
 
 import re
 import pandas as pd
+import math
+from ..aaindex import *
 
 #list of amino acids
 aminoAcids = [
@@ -48,17 +50,17 @@ def AAComposition(sequence):
 
     Returns
     -------
-    :composition_df : pd.Series
-        pandas Series of AAComp for protein sequence. Series will
+    :composition_df : pd.DataFrame
+        pandas dataframe of AAComp for protein sequence. Dataframe will
         be of the shape 20 x 1, where 20 is the number of features 
         calculated from the descriptor (for the 20 amino acids).
     """
     composition = {}
     for aa in aminoAcids:
-        composition[aa] = round(float(sequence.count(aa)) / len(seqeuence) * 100, 3)
+        composition[aa] = round(float(sequence.count(aa)) / len(sequence) * 100, 3)
 
-    #convert resultant descriptor values into a Series
-    composition_df = pd.Series(data=(list(composition.values())), index=list(composition.keys()))
+    #transform values and columns to DataFrame
+    composition_df = pd.DataFrame([list(composition.values())], columns=list(composition.keys()))
 
     return composition_df
 
@@ -85,8 +87,8 @@ def DipeptideComposition(sequence):
 
     Returns
     -------
-    :dipepComposition_df : pd.Series
-        pandas Series of dipeptide composition for protein sequence. Series will
+    :dipepComposition_df : pd.DataFrame
+        pandas dataframe of dipeptide composition for protein sequence. Dataframe will
         be of the shape 400 x 1, where 400 is the number of features calculated 
         from the descriptor (20^2 for the 20 canonical amino acids).
     """
@@ -95,12 +97,12 @@ def DipeptideComposition(sequence):
         for j in aminoAcids:
             dipep = i + j
             dipepComposition[dipep] = round(
-                float(sequence.count(dipep)) / len(sequence-1) * 100, 2
+                float(sequence.count(dipep)) / (len(sequence)-1) * 100, 2
             )
         # dipepComposition[i] = round(float(sequence.count(i)) / len(sequence) *100, 3)
 
-    #convert resultant descriptor values into a Series
-    dipepComposition_df = pd.Series(data=(list(dipepComposition.values())), index=list(dipepComposition.keys()))
+    #transform values and columns to DataFrame
+    dipepComposition_df = pd.DataFrame([list(dipepComposition.values())], columns=list(dipepComposition.keys()))
 
     return dipepComposition_df
 
@@ -127,8 +129,8 @@ def TripeptideComposition(sequence):
 
     Returns
     -------
-    :tripepComposition_df : pd.Series
-        pandas Series of tripeptide composition for protein sequence. Series will
+    :tripepComposition_df : pd.DataFrame
+        pandas DataFrame of tripeptide composition for protein sequence. Dataframe will
         be of the shape 8000 x 1, where 8000 is the number of features calculated 
         from the descriptor (20^3 for the 20 canonical amino acids).
     """
@@ -145,8 +147,8 @@ def TripeptideComposition(sequence):
     for i in tripeptides:
         tripepComposition[i] = len(re.findall(i, sequence))
 
-    #convert resultant descriptor values into a Series
-    tripepComposition_df = pd.Series(data=(list(tripepComposition.values())), index=list(tripepComposition.keys()))
+    #transform values and columns to DataFrame
+    tripepComposition_df = pd.DataFrame([list(tripepComposition.values())], columns=list(tripepComposition.keys()))
 
     return tripepComposition_df
 
@@ -177,8 +179,8 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
 
     Returns
     -------
-    :pseudoAAComp_df : pd.Series
-        pandas Series of pseudo amino acid composition for protein sequence. Series will
+    :pseudoAAComp_df : pd.Dataframe
+        pandas Dataframe of pseudo amino acid composition for protein sequence. Dataframe will
         be of the shape [(20 + lamda),1] - 50 x 1, where 50 is the number of features calculated 
         from the descriptor. 
 
@@ -192,21 +194,38 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
     if ((lamda < 0) or (lamda > len(sequence)) or not isinstance(lamda, int)):
         lamda = 30
 
-    #keys of dicts should be AA not properties
-    aai_properties = {}
-    aai_property_vals = {}
-    aaindex = AAIndex()
-
     #ensure at least 1 property input to function and or properties is a list so it can be iterated over
     if (properties == "" or properties == []):
         raise ValueError('At least one property value must be input to function.')
     if (isinstance(properties, str)):   #cast properties to list if str
         properties = [properties]
 
-    #get amino acid values from AAI for property 
-    for prop in properties: 
-        aai_properties[prop] = aaindex.get_values_from_record(prop)
+    #initialise dicts to store AAI properties and values
+    aai_properties = {}
+    aaindex = AAIndex()
+    for prop in properties:
+        aai_properties[prop] = {}
 
+    #iterate through list of properties, getting property values from AAIndex
+    for prop in properties:
+
+        #get property values from AAIndex & reshape
+        aaindex[prop]['values'].pop('-', None)
+        prop_aminoacid_values = aaindex[prop]['values']
+     
+        #normalise property values, calculate mean and std dev
+        aai_property_vals = {}
+        for i, j in prop_aminoacid_values.items():
+            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
+
+        aa_counter = 0
+        #assign property and associated amino acid values to aai_property_vals array
+        for i, j in aai_property_vals.items():
+            aai_property_vals[aminoAcids[aa_counter]] = aai_property_vals[i]
+            aa_counter+=1
+        aai_properties[prop] = aai_property_vals
+
+    print(aai_properties)
     #### Pseudo AAC 1 ####
 
     #calculate pseudo AAC for sequence
@@ -217,15 +236,14 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
         )
 
     #get amino acid composition
-    aaComp = AAComposition(sequence)
-
+    aaComp = AAComposition(sequence)    
     result = {}
     #applying weighting factor to components
     temp = 1 + weight * rightpart
 
     #append each descriptor feature value to results dict
     for index, i in enumerate(aminoAcids):
-        result["PAAC" + str(index + 1)] = round(aaComp[i] / temp, 3)
+        result["PseudoAAC1_" + str(index + 1)] = round(aaComp.iloc[0][i] / temp, 3) 
 
     ##### Pseudo AAC 2 ####
     #calculate pseudo AAC for sequence 
@@ -237,13 +255,13 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
     temp = 1 + weight * sum(rightpart)
 
     #append each descriptor feature value to results dict
-    for index in range(20, 20 + lamdba):
-        result["PAAC_2" + str(index + 1)] = round(
+    for index in range(20, 20 + lamda):
+        result["PseudoAAC2_" + str(index + 1)] = round(
             weight * rightpart[index - 20] / temp * 100, 3
         )
 
-    #convert resultant descriptor values into a Series
-    pseudoAAComp_df = pd.Series(data=(list(result.values())), index=list(result.keys()))
+    #convert resultant descriptor values into a dataframe
+    pseudoAAComp_df = pd.DataFrame([list(result.values())], columns=list(result.keys()))
 
     return pseudoAAComp_df
 
@@ -275,59 +293,51 @@ def sequenceOrderCorrelationFactor(sequence, k=1, properties=[]):
     #ensure at least 1 property input to function and or properties is a list so it can be iterated over
     if (properties == "" or properties == []):
         raise ValueError('At least one property value must be input to function.')
-    if (isinstance(properties, str)):   #cast properties to list if str
-        properties = [properties]
 
+    #cast properties to list if str
+    if (isinstance(properties, str)):   
+        properties = [properties]
+    
+    LengthSequence = len(sequence)
     res = []
-    for i in range(len(sequence) - k):
+    for i in range(LengthSequence - k):
         AA1 = sequence[i]
         AA2 = sequence[i + k]
+        res.append(correlation_function(AA1, AA2, properties))
+    result = round(sum(res) / (LengthSequence - k), 3)
+    return result
 
-        theta = 0.0
-        for j in range(len(properties)):
-            temp_prop = np.array(list(properties[j].values()))
-            temp_prop = temp_prop.reshape(-1,1)
+def correlation_function(aa1, aa2, property):
 
-            #normalise property values
-            norm_prop = preprocessing.normalize(temp_prop)
-            theta = theta + math.pow(norm_prop[AA1] - norm_prop[AA2], 2)
-
-        result = round(theta / len(properties), 3)
-        res.append(round(theta / len(properties), 3))
-
-    result = round(sum(res) / (len(sequence) - k), 3)
+    NumAAP = len(property)
+    theta = 0.0
+    for prop in property:
+        temp = NormalizeEachAAP(property[prop]) #[{"ABCD": "A":ddsd, ...}]
+        theta = theta + math.pow(temp[aa1] - temp[aa2], 2)
+    result = round(theta / NumAAP, 3)
     return result
 
 
+def NormalizeEachAAP(AAP):
+    """
+    ########################################################################################
+    All of the amino acid indices are centralized and
+    standardized before the calculation.
+    Usage:
+    result=NormalizeEachAAP(AAP)
+    Input: AAP is a dict form containing the properties of 20 amino acids.
+    Output: result is the a dict form containing the normalized properties
+    of 20 amino acids.
+    ########################################################################################
+    """
+    if len(AAP.values()) != 20:
+        print("You can not input the correct number of properities of Amino acids!")
+    else:
+        Result = {}
+        for i, j in AAP.items():
+            Result[i] = (j - _mean(AAP.values())) / _std(AAP.values(), ddof=0)
 
-# def sequenceOrderCorrelationFactorAPseudoAAC(sequence, k=1, properties=[]):
-    #ensure at least 1 property input to function and or properties is a list so it can be iterated over
-    # if (properties == "" or properties == []):
-    #     raise ValueError('At least one property value must be input to function.')
-    # if (isinstance(properties, str)):   #cast properties to list if str
-    #     properties = [properties]
-#     resHydrophobicity = []
-#     reshydrophilicity = []
-
-#     for i in range(len(sequence) - k):
-#         AA1 = ProteinSequence[i]
-#         AA2 = ProteinSequence[i + k]
-
-#         for j in range(len(properties)):
-#             temp_prop = np.array(list(properties[j].values()))
-#             temp_prop = temp_prop.reshape(-1,1)
-#             theta1 = AA1 * 
-
-#         temp = _GetCorrelationFunctionForAPAAC(AA1, AA2)
-
-#         resHydrophobicity.append(temp[0])
-#         reshydrophilicity.append(temp[1])
-#     result = []
-#     result.append(round(sum(resHydrophobicity) / (LengthSequence - k), 3))
-#     result.append(round(sum(reshydrophilicity) / (LengthSequence - k), 3))
-#     return result
-
-#     pass
+    return Result
 
 # def amphiphilicPseudoAAC(sequence, lamda=30, weight=0.5, properties=["ARGP820101", "KUHL950101"]):
 #     """
@@ -369,3 +379,88 @@ def sequenceOrderCorrelationFactor(sequence, k=1, properties=[]):
 #         result["APAAC" + str(index + 1)] = round(AAC[i] / temp, 3)
 
 #     return result
+
+def _mean(listvalue):
+    """
+    ########################################################################################
+    The mean value of the list data.
+    Usage:
+    result=_mean(listvalue)
+    ########################################################################################
+    """
+    return sum(listvalue) / len(listvalue)
+
+def _std(array, ddof=1):
+    """
+    Calculate the standard deviation of the array data.
+
+    Parameters
+    ----------
+    :array : np.array
+        numpy array of floats.
+
+    Returns
+    -------
+    :res : np.array
+        input array after standard deviation transformation.
+    """
+    return math.sqrt(sum([math.pow(i - sum(array) / len(array), 2) for i in array]) 
+        / (len(array) - ddof))
+
+    #     def sequenceOrderCorrelationFactor(sequence, k=1, properties=[]):
+    # """
+    # Calculate the sequence order correlation factor with gap = k for the inputted
+    # physiochemical properties. 
+
+    # Parameters
+    # ----------
+    # :k : int (default = 1)
+    #     gap in sequence for calculating factor.
+    # :properties : list (default = [])
+    #     list of physiochemical properties.
+
+    # Returns
+    # -------
+    # :seqOrderCorrelationFactor : float
+    #     sequence order correlation factor with gap = k.
+    
+    # References
+    # ----------
+    # [1]: Manish C. Saraf, Gregory L. Moore, Costas D. Maranas, Using multiple 
+    #     sequence correlation analysis to characterize functionally important 
+    #     protein regions, Protein Engineering, Design and Selection, Volume 16, 
+    #     Issue 6, June 2003, Pages 397–406, https://doi.org/10.1093/protein/gzg053
+    
+    # """
+    # #ensure at least 1 property input to function and or properties is a list so it can be iterated over
+    # if (properties == "" or properties == []):
+    #     raise ValueError('At least one property value must be input to function.')
+
+    # #cast properties to list if str
+    # if (isinstance(properties, str)):   
+    #     properties = [properties]
+    
+    # res = []
+    # for i in range(len(sequence) - k):
+    #     AA1 = sequence[i]
+    #     AA2 = sequence[i + k]
+
+    #     theta = 0.0
+    #     for prop in properties:
+    #         print(prop)
+    #         temp_prop = np.array(list(properties[prop].values()))
+    #         print(temp_prop)
+    #         # temp_prop = np.array(list(properties[j].values()))
+    #         temp_prop = temp_prop.reshape(-1,1)
+
+    #         #normalise property values
+    #         # norm_prop = preprocessing.normalize(temp_prop)
+    #         norm_prop = ((sum(temp_prop) / len(properties[prop].values()))) / _std(temp_prop, ddof=0)
+
+    #         theta = theta + math.pow(norm_prop[AA1] - norm_prop[AA2], 2)
+
+    #     result = round(theta / len(properties), 3)
+    #     res.append(round(theta / len(properties), 3))
+
+    # result = round(sum(res) / (len(sequence) - k), 3)
+    # return result

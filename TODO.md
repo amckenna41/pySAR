@@ -3,7 +3,7 @@ TO DO List:
 - [X] Add Config files instead of individual parameters in function
 - [ ] Add Manifest file?
 - [ ] Add License & Releases
-- [ ] Add distance matrices to SOCNum
+- [X] Add distance matrices to SOCNum
 - [ ] Add coveralls
 - [X] Change descriptor functions to accept sequences themselves.
 - [X] Add references for all descriptors
@@ -22,7 +22,7 @@ TO DO List:
 - [ ] Parse descriptors into embedded JSON format
 - [ ] Seperate pySAR and descriptors into different softwares??
 - [X] Change ProDSP to pyDSP
-- [ ] Update comments in funcs to that of DCBLSTM_PSP
+- [X] Update comments in funcs to that of DCBLSTM_PSP
 - [X] Add config file to README
 - [X] Change Explained Var to Explained Variance
 - [X] Add : to parameters in functions 
@@ -34,6 +34,8 @@ TO DO List:
 - [ ] Remove parameter instances of class Object in comments?
 - [X] Add filter/window/convolution metaparameters to config
 - [X] Remove 'Description' from comments of functions
-- [ ] Ensure outputs are Series not DF's
+- [X] Ensure outputs are Series not DF's
 - [ ] Lower case input before searching DB in func get_record_from_name
 - [ ] Change get_record_from_name to get_record_from_desc
+- [ ] For each descriptor function, if input is single string (single seq) return 
+- [ ] Add wiki to pySAR
