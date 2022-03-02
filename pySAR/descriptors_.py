@@ -4,15 +4,10 @@
 
 import pandas as pd
 import numpy as np
-import datetime, time
-import itertools
-import pickle
-import os
-import time
 from difflib import get_close_matches
 import json
 from json import JSONDecodeError
-import sys
+import itertools
 from tqdm import tqdm
 
 from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
@@ -23,7 +18,7 @@ from .evaluate import Evaluate
 from .utils import *
 from .descriptors.autocorrelation import moran_autocorrelation, geary_autocorrelation, norm_moreaubroto_autocorrelation
 from .descriptors.composition import AAComposition, DipeptideComposition, TripeptideComposition, \
-    sequenceOrderCorrelationFactor, pseudoAAC
+    sequenceOrderCorrelationFactor, pseudoAAC, amphiphilicPseudoAAC
 from .descriptors.conjointTriad import conjoint_triad
 from .descriptors.ctd import ctd_composition, ctd_transition, ctd_distribution, ctd_
 from .descriptors.quasiSequenceOrder import quasi_sequence_order, seq_order_coupling_number
@@ -43,7 +38,7 @@ class Descriptors():
     autocorrelation (NMBAuto), Moran autocorrelation (MAuto), Geary autocorrelation (GAuto),
     Composition (C), Transition (T), Distribution (D), CTD, Conjoint Triad (CTriad), sequence
     order coupling number (SOCNum), Quasi-sequence-order (QSOrder), Pseudo amino-acid
-    composition-type 1(PAAcomp) and Amphiphilic pseudo amino-acid composition - type 2 (APAAComp). 
+    composition - type 1 (PAAcomp) and Amphiphilic pseudo amino-acid composition - type 2 (APAAComp). 
     The descriptors directory contains the individual modules and functions used to calculate
     these descriptors. 
 
@@ -62,10 +57,10 @@ class Descriptors():
 
     Attributes
     ----------
-    : desc_config: str
+    :desc_config: str
         path to configuration file which will contain the various parameter values for all
         descriptors. If invalid value input then error will be raised.
-    : protein_seqs : np.ndarray
+    :protein_seqs : np.ndarray
         array of protein sequences that descriptors will be calculated for. If set to none, 
         protein sequences will be imported from the specified dataset in the config file.
 
@@ -99,7 +94,7 @@ class Descriptors():
     [10]: Kuo-Chen Chou. Using amphiphilic pseudo amino acid composition to predict enzyme
           subfamily classes. Bioinformatics, 2005,21,10-19.
     """
-    def __init__(self, desc_config="", protein_seqs = None):
+    def __init__(self, desc_config="", protein_seqs=None):
 
         self.desc_config = desc_config
         self.protein_seqs = protein_seqs
@@ -108,7 +103,7 @@ class Descriptors():
         desc_config_filepath = ""
         #open json config file
         if not isinstance(desc_config, str) or desc_config is None:
-            raise TypeError('JSON config file must be a filepath of type string')
+            raise TypeError('JSON config file must be a filepath of type string, got type {}'.format(type(desc_config)))
         if os.path.isfile(self.desc_config):
             desc_config_filepath = self.desc_config
         elif os.path.isfile(os.path.join('config', self.desc_config)):
@@ -118,9 +113,8 @@ class Descriptors():
         try:
             with open(desc_config_filepath) as f:
                 self.parameters = json.load(f)
-        except JSONDecodeError as e:
-            print('Error getting config JSON file: {}.'.format(desc_config_filepath))
-            sys.exit()
+        except:
+            raise JSONDecodeError('Error parsing config JSON file: {}.'.format(desc_config_filepath))
 
         #set descriptor parameters
         self.dataset_parameters = self.parameters["dataset"][0]
@@ -163,8 +157,8 @@ class Descriptors():
         #  valid amino acids, if not then raise ValueError
         invalid_seqs = valid_sequence(self.protein_seqs)
         if invalid_seqs!=None:
-            raise ValueError('Invalid Amino Acids found in protein sequence \
-                dataset: {}'.format(invalid_seqs))
+            raise ValueError('Invalid Amino Acids found in protein sequence dataset: {}'.
+                format(invalid_seqs))
 
         #get the total number of inputted protein sequences
         self.num_seqs = len(self.protein_seqs)
@@ -198,7 +192,7 @@ class Descriptors():
             if (self.all_desc):
                 self.all_descriptors = self.get_all_descriptors()
                 #save all calculated descriptor values for next time
-                self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.descr_config["descriptors_csv"]), index=0)
+                self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.descr_config[0]["descriptors_csv"]), index=0)
 
         #create dictionary of descriptors and their associated groups
         keys = self.all_descriptors_list()
@@ -219,21 +213,25 @@ class Descriptors():
         of all possible 15 descriptor parameters for the N protein sequences.
         To create a descriptors file, create an instance of the desc class,
         with the parameter all_desc=True in the config file, this will calculate
-        all descriptors and store them to the DATA_DIR in a csv.
+        all descriptors and store them to the DATA_DIR in a csv. The aim of this 
+        function is to simply import the descriptors during each use of pySAR rather than
+        calculating each time.
 
         Parameters
         ----------
         None
         """
+        descr_filepath = os.path.join(DATA_DIR, self.descr_config[0]["descriptors_csv"])
+
         #verify descriptors csv exists
-        if not (os.path.isfile(os.path.join(DATA_DIR, self.descr_config[0]["descriptors_csv"]))):
-            raise OSError('Descriptors csv file does not exist, at filepath: {}'.format(self.descr_config["descriptors_csv"]))
+        if not (os.path.isfile(descr_filepath)):
+            raise OSError('Descriptors csv file does not exist, at filepath: {}'.format(descr_filepath))
 
         #import descriptors csv as dataframe
         try:
-            descriptor_df = pd.read_csv(os.path.join(DATA_DIR, self.descr_config[0]["descriptors_csv"]))
+            descriptor_df = pd.read_csv(descr_filepath)
         except IOError:
-            print('Error reading descriptor file: {}.'.format(descriptor_file))
+            print('Error reading descriptors csv file: {}.'.format(descr_filepath))
 
         #replacing any +/- infinity or NAN values with 0
         descriptor_df.replace([np.inf, -np.inf], np.nan)
@@ -304,9 +302,9 @@ class Descriptors():
 
         Returns
         -------
-        :aa_composition : pd.Series
-            pandas Series of AAComp for protein sequence. Series will
-            be of the shape 20 x 1, where 20 is the number of features 
+        :aa_composition : pd.Dataframe
+            pandas dataframe of AAComp for protein sequence. Dataframe will
+            be of the shape N x 20, where 20 is the number of features 
             calculated from the descriptor (for the 20 amino acids).
         """
         print('\nGetting AA Composition Descriptors...')
@@ -335,9 +333,9 @@ class Descriptors():
 
         Returns
         -------
-        : dipeptide_composition : pd.Series
-            pandas Series of dipeptide composition for protein sequence. Series will
-            be of the shape 400 x 1, where 400 is the number of features calculated 
+        :dipeptide_composition : pd.Dataframe
+            pandas Dataframe of dipeptide composition for protein sequence. Dataframe will
+            be of the shape N x 400, where 400 is the number of features calculated 
             from the descriptor (20^2 for the 20 canonical amino acids).
         """
         print('\nGetting Dipeptide Composition Descriptors...')
@@ -366,9 +364,9 @@ class Descriptors():
 
         Returns
         -------
-        :tripeptide_composition : pd.Series
-            pandas Series of tripeptide composition for protein sequence. Series will
-            be of the shape 8000 x 1, where 8000 is the number of features calculated 
+        :tripeptide_composition : pd.Dataframe
+            pandas Dataframe of tripeptide composition for protein sequence. Dataframe will
+            be of the shape N x 8000, where 8000 is the number of features calculated 
             from the descriptor (20^3 for the 20 canonical amino acids).
         """
         print('\nGetting Tripeptide Composition Descriptors...')
@@ -397,10 +395,10 @@ class Descriptors():
 
         Returns
         -------
-        :normalized_moreaubroto_autocorrelation : pd.Series
-            pandas Series of NMBAuto values for protein sequence. Output will
-            be of the shape N x 1, where N is the number of features calculated from
-            the descriptor. By default, the shape will be 240 x 1 (30 features per 
+        :normalized_moreaubroto_autocorrelation : pd.Dataframe
+            pandas Dataframe of NMBAuto values for protein sequence. Output will
+            be of the shape N x M, where M is the number of features calculated from
+            the descriptor. By default, the shape will be N x 240 (30 features per 
             property - using 8 properties).
         """
         print('\nGetting Normalized Moreaubroto Autocorrelation Descriptors...')
@@ -435,8 +433,8 @@ class Descriptors():
         -------
         :moran_autocorrelation : pd.DataFrame
             pandas Dataframe of MAuto values for protein sequence. Output will
-            be of the shape N x 1, where N is the number of features calculated from
-            the descriptor. By default, the shape will be 240 x 1 (30 features per 
+            be of the shape N x M, where M is the number of features calculated from
+            the descriptor. By default, the shape will be N x 240 (30 features per 
             property - using 8 properties).
         """
         print('\nGetting Moran Autocorrelation Descriptors...')
@@ -471,8 +469,8 @@ class Descriptors():
         -------
         :geary_autocorrelation : pd.DataFrame
             pandas Dataframe of GAuto values for protein sequence. Output will
-            be of the shape N x 1, where N is the number of features calculated from
-            the descriptor. By default, the shape will be 240 x 1 (30 features per 
+            be of the shape N x M, where M is the number of features calculated from
+            the descriptor. By default, the shape will be N x 240 (30 features per 
             property - using 8 properties).
         """
         print('\nGetting Geary Autocorrelation Descriptors...')
@@ -507,7 +505,7 @@ class Descriptors():
         -------
         :composition : pd.DataFrame
             pandas dataframe of C_CTD values for protein sequence. Output will
-            be of the shape N x M x 1, where 21 is the number of features calculated from
+            be of the shape N x 3, where 3 is the number of features calculated from
             the descriptor.
         """
         print('\nGetting Composition (CTD) Descriptors...')
@@ -539,9 +537,9 @@ class Descriptors():
 
         Returns
         -------
-        :transition : pd.Series
-            pandas Series of T_CTD values for protein sequence. Output will
-            be of the shape 21 x 1, where 21 is the number of features calculated from
+        :transition : pd.Dataframe
+            pandas Dataframe of T_CTD values for protein sequence. Output will
+            be of the shape N x 1, where 3 is the number of features calculated from
             the descriptor.
         """
         print('\nGetting Transition (CTD) Descriptors...')
@@ -573,9 +571,9 @@ class Descriptors():
 
         Returns
         -------
-        :distribution : pd.Series
-            pandas Series of D_CTD values for protein sequence. Output will
-            be of the shape 105 x 1, where 105 is the number of features calculated from
+        :distribution : pd.Dataframe
+            pandas Dataframe of D_CTD values for protein sequence. Output will
+            be of the shape N x 15, where 15 is the number of features calculated from
             the descriptor.
         """
         print('\nGetting Distribution (CTD) Descriptors...')
@@ -609,7 +607,7 @@ class Descriptors():
         -------
         :ctd : pd.Series
             pandas Series of CTD values for protein sequence. Output will
-            be of the shape 147 x 1, where 105 is the number of features calculated from
+            be of the shape N x 147, where 147 is the number of features calculated from
             the descriptor.
         """
         print('\nGetting CTD Descriptors...')
@@ -642,9 +640,9 @@ class Descriptors():
 
         Returns
         -------
-        :conjoint_triad : pd.Series
-            pandas Series of CTriad descriptor values for all protein sequences. Series
-            will be of the shape 343 x 1, where 343 is the number of features calculated 
+        :conjoint_triad : pd.Dataframe
+            pandas Dataframe of CTriad descriptor values for all protein sequences. Dataframe
+            will be of the shape N x 343, where 343 is the number of features calculated 
             from the descriptor for a sequence.
         """
         print('\nGetting Conjoint Triad Descriptors...')
@@ -673,8 +671,8 @@ class Descriptors():
 
         Returns
         -------
-        :seq_order_df : pd.Series
-            Series of SOCNum descriptor values for all protein sequences. Output
+        :seq_order_df : pd.Dataframe
+            Dataframe of SOCNum descriptor values for all protein sequences. Output
             will be of the shape N x M, where N is the number of protein sequences and
             M is the number of features calculated from the descriptor (calculated as
             N * 2 where N = lag).
@@ -709,14 +707,13 @@ class Descriptors():
 
         Returns
         -------
-        :quasi_seq_order_df : pd.Series
-            Series of quasi-sequence-order descriptor values for the
+        :quasi_seq_order_df : pd.Dataframe
+            Dataframe of quasi-sequence-order descriptor values for the
             protein sequences, with output shape N x 100 where N is the number
             of sequences and 100 the number of calculated features.
         """
         print('\nGetting Quasi Sequence Order Descriptors...')
         print('###########################################\n')
-
 
         #if attribute already calculated & not empty then return it
         if not self.quasi_seq_order.empty:
@@ -746,9 +743,9 @@ class Descriptors():
 
         Returns
         -------
-        :pseudo_aa_composition : pd.Series
-            Series of pseudo amino acid composition descriptor values
-            for the protein sequences of output shape 50 x 1.
+        :pseudo_aa_composition : pd.Dataframe
+            Dataframe of pseudo amino acid composition descriptor values
+            for the protein sequences of output shape N x 50.
         """
         print('\nGetting Pseudo Amino Acid Composition Descriptors...')
         print('####################################################\n')
@@ -768,7 +765,7 @@ class Descriptors():
         #calculate descriptor value, concatenate descriptor values
         for seq in self.protein_seqs:
             pseudo_aacomp_seq = pseudoAAC(seq, lamda=lamda, weight=weight, properties=properties)
-            pseudo_aacomp_df = pd.concat([pseudo_aacomp_seq, pseudo_aacomp_seq])
+            pseudo_aacomp_df = pd.concat([pseudo_aacomp_df, pseudo_aacomp_seq])
 
         self.pseudo_aa_composition = pseudo_aacomp_df
 
@@ -781,9 +778,9 @@ class Descriptors():
 
         Returns
         -------
-        :amp_pseudo_aa_composition_df : pd.Series
-            Series of Amphiphilic pseudo amino acid composition descriptor
-            values for the protein sequences of output shape 80 x 1.
+        :amp_pseudo_aa_composition_df : pd.Dataframe
+            Dataframe of Amphiphilic pseudo amino acid composition descriptor
+            values for the protein sequences of output shape N x 80.
         """
         print('\nGetting Amphiphilic Pseudo Amino Acid Composition Descriptors...')
         print('###############################################################\n')
@@ -796,11 +793,15 @@ class Descriptors():
         lamda = self.parameters["amp_pseudo_aa_composition"]["lambda"]
         weight = self.parameters["amp_pseudo_aa_composition"]["weight"]
 
-        #calculate descriptor value
-        self.amp_pseudo_aa_composition = amphiphilicPseudoAAC(self.protein_seqs, lamda=lamda, weight=weight)
+        #calculate descriptor value, concatenate descriptor values
+        for seq in self.protein_seqs:
+            amp_pseudo_aacomp_seq = amphiphilicPseudoAAC(seq, lamda=lamda, weight=weight)
+            amp_pseudo_aacomp_df = pd.concat([amp_pseudo_aacomp_df, amp_pseudo_aacomp_seq])
+
+        self.amp_pseudo_aa_composition = amp_pseudo_aacomp_df
 
         return self.amp_pseudo_aa_composition
-
+    
     def get_descriptor_encoding(self, descriptor):
         """
         Get the protein descriptor values of a specified input descriptor. If the
@@ -912,7 +913,7 @@ class Descriptors():
 
        Parameters
        ----------
-       :desc_combo : int (default = 1)
+       :desc_combo : int (default=1)
             combination of descriptors to return. A value of 2 or 3 will return
             all combinations of 2 or 3 descriptor attributes etc.
 
@@ -939,7 +940,7 @@ class Descriptors():
     def get_all_descriptors(self):
         """
         Calculate all individual descriptor values, concatenating each descriptor
-        Series into one storing all descriptors.
+        Dataframe into one storing all descriptors.
 
         Returns
         -------
@@ -949,8 +950,9 @@ class Descriptors():
             N x 9920. The 2nd dimension is dependant on several additional parameters
             of some descriptors, including the number of properties and max lag for the
             Autocorrelation descriptors, the max lag for the SOCNum, the number of properties
-            and lamda for PAAComp and the lambda for APAAComp. N represents the number of 
-            sequences and 9920 is the total number of descriptor features calculated.
+            and lamda for PAAComp and the lambda for APAAComp. 9920 features are calculated 
+            in total when using the default parameters of each descriptor and N represents 
+            the number of sequences.
         """
         print('Calculating all descriptor values....\n')
         print('#####################################\n')
@@ -1007,9 +1009,9 @@ class Descriptors():
             self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
             self.geary_autocorrelation, self.comp, self.transition,
             self.distribution, self.ctd, self.conjoint_triad, self.seq_order_coupling_number,
-            self.quasi_seq_order, self.pseudo_aa_composition, self.amp_pseudo_aa_composition
+            self.quasi_seq_order, self.pseudo_aa_composition
             ]
-
+        # self.amp_pseudo_aa_composition
         #concatenate individual descriptor dataframe attributes
         all_desc_df = pd.concat(all_desc, axis = 1)
         self.all_descriptors = all_desc_df     
@@ -1184,7 +1186,7 @@ class Descriptors():
         del self._geary_autocorrelation
         del self._ctd
         del self._transition
-        del self._composition
+        del self._comp
         del self._distribution
         del self._conjoint_triad
         del self._seq_order_coupling_number

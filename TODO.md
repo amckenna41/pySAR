@@ -39,3 +39,4 @@ TO DO List:
 - [ ] Change get_record_from_name to get_record_from_desc
 - [ ] For each descriptor function, if input is single string (single seq) return 
 - [ ] Add wiki to pySAR
+- [ ] Catch TypeError on each descriptor func (add typerror to descriptor tests)

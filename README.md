@@ -12,6 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 [![Build](https://img.shields.io/github/workflow/status/amckenna41/pySAR/Deploy%20to%20PyPI%20%F0%9F%93%A6)](https://github.com/amckenna41/pySAR/actions)
 [![Build Status](https://travis-ci.com/amckenna41/pySAR.svg?branch=main)](https://travis-ci.com/amckenna41/pySAR)
+[![CircleCI](https://circleci.com/gh/amckenna41/pySAR.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/pySAR)
 [![Issues](https://img.shields.io/github/issues/amckenna41/pySAR)](https://github.com/amckenna41/pySAR/issues)
 [![Size](https://img.shields.io/github/repo-size/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
 [![Commits](https://img.shields.io/github/commit-activity/w/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
@@ -32,7 +33,7 @@ Table of Contents
 
 Research Article
 ----------------
-The research article that accompanied this software is: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as pySAR_research.pdf. The article was published in the journal X and is available <em>here</em>.
+The research article that accompanied this software is: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as pySAR_research.pdf. The article was published in the Journal of Biomedical Informatics and is available [here][article].
 
 Introduction
 ------------
@@ -49,6 +50,8 @@ Requirements
 * [scipy][scipy] >= 1.4.1
 * [tqdm][tqdm] >= 4.55.0
 * [seaborn][seaborn] >= 0.11.1
+* [biopython][biopython] >= 1.79
+* [varname][varname] >= 0.8.1
 
 Installation
 -----------------
@@ -427,7 +430,7 @@ Distributed under the MIT License. See `LICENSE` for more details.
 
 Contact
 -------
-If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab. <br>
+If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab. <br><br>
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/adam-mckenna-7a5b22151/)
 
 References
@@ -440,6 +443,7 @@ References
 \[6\]: https://arxiv.org/abs/2010.03516
 
 <br>
+
 [Back to top](#TOP)
 
 <!-- |Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png -->
@@ -451,4 +455,7 @@ References
 [scipy]: https://www.scipy.org/
 [tqdm]: https://tqdm.github.io/
 [seaborn]: https://seaborn.pydata.org/
+[varname]: https://pypi.org/project/varname/
+[biopython]: https://biopython.org/
+[article]: https://www.sciencedirect.com/science/article/abs/pii/S1532046422000326
 [Issues]: https://github.com/amckenna41/pySAR/issues

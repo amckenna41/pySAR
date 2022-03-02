@@ -12,9 +12,9 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import SCORERS
 from sklearn.exceptions import UndefinedMetricWarning
+from sklearn.feature_selection import SelectKBest, chi2
 from difflib import get_close_matches
 import numpy as np
-import inspect
 import os
 import pickle
 
@@ -32,17 +32,17 @@ class Model():
         an approximate representation of model name, for example: 'plsreg' will 
         initialiase an instance of the PLSRegression model.
     :parameters : dict (default = {})
-        parameters to use for building regression model, by default it set to {}, meaning
+        parameters to use for building regression model, by default it is set to {}, meaning
         all of the models' default parameters are used.
     :test_split : float (default = 0.2)
-        proportion of the test data to use for building model
+        proportion of the test data to use for building model.
 
     Methods
     -------
     get_model():
         build model using inputtted parameters.
     train_test_split(X, Y, scale = True, test_size = 0.2,random_state=None, shuffle=True):
-        get train test split of dataset.
+        get train-test split of dataset.
     fit():
         fit model.
     predict():
@@ -59,14 +59,13 @@ class Model():
     def __init__(self, algorithm, parameters={}, test_split=0.2):
 
         self.algorithm = algorithm
+        self.test_split = test_split
 
-        #if no parameters input to 
+        #if no parameters input, then set to {} meaning default parameters are used
         if (parameters == [] or parameters == ""):
             self.parameters = {}
         else:
             self.parameters = parameters
-
-        self.test_split = test_split
 
         #list of valid models available to use for this class
         self.valid_models = ['plsregression','randomforestregressor','adaboostregressor',\
@@ -83,6 +82,7 @@ class Model():
         else:
             raise ValueError('Input algorithm {} not found in available valid models {}.'.format(
                     self.algorithm, self.valid_models))
+
         #create instance of algorithm object
         self.model = self.get_model()
         self.model_fit = None
@@ -95,7 +95,8 @@ class Model():
 
         Parameters
         ----------
-        :self (Model object) : instance of Model class.
+        :self (Model object) : 
+            instance of Model class.
 
         Returns
         -------
@@ -228,8 +229,8 @@ class Model():
             else:
                 model = KNeighborsRegressor()
         else:
-            raise ValueError('Input Algorithm ({}) not found in available valid \
-                models'.format(self.algorithm, self.valid_models))
+            raise ValueError('Input Algorithm ({}) not found in available valid models'.
+                format(self.algorithm, self.valid_models))
 
         return model
 
@@ -266,8 +267,8 @@ class Model():
         """
         #validate that X and Y arrays are of the same size
         if (len(X)!=len(Y)):
-            raise ValueError('X and Y input parameters must be of the same length, \
-                X: {}, Y: {}'.format(len(X), len(Y)))
+            raise ValueError('X and Y input parameters must be of the same length, X: {}, Y: {}'.
+                format(len(X), len(Y)))
 
         #reshape input arrays to 2D arrays
         if (X.ndim!=2):
@@ -284,6 +285,7 @@ class Model():
         #scale training data X
         if scale:
             X = StandardScaler().fit_transform(X)
+            # X = MinMaxScaler().fit_transform(X)
 
         #split X and Y into training and test data
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y,
@@ -374,7 +376,7 @@ class Model():
         """
         #input parameters parameter must be a dict, if not raise error
         if not isinstance(parameters, dict):
-            raise TypeError('Parameters argument must be of type dict.')
+            raise TypeError('Parameters argument must be of type dict, not of type {}.'.format(type(parameters)))
 
         #input metric must be in available scoring metrics, if not raise error
         if metric not in sorted(SCORERS.keys()):
@@ -394,7 +396,7 @@ class Model():
 
         #grid search of hyperparameter space for model
         model_copy = self.copy()
-        grid_search = GridSearchCV(estimator=model_copy, param_grid=parameters,\
+        grid_search = GridSearchCV(estimator=model_copy, param_grid=parameters, \
             cv=cv, scoring=metric, n_jobs=n_jobs, verbose=2, error_score=0)
 
         #fit X and Y to best model found in grid search
@@ -465,6 +467,40 @@ class Model():
         """
         return (self.model_fit != None)
 
+    def feature_selection(self, X, Y, method=""):
+        """
+        Feature selection/dimensionality reduction on dataset and models.
+        Return the best applicable features found using the technique selected
+        from method input parameter.
+
+        Parameters
+        ----------
+        :X : np.ndarray
+            training data.
+        :Y : np.ndarray
+            training data labels.
+        :method : str (default = "")
+            feature selection method to use.
+
+        Returns
+        -------
+        :X_new : np.ndarray
+            best found features from training data.
+        """
+        valid_feature_selection = []
+
+        #get closest valid feature selection method
+        feature_matches = get_close_matches(method.lower().strip(), [item.lower().strip() \
+            for item in valid_feature_selection], cutoff=0.5)
+
+        #apply feature selection method according to input parameter
+        if feature_matches == 'selectkbest':
+            X_new = SelectKBest(chi2, k=2).fit_transform(X, Y)
+
+        return X_new
+
+        # https://scikit-learn.org/stable/modules/feature_selection.html
+        
 ######################          Getters & Setters          ######################
 
     @property

@@ -7,8 +7,10 @@ import pandas as pd
 import numpy as np
 from difflib import get_close_matches
 from scipy import signal
-from scipy.signal import savgol_filter, blackman, hanning, hamming, bartlett, \
-    blackmanharris, kaiser, gaussian, medfilt, symiirorder1, lfilter, hilbert
+from scipy.signal import savgol_filter, medfilt, symiirorder1, lfilter, hilbert
+from scipy.signal.windows import blackman, hanning, hamming, bartlett, blackmanharris, \
+     kaiser, gaussian, barthann, bohman, chebwin, cosine, exponential, boxcar, \
+        flattop, nuttall, parzen, tukey, triang
 try:
     from scipy.fftpack import fft, ifft, fftfreq, rfft, rfftfreq
 except:
@@ -17,10 +19,8 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import json
 from json import JSONDecodeError
-import sys
 
 from .utils import *
-# import .utils as utils
 from .globals_ import DATA_DIR, OUTPUT_DIR, OUTPUT_FOLDER
 from .aaindex import AAIndex
 class PyDSP():
@@ -36,9 +36,8 @@ class PyDSP():
     function that applies a weighting to each discrete time series sample in a finite set.
     By default, the hamming function is applied; although the function can accept
     the blackman, blackmanharris, bartlett, gaussian and kaiser window functions. A
-    filter can also be applied, with the savgol filter only currently supported
-    in this class, with plans for future expansion. Additionally a convolution
-    function can be applied before the FFT.
+    filter function can also be applied. Additionally a convolution function can be 
+    applied before the FFT.
 
     Additonal to the FFT, the RFFT (real-FFT) is calculated which removes some
     redundancy that is generated from the original FFT function which itself is
@@ -62,8 +61,6 @@ class PyDSP():
 
     Methods
     -------
-    read_data():
-        read configuration file and its parameters.
     pre_processing():
         complete pre-processing steps before completeing DSP functionality.
     encode_seqs():
@@ -85,7 +82,7 @@ class PyDSP():
         #read protein seqs from dataset if not input as parameter,
         # parse DSP parameters from config file
         if not isinstance(dsp_config, str) or dsp_config is None:
-            raise TypeError('JSON config file must be a filepath of type string')
+            raise TypeError('JSON config file must be a filepath of type string, got type {}.'.format(type(dsp_config)))
         if os.path.isfile(self.dsp_config):
             config_filepath = self.dsp_config
         elif os.path.isfile(os.path.join('config', self.dsp_config)):
@@ -95,20 +92,16 @@ class PyDSP():
         try:
             with open(config_filepath) as f:
                 self.parameters = json.load(f)
-        except JSONDecodeError as e:
-            print('Error getting config JSON file: {}.'.format(config_filepath))
-            sys.exit() 
+        except:
+            raise JSONDecodeError('Error parsing config JSON file: {}.'.format(config_filepath))
 
         #read protein seqs from dataset if not input as parameter
         if (self.protein_seqs is None):
-            # self.data = self.read_data()
-            # self.protein_seqs = self.data[self.parameters["dataset"][0]["sequence_col"]]
             raise ValueError('Protein sequences input parameter cannot be empty or None.')
 
         #reshape protein sequences to 2 dimensions
         if (self.protein_seqs.ndim!=2):
             try:
-                # self.protein_seqs = reshape((-1,1))
                 self.protein_seqs = self.protein_seqs.reshape((-1,1))
             except:
                 raise ValueError('Error reshaping input sequences.')
@@ -128,40 +121,9 @@ class PyDSP():
         #transform sequences into the various informational protein spectra
         self.encode_seqs()
 
-    def read_data(self):
-        """ 
-        Read in dataset according to 'dataset' attribute in configuration file. By default
-        the dataset should be stored in DATA_DIR. 
-
-        Parameters
-        ----------
-        :self (PyDSP object): 
-            instance of PyDSP class.
-
-        Returns
-        -------
-        :data (pd.DataFrame): 
-            dataframe of dataset   
-        """
-        filepath = ""
-        #read in dataset csv if found in path, if not raise error
-        if (os.path.isfile(os.path.join(DATA_DIR,self.parameters["dataset"][0]["dataset"]))):
-            filepath = os.path.join(DATA_DIR,self.parameters["dataset"][0]["dataset"])
-        elif os.path.isfile(self.parameters["dataset"][0]["dataset"]):
-            filepath = self.parameters["dataset"][0]["dataset"]
-        else:
-            raise OSError('Dataset filepath is not correct: {}'.format(filepath))
-
-        #read in dataset csv
-        try:
-            data = pd.read_csv(filepath, sep=",", header=0)
-            return data
-        except:
-            raise IOError('Error opening dataset file: {}'.format(filepath))
-
     def pre_processing(self):
         """
-        Complete various pre-processing steps to encoded protein sequences before
+        Complete various pre-processing steps for encoded protein sequences before
         doing any of the DSP-related functions or transformations. Zero-pad
         the sequences, remove any +/- infinity or NAN values, get the approximate
         protein spectra and window function parameter names.
@@ -178,6 +140,8 @@ class PyDSP():
         """
         #zero-pad encoded sequences so they are all the same length
         self.protein_seqs = zero_padding(self.protein_seqs)
+
+        #get shape parameters of proteins seqs
         self.num_seqs = self.protein_seqs.shape[0]
         self.signal_len = self.protein_seqs.shape[1]
 
@@ -187,7 +151,7 @@ class PyDSP():
         self.protein_seqs[self.protein_seqs == np.nan] = 0
 
         #replace any NAN's with 0's
-        #self.protein_seqs.fillna(0,inplace=True)
+        #self.protein_seqs.fillna(0, inplace=True)
         self.protein_seqs = np.nan_to_num(self.protein_seqs)
 
         #initialise zeros array to store all protein spectra
@@ -201,20 +165,20 @@ class PyDSP():
         all_windows = ['hamming', 'blackman','blackmanharris','gaussian','bartlett',
                        'kaiser', 'barthann', 'bohman', 'chebwin', 'cosine', 'exponential'
                        'flattop', 'hann', 'boxcar', 'hanning', 'nuttall', 'parzen',
-                       'taylor', 'triang', 'tukey']
+                        'triang', 'tukey']
         all_filters = ['savgol', 'medfilt', 'symiirorder1', 'lfilter', 'hilbert']
 
         #set required input parameters, raise error if spectrum is none
         if self.spectrum == None:
-            raise ValueError('Invalid input Spectrum type ({}) not available in valid \
-                spectra: {}'.format(self.spectrum, all_spectra))
+            raise ValueError('Invalid input Spectrum type ({}) not available in valid spectra: {}'.
+                format(self.spectrum, all_spectra))
         else:
             #get closest correct spectra from user input, if no close match then raise error
             spectra_matches = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))
 
             if spectra_matches == []:
-                raise ValueError('Invalid input Spectrum type ({}) not available in valid \
-                    spectra: {}'.format(self.spectrum, all_spectra))
+                raise ValueError('Invalid input Spectrum type ({}) not available in valid spectra: {}'.
+                    format(self.spectrum, all_spectra))
             else:
                 self.spectra = spectra_matches[0]   #closest match in array
 
@@ -226,7 +190,6 @@ class PyDSP():
 
             #check if sym=True or sym=False
             #get window function specified by window input parameter, if no match then window = 1
-            #****
             if window_matches != []:
                 if window_matches[0] == 'hamming':
                     self.window = hamming(self.signal_len, sym=True)
@@ -246,11 +209,48 @@ class PyDSP():
                 elif window_matches[0] == "kaiser":
                     self.window = kaiser(self.signal_len, beta=14, sym=True)
                     self.window_type = "kaiser"
+                elif window_matches[0] == "hanning":
+                    self.window = hanning(self.signal_len, sym=True)
+                    self.window_type = "hanning"
+                elif window_matches[0] == "barthann":
+                    self.window = barthann(self.signal_len, sym=True)
+                    self.window_type = "barthann"
+                elif window_matches[0] == "bohman":
+                    self.window = bohman(self.signal_len, sym=True)
+                    self.window_type = "bohman"
+                elif window_matches[0] == "chebwin":
+                    self.window = chebwin(self.signal_len, sym=True)
+                    self.window_type = "chebwin"
+                elif window_matches[0] == "cosine":
+                    self.window = cosine(self.signal_len, sym=True)
+                    self.window_type = "cosine"
+                elif window_matches[0] == "exponential":
+                    self.window = exponential(self.signal_len, sym=True)
+                    self.window_type = "exponential"
+                elif window_matches[0] == "flattop":
+                    self.window = flattop(self.signal_len, sym=True)
+                    self.window_type = "flattop"
+                elif window_matches[0] == "boxcar":
+                    self.window = boxcar(self.signal_len, sym=True)
+                    self.window_type = "boxcar"
+                elif window_matches[0] == "nuttall":
+                    self.window = nuttall(self.signal_len, sym=True)
+                    self.window_type = "nuttall"
+                elif window_matches[0] == "parzen":
+                    self.window = parzen(self.signal_len, sym=True)
+                    self.window_type = "parzen"
+                elif window_matches[0] == "triang":
+                    self.window = triang(self.signal_len, sym=True)
+                    self.window_type = "triang"
+                elif window_matches[0] == "tukey":
+                    self.window = tukey(self.signal_len, sym=True)
+                    self.window_type = "tukey"
+
             else:
                 self.window = 1     #window = 1 is the same as applying no window
 
         #calculate convolution from protein sequences
-        if self.convolution != None:
+        if self.convolution is not None:
             if self.window is not None:
                 self.convoled_seqs = signal.convolve(self.protein_seqs, self.window, mode='same') / sum(self.window)
 
@@ -261,7 +261,7 @@ class PyDSP():
             #set filter attribute according to approximate user input
             if filter_matches != []:
                 if filter_matches[0] == 'savgol':
-                    self.filter = savgol_filter(self.signal_len, self.signal_len) #**
+                    self.filter = savgol_filter(self.signal_len, self.signal_len) 
                 elif filter_matches[0] == 'medfilt':
                     self.filter = medfilt(self.signal_len)
                 elif filter_matches[0] == 'symiirorder1':
@@ -307,8 +307,8 @@ class PyDSP():
 
         #initialise zero arrays used to store output of both fft and rfft, set
         #  datatype to complex number as that is the output type of the transformation.
-        encoded_dataset_rfft = np.zeros((self.protein_seqs.shape),dtype=complex)
-        encoded_dataset_fft = np.zeros((self.protein_seqs.shape),dtype=complex)
+        encoded_dataset_rfft = np.zeros((self.protein_seqs.shape), dtype=complex)
+        encoded_dataset_fft = np.zeros((self.protein_seqs.shape), dtype=complex)
 
         #initialise zero arrays used to store output frequencies from fft & rfft transformations
         rttf_freq_size = int((rfft_output_size)/2 + 1)
@@ -316,12 +316,12 @@ class PyDSP():
         encoded_freqs_fft = np.zeros(self.protein_seqs.shape)
 
         #iterate through each sequence, applying the FFT and RFFT to each
-        for seq in range(0,self.num_seqs):
+        for seq in range(0, self.num_seqs):
 
-          encoded_rfft = np.zeros((self.protein_seqs.shape[1]),dtype=complex)
-          encoded_fft = np.zeros((self.protein_seqs.shape[1]),dtype=complex)
+          encoded_rfft = np.zeros((self.protein_seqs.shape[1]), dtype=complex)
+          encoded_fft = np.zeros((self.protein_seqs.shape[1]), dtype=complex)
 
-          #apply filter
+          #apply filter *
         #   if (self.filter!=""):
         #      if (self.filter == 'savgol'):
         #         encoded_seq_copy[seq] = savgol_filter(encoded_seq_copy[seq], 17, polyorder=2, deriv=2)
@@ -396,7 +396,7 @@ class PyDSP():
 
     def consensus_freq(self, freqs):
         """
-        Get the Consensus frequency from Fourier Transform of encoded protein sequences.
+        Get the Consensus Frequency from Fourier Transform of encoded protein sequences.
 
         Parameters
         ----------
@@ -406,7 +406,7 @@ class PyDSP():
         Returns
         -------
         :CF : float
-            consus frequency found in array of frequencies.
+            consensus frequency found in array of frequencies.
         :CFi : int
             index of consensus frequency.
         """
@@ -501,6 +501,14 @@ class PyDSP():
     @filter_.setter
     def filter_(self, val):
         self._filter = val
+
+    @property
+    def convolution(self):
+        return self._convolution
+
+    @convolution.setter
+    def convolution(self, val):
+        self._convolution = val
 
 ################################################################################
 

@@ -88,6 +88,10 @@ def norm_moreaubroto_autocorrelation(
         of different protein descriptors in predicting protein functional families,”
         BMC Bioinformatics, vol. 8, p. 300, 2007.
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
+
     #set default lag if invalid value input
     if (lag>=len(sequence) or (lag<0) or not (isinstance(lag, int))):
         lag=30
@@ -116,7 +120,8 @@ def norm_moreaubroto_autocorrelation(
         #normalise property values, calculate mean and std dev
         aai_property_vals = {}
         for i, j in prop_aminoacid_values.items():
-            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
+            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / 
+                len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
 
         aa_counter = 0
         #assign property and associated amino acid values to aai_property_vals array
@@ -134,7 +139,6 @@ def norm_moreaubroto_autocorrelation(
         for i in range(1,lag+1):
             for j in range(len(sequence)-i):
                 temp = temp + aai_properties[key][sequence[j]] * aai_properties[key][sequence[j+1]]
-
             if len(sequence) - i == 0:
                 result["MoreauBrotoAuto_" + key + "_"+str(i)] = round(
                     temp / (len(sequence)), 3
@@ -178,6 +182,9 @@ def moran_autocorrelation(
         of different protein descriptors in predicting protein functional families,”
         BMC Bioinformatics, vol. 8, p. 300, 2007.    
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
 
     #set default lag if invalid value input
     if (lag>=len(sequence) or (lag<0) or not (isinstance(lag, int))):
@@ -199,15 +206,15 @@ def moran_autocorrelation(
 
     #iterate through list of properties, getting property values from AAIndex
     for prop in properties:
-
         #get property values from AAIndex & reshape
         aaindex[prop]['values'].pop('-', None)
         prop_aminoacid_values = aaindex[prop]['values']
-     
         #normalise property values, calculate mean and std dev
         aai_property_vals = {}
+
         for i, j in prop_aminoacid_values.items():
-            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
+            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / 
+                len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
 
         aa_counter = 0
         #assign property and associated amino acid values to aai_property_vals array
@@ -235,12 +242,10 @@ def moran_autocorrelation(
 
         for i in range(1,lag+1):
             temp = 0
-
             for j in range(len(sequence)-i):
                 temp = temp + aai_properties[key][sequence[j]] - prop_mean * (
                     aai_properties[key][sequence[j+i]] - prop_mean
                 )
-
             if len(sequence) - i == 0:
                 result["MoranAuto_" + key + "_"+str(i)] = round(
                     temp / ((len(sequence)) / k, 5)
@@ -284,6 +289,9 @@ def geary_autocorrelation(
         of different protein descriptors in predicting protein functional families,”
         BMC Bioinformatics, vol. 8, p. 300, 2007. 
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
 
     #set default lag if invalid value input
     if (lag>=len(sequence) or (lag<0) or not (isinstance(lag, int))):
@@ -305,7 +313,6 @@ def geary_autocorrelation(
 
     #iterate through list of properties, getting property values from AAIndex
     for prop in properties:
-
         #get property values from AAIndex & reshape
         aaindex[prop]['values'].pop('-', None)
         prop_aminoacid_values = aaindex[prop]['values']
@@ -313,7 +320,8 @@ def geary_autocorrelation(
         #normalise property values, calculate mean and std dev
         aai_property_vals = {}
         for i, j in prop_aminoacid_values.items():
-            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
+            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / 
+                len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
 
         aa_counter = 0
         #assign property and associated amino acid values to aai_property_vals array
@@ -327,7 +335,6 @@ def geary_autocorrelation(
 
     #iterate through list of properties, calculating autocorrelation values for the sequence, append to results dict
     for key in aai_properties:
-
         cc = []
         for aa in sequence:
             cc.append(aai_properties[key][aa])
@@ -336,12 +343,10 @@ def geary_autocorrelation(
 
         for i in range(1,lag+1):
             temp = 0
-
             for j in range(len(sequence)-i):
                 temp = (temp + (
                     aai_properties[key][sequence[j]] - aai_properties[key][sequence[j+i]]) **2
                 )
-
             if len(sequence) - i == 0:
                 result["GearyAuto_" + key + "_"+str(i)] = round(
                     temp / (2* (len(sequence))) / k,3
@@ -358,16 +363,19 @@ def geary_autocorrelation(
 
 def _std(array, ddof=1):
     """
-    Calculate the standard deviation of the array data.
+    Calculate the standard deviation of the array data, with associated means Delta Degrees 
+    of Freedom (ddof).
 
     Parameters
     ----------
     :array : np.array
         numpy array of floats.
+    :ddof : int (default=1)
+        Means Delta Degrees of Freedom.
 
     Returns
     -------
-    :res : np.array
+    :result : np.array
         input array after standard deviation transformation.
     """
     return math.sqrt(sum([math.pow(i - sum(array) / len(array), 2) for i in array]) 

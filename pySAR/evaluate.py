@@ -14,12 +14,12 @@ class Evaluate():
     results in the class attributes. The class supports metrics: R2, RMSE, MSE,
     MAE, RPD, Explained Variance, Max Error and Mean Poisson Deviance.
 
-    Attributes
+    Parameters
     ----------
     :Y_true : np.ndarray
-        array of observed activity values.
+        array of observed activity/fitness values.
     :Y_pred : np.ndarray
-        array of predicted activity values.
+        array of predicted activity/fitness values.
 
     Methods
     -------
@@ -68,7 +68,7 @@ class Evaluate():
 
         Parameters
         ----------
-        :multioutput : str (default = 'uniform_average')
+        :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
@@ -105,7 +105,7 @@ class Evaluate():
 
         Parameters
         ----------
-        :multioutput : str (default = 'uniform_average')
+        :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
@@ -123,7 +123,7 @@ class Evaluate():
 
         Parameters
         ----------
-        :multioutput : str (default = 'uniform_average')
+        :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
@@ -149,7 +149,7 @@ class Evaluate():
         :rpd : float
             the RPD score for the model.
         """
-        return self.Y_true.std()/np.sqrt(self.mse_())
+        return self.Y_true.std() / np.sqrt(self.mse_())
 
     def explained_var_(self, multioutput='uniform_average'):
         """
@@ -158,7 +158,7 @@ class Evaluate():
 
         Parameters
         ----------
-        :multioutput : str (default = 'uniform_average')
+        :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
@@ -203,5 +203,5 @@ class Evaluate():
         return "Instance of Evaluate Class with attribute values: \
                 R2: {}, RMSE: {}, MSE: {}, MAE: {}, RPD: {}, Explained Variance: {}, \
                     Max Error: {}, Mean Poisson Deviance: {}" \
-                .format(self.r2,self.rmse,self.mse,self.mae,self.rpd,self.explained_var,
-                    self.max_error,self.mean_poisson_deviance)
+                .format(self.r2, self.rmse, self.mse, self.mae, self.rpd, self.explained_var,
+                    self.max_error, self.mean_poisson_deviance)

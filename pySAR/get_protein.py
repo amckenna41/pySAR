@@ -25,11 +25,12 @@ def get_protein_from_fasta(fasta_path):
     if not (os.path.isfile(fasta_path)):
         raise OSError('Fasta file not found on filepath: {}'.format(fasta_path))
 
+    #read sequence using Biopython library
     sequence = SeqIO.read(fasta_path, "fasta").seq
 
     return sequence
 
-def download_protein_from_uniprot(prot_id, save_dir=os.path.join('pySAR',DATA_DIR)):
+def download_protein_from_uniprot(prot_id, save_dir=os.path.join('pySAR', DATA_DIR)):
     """
     Download protein sequence from Uniprot database using its Uniprot ID.
 
@@ -50,13 +51,13 @@ def download_protein_from_uniprot(prot_id, save_dir=os.path.join('pySAR',DATA_DI
     #download protein using Uniprot URL, store in save_dir directory
     try:
         with closing(request.urlopen(url)) as r:
-            with open((os.path.join(save_dir,prot_id+'.fasta')), 'wb') as f:
+            with open((os.path.join(save_dir, prot_id + '.fasta')), 'wb') as f:
                 shutil.copyfileobj(r, f)
         print('Protein successfully downloaded.')
     except requests.exceptions.RequestException:
         print('Error downloading protein with ID {} from the url {}.'.format(prot_id, url))
 
-def download_protein_from_ncbi(prot_id,db="protein",email="email@example.com", save_dir=os.path.join('pySAR',DATA_DIR)):
+def download_protein_from_ncbi(prot_id,db="protein", email="email@example.com", save_dir=os.path.join('pySAR', DATA_DIR)):
     """
     Download protein sequence from NCBI database using its protein ID.
 
@@ -88,16 +89,16 @@ def download_protein_from_ncbi(prot_id,db="protein",email="email@example.com", s
     try:
         out_handle = open(os.path.join(save_dir,prot_id + ".fasta"), "w")
     except:
-        raise OSError('Error opening file {}'.format(os.path.join(save_dir,prot_id + ".fasta")))
+        raise OSError('Error opening file {}'.format(os.path.join(save_dir, prot_id + ".fasta")))
     
     #write to fasta file
     out_handle.write(net_handle.read())
     out_handle.close()
     net_handle.close()
 
-    print('Fasta file downloaded from NCBI, saved as {}'.format(os.path.join(save_dir,prot_id + ".fasta")))
+    print('Fasta file downloaded from NCBI, saved as {}'.format(os.path.join(save_dir, prot_id + ".fasta")))
 
-def download_protein_from_pdb(pdb_id, save_dir=os.path.join('pySAR',DATA_DIR)):
+def download_protein_from_pdb(pdb_id, save_dir=os.path.join('pySAR', DATA_DIR)):
     """
     Download protein from the PDB (Protein Data Bank) using its ID.
 
@@ -118,10 +119,10 @@ def download_protein_from_pdb(pdb_id, save_dir=os.path.join('pySAR',DATA_DIR)):
     #download protein using PDB URL, store in save_dir directory
     try:
         with closing(request.urlopen(url)) as r:
-            with open((os.path.join(save_dir,pdb_id+'.pdb')), 'wb') as f:
+            with open((os.path.join(save_dir, pdb_id + '.pdb')), 'wb') as f:
                 shutil.copyfileobj(r, f)
         print('Protein {} successfully downloaded, saved as {}'.format(
-            pdb_id, os.path.join(save_dir,pdb_id+'.pdb')
+            pdb_id, os.path.join(save_dir, pdb_id + '.pdb')
         ))
     except requests.exceptions.RequestException:
         print('Error downloading protein with ID {} from the url {}.'.format(pdb_id, url))

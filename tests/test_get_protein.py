@@ -9,13 +9,11 @@ class GetProteinTests(unittest.TestCase):
     Unit tests for testing the get_protein module of pySAR.
     """
     def test_fasta(self):
-        """ Test get_protein_from_fasta function which returns protein seq from fasta file"""
-
+        """ Test get_protein_from_fasta function which returns protein seq from fasta file. """
         test_seq = get_protein_from_fasta(os.path.join("tests", "test_data", "test_fasta.fasta"))
 #1.)
         with self.assertRaises(OSError):
             test_seq = get_protein_from_fasta("incorrect_filepath.fasta")
-
         with self.assertRaises(ValueError):
             test_seq.index("Z")
         with self.assertRaises(ValueError):
@@ -49,10 +47,10 @@ class GetProteinTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(protid_savedir, protid_3)))
         self.assertTrue(os.path.isfile(os.path.join(protid_savedir, protid_4)))
 #2.)
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests.exceptions.RequestException, msg='Requests Error raised, invalid url given.'):
             download_protein_from_uniprot(invalid_protid_1, save_dir=protid_savedir)
 
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests.exceptions.RequestException, msg='Requests Error raised, invalid url given.'):
             download_protein_from_uniprot(invalid_protid_2, save_dir=protid_savedir)
 
     @unittest.skip("Don't want to overload the NCBI server each time tests are run.")
@@ -76,10 +74,10 @@ class GetProteinTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join('pySAR', ncib_savedir, ncbi_3)))
         self.assertTrue(os.path.isfile(os.path.join('pySAR', ncib_savedir, ncbi_4)))
 #2.)
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests.exceptions.RequestException, msg='Requests Error raised, invalid url given.'):
             download_protein_from_ncbi(invalid_protid_1, save_dir=ncib_savedir)
 
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests.exceptions.RequestException, msg='Requests Error raised, invalid url given.'):
             download_protein_from_ncbi(invalid_protid_2, save_dir=ncib_savedir)
 
     @unittest.skip("Don't want to overload the PDB server each time tests are run.")
@@ -103,8 +101,8 @@ class GetProteinTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join('pySAR', pdb_savedir, pdb_3)))
         self.assertTrue(os.path.isfile(os.path.join('pySAR', pdb_savedir, pdb_4)))
 #2.)
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests.exceptions.RequestException, msg='Requests Error raised, invalid url given.'):
             download_protein_from_ncbi(invalid_protid_1, save_dir=pdb_savedir)
 
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests.exceptions.RequestException, msg='Requests Error raised, invalid url given.'):
             download_protein_from_ncbi(invalid_protid_2, save_dir=pdb_savedir)

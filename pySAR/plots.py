@@ -8,7 +8,7 @@ import os
 
 from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
 
-def plot_reg(Y_true, Y_pred, r2):
+def plot_reg(Y_true, Y_pred, r2, show_plot=False):
     """
     Plot regression plot of observed (Y_true) vs predicted activity values (Y_pred).
 
@@ -19,7 +19,10 @@ def plot_reg(Y_true, Y_pred, r2):
     :Y_pred : np.ndarray
         array of predicted values
     :r2 : float
-        r2_score value
+        r2 score value
+    :show_plot : bool (default = False)
+        whether to display plot or not when function is run, if False the plot is just
+        saved to output folder. 
 
     Returns
     -------
@@ -34,6 +37,7 @@ def plot_reg(Y_true, Y_pred, r2):
     plt.ylabel('Observed Value',fontdict=dict(weight='bold'), fontsize=12)
     plt.title('Observed vs Predicted values for protein activity',fontdict=dict(weight='bold'), fontsize=15)
     plt.savefig(os.path.join(OUTPUT_FOLDER,'model_regPlot.png'))  #save plot to output folder
-    plt.show(block=False)
-    plt.pause(3)
-    plt.close()
+    if (show_plot):     
+        plt.show(block=False)
+        plt.pause(3)
+        plt.close()

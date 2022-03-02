@@ -8,8 +8,8 @@ import sys
 import pySAR
 
 #ensure python version is greater than 3
-if sys.version_info[0] < 3:
-    sys.exit('Python 3 is the minimum version requirement')
+if (sys.version_info[0] < 3):
+    sys.exit('Python 3 is the minimum version requirement.')
 
 #get path to README file
 HERE = pathlib.Path(__file__).parent
@@ -40,7 +40,6 @@ setup(name='pySAR',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
         'Topic :: Scientific/Engineering :: Mathematics'
@@ -57,8 +56,9 @@ setup(name='pySAR',
           'matplotlib',
           'seaborn',
           'tqdm',
-          'pytest'
-
+          'pytest',
+          'varname',
+          'biopython'
       ],
      # packages=find_packages(), #create Manifest file to ignore results folder in dist
      packages=find_packages(exclude=["Results"]),

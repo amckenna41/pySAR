@@ -20,7 +20,7 @@
     "descriptors":
       [
         {
-          "descriptors_csv": "descriptors.csv",
+          "descriptors_csv": "descriptors_absorption.csv",
           "descriptors": {
             "all_desc": 0,
             "aa_composition": 1,

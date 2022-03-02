@@ -3,6 +3,7 @@
 ################################################################################
 
 import re
+from typing import Type
 import pandas as pd
 import math
 from ..aaindex import *
@@ -55,6 +56,10 @@ def AAComposition(sequence):
         be of the shape 20 x 1, where 20 is the number of features 
         calculated from the descriptor (for the 20 amino acids).
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
+
     composition = {}
     for aa in aminoAcids:
         composition[aa] = round(float(sequence.count(aa)) / len(sequence) * 100, 3)
@@ -63,7 +68,6 @@ def AAComposition(sequence):
     composition_df = pd.DataFrame([list(composition.values())], columns=list(composition.keys()))
 
     return composition_df
-
 
 def DipeptideComposition(sequence):
     """
@@ -92,6 +96,10 @@ def DipeptideComposition(sequence):
         be of the shape 400 x 1, where 400 is the number of features calculated 
         from the descriptor (20^2 for the 20 canonical amino acids).
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
+
     dipepComposition = {}
     for i in aminoAcids:
         for j in aminoAcids:
@@ -99,13 +107,11 @@ def DipeptideComposition(sequence):
             dipepComposition[dipep] = round(
                 float(sequence.count(dipep)) / (len(sequence)-1) * 100, 2
             )
-        # dipepComposition[i] = round(float(sequence.count(i)) / len(sequence) *100, 3)
 
     #transform values and columns to DataFrame
     dipepComposition_df = pd.DataFrame([list(dipepComposition.values())], columns=list(dipepComposition.keys()))
 
     return dipepComposition_df
-
 
 def TripeptideComposition(sequence):
     """
@@ -134,8 +140,12 @@ def TripeptideComposition(sequence):
         be of the shape 8000 x 1, where 8000 is the number of features calculated 
         from the descriptor (20^3 for the 20 canonical amino acids).
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
+
     tripepComposition = {}
-    tripeptides = []    #tripeptides = list()
+    tripeptides = []    
 
     #get list of tripeptides
     for i in aminoAcids:
@@ -159,9 +169,9 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
     made up of a 50-dimensional vector in which the first 20 components are a weighted
     sum of the amino acid composition and 30 are physiochemical square correlations as
     dictated by the lamda and properties parameters. This generates an output of 
-    [(20 + lamda), 1] - 50 x 1. By default, the physiochemical properties used are 
-    hydrophobicity (ARGP820101) and hydrophillicity (KUHL950101) indices, with a 
-    lamda of 30 and weight of 0.05.
+    [(20 + lamda), 1] = 50 x 1 when using the default lamda of 30. By default, the 
+    physiochemical properties used are  hydrophobicity (ARGP820101) and hydrophillicity 
+    (KUHL950101) indices, with a lamda of 30 and weight of 0.05.
 
     Parameters 
     ----------
@@ -173,24 +183,30 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
     :weight : float (default = 0.05)
         weighting factor allowing for weights to be added to the additioanl descriptor
         components with respect to the conventional amino acid components. 
-    :properties : str/array (default =["ARGP820101", "KUHL950101"])
+    :properties : str/array (default=["ARGP820101", "KUHL950101"])
         single or multiple amino acid index properties from the AAI database used for 
-        calculating the sequence-order 
+        calculating the sequence-order.
 
     Returns
     -------
     :pseudoAAComp_df : pd.Dataframe
         pandas Dataframe of pseudo amino acid composition for protein sequence. Dataframe will
         be of the shape [(20 + lamda),1] - 50 x 1, where 50 is the number of features calculated 
-        from the descriptor. 
+        from the descriptor, when using the default lamda of 30.
 
     References
     ----------
     [1]: Chou, K. C. (2001). Prediction of protein cellular attributes using pseudo-amino acid 
          composition. Proteins, 43(3), 246–255. https://doi.org/10.1002/prot.1035
+    [2]: Chen C, Zhou X, Tian Y, Zhou X, Cai P: Predicting protein structural class with pseudo-amino 
+         acid composition and support vector machine fusion network. Anal Biochem 2006, 
+         357: 116–121. 10.1016/j.ab.2006.07.022
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
 
-    #set lamda to its default value if <0, > sequence len or not an int
+    #set lamda to its default value if <0, or > sequence len or not an int
     if ((lamda < 0) or (lamda > len(sequence)) or not isinstance(lamda, int)):
         lamda = 30
 
@@ -225,7 +241,6 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
             aa_counter+=1
         aai_properties[prop] = aai_property_vals
 
-    print(aai_properties)
     #### Pseudo AAC 1 ####
 
     #calculate pseudo AAC for sequence
@@ -246,6 +261,7 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
         result["PseudoAAC1_" + str(index + 1)] = round(aaComp.iloc[0][i] / temp, 3) 
 
     ##### Pseudo AAC 2 ####
+
     #calculate pseudo AAC for sequence 
     rightpart = []
     for i in range(lamda):
@@ -285,11 +301,15 @@ def sequenceOrderCorrelationFactor(sequence, k=1, properties=[]):
     References
     ----------
     [1]: Manish C. Saraf, Gregory L. Moore, Costas D. Maranas, Using multiple 
-        sequence correlation analysis to characterize functionally important 
-        protein regions, Protein Engineering, Design and Selection, Volume 16, 
-        Issue 6, June 2003, Pages 397–406, https://doi.org/10.1093/protein/gzg053
+         sequence correlation analysis to characterize functionally important 
+         protein regions, Protein Engineering, Design and Selection, Volume 16, 
+         Issue 6, June 2003, Pages 397–406, https://doi.org/10.1093/protein/gzg053
     
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
+
     #ensure at least 1 property input to function and or properties is a list so it can be iterated over
     if (properties == "" or properties == []):
         raise ValueError('At least one property value must be input to function.')
@@ -297,98 +317,145 @@ def sequenceOrderCorrelationFactor(sequence, k=1, properties=[]):
     #cast properties to list if str
     if (isinstance(properties, str)):   
         properties = [properties]
-    
-    LengthSequence = len(sequence)
+
+    #iterate through sequence, calculate sequence order correlation for amino acids    
     res = []
-    for i in range(LengthSequence - k):
+    for i in range(len(sequence) - k):
         AA1 = sequence[i]
         AA2 = sequence[i + k]
         res.append(correlation_function(AA1, AA2, properties))
-    result = round(sum(res) / (LengthSequence - k), 3)
+    
+    #get resultant correlation values
+    result = round(sum(res) / (len(sequence) - k), 3)
+
     return result
 
-def correlation_function(aa1, aa2, property):
+def correlation_function(aa1, aa2, properties):
+    """
+    Calculate the correlation between two amino acids using the selected
+    properties for APAAC (type II PseAAC).
 
-    NumAAP = len(property)
+    Parameters
+    ----------
+    :aa1 : str 
+        amino aicd letter.
+    :aa2: str 
+        amino acid letter.
+    :properties : list
+        list of physiochemical properties.
+
+    Returns
+    -------
+    :seqOrderCorrelationFactor : float
+        sequence order correlation factor with gap = k.    
+    """
+    #if only 1 property passed in, cast to a list
+    if isinstance(properties, str):
+        properties = [properties]
+
     theta = 0.0
-    for prop in property:
-        temp = NormalizeEachAAP(property[prop]) #[{"ABCD": "A":ddsd, ...}]
+    #calculate correlation between 2 input amino acids per property
+    for prop in properties:
+        temp = NormalizeEachAAP(properties[prop])
         theta = theta + math.pow(temp[aa1] - temp[aa2], 2)
-    result = round(theta / NumAAP, 3)
+    
+    result = round(theta / len(properties), 3)
     return result
 
-
-def NormalizeEachAAP(AAP):
+def NormalizeEachAAP(property):
     """
-    ########################################################################################
-    All of the amino acid indices are centralized and
-    standardized before the calculation.
-    Usage:
-    result=NormalizeEachAAP(AAP)
-    Input: AAP is a dict form containing the properties of 20 amino acids.
-    Output: result is the a dict form containing the normalized properties
-    of 20 amino acids.
-    ########################################################################################
+    Normalize and centralize the amino acid property values.
+
+    Parameters
+    ----------
+    :property : dict 
+        dictionary of amino acid property and associated values.
+
+    Returns
+    -------
+    :result : dict
+        normalized amino acid property values.    
     """
-    if len(AAP.values()) != 20:
-        print("You can not input the correct number of properities of Amino acids!")
-    else:
-        Result = {}
-        for i, j in AAP.items():
-            Result[i] = (j - _mean(AAP.values())) / _std(AAP.values(), ddof=0)
+    #normalize amino acid property values
+    result = {}
+    for i, j in property.items():
+        result[i] = (j - (sum(property.values()) / len(property.values())) / _std(property.values(), ddof=0))
 
-    return Result
+    return result
 
-# def amphiphilicPseudoAAC(sequence, lamda=30, weight=0.5, properties=["ARGP820101", "KUHL950101"]):
-#     """
-
-#     """
-
-#     #set lamda to its default value if <0, > sequence len or not an int
-#     if ((lamda < 0) or (lamda > len(sequence)) or not isinstance(lamda, int)):
-#         lamda = 30
-
-#     #keys of dicts should be AA not properties
-#     aai_properties = {}
-#     aai_property_vals = {}
-#     aaindex = AAIndex()
-
-#     #ensure properties is a list so it can be iterated over
-#     if (isinstance(properties, list) or len(properties) == 1):
-#         properties = [properties]
-
-#     #get amino acid values from AAI for property 
-#     for prop in properties: 
-#         aai_properties[prop] = aaindex.get_values_from_record(prop)
-
-
-
-#     rightpart = 0.0
-#     for i in range(lamda):
-#         rightpart = rightpart + sum(
-#             GetSequenceOrderCorrelationFactorForAPAAC(sequence, k=i + 1)
-#         )
-
-
-
-#     AAC = GetAAComposition(ProteinSequence)
-
-#     result = {}
-#     temp = 1 + weight * rightpart
-#     for index, i in enumerate(AALetter):
-#         result["APAAC" + str(index + 1)] = round(AAC[i] / temp, 3)
-
-#     return result
-
-def _mean(listvalue):
+def amphiphilicPseudoAAC(sequence, lamda=30, weight=0.5, properties=["ARGP820101", "KUHL950101"]):
     """
-    ########################################################################################
-    The mean value of the list data.
-    Usage:
-    result=_mean(listvalue)
-    ########################################################################################
+    Calculate the Type 2 Pseudo AA Composition descriptors from the input physiochemical
+    properties. The number of features generated depends on the property and lambda value: 
+    20 + i*lambda discrete numbers are generated to represent a protein, where i is the number of 
+    amino acid attributes selected). By default, the ARGP820101 (Hydrophobicity) and KUHL950101
+    (Hydrophilicity) properties are used from the AAIndex. More about the descriptor can be found
+    here [3]. 
+
+    Parameters
+    ----------
+    :sequence : str
+        protein sequence in str form.
+    :lamda : int (default = 30)
+        lamda parameter that reflects the rank correlation and should be a non-negative
+        integer and not larger than the length of the protein sequence.
+    :weight : float (default = 0.05)
+        weighting factor allowing for weights to be added to the additioanl descriptor
+        components with respect to the conventional amino acid components. 
+    :properties : str/array (default =["ARGP820101", "KUHL950101"])
+        single or multiple amino acid index properties from the AAI database.
+
+    Returns
+    -------
+    :amppseudoAAComp_df : pd.Dataframe
+        pandas Dataframe of amphiphilic pseudo amino acid composition for protein sequence. Dataframe will
+        be of the shape (20 +(i*lambda), 1), where (20 + (i*lambda)) is the number of features calculated 
+        from the descriptor. 
+    
+    References
+    ----------
+    [1]: Kuo-Chen Chou. Using amphiphilic pseudo amino acid composition to predict enzyme
+         subfamily classes. Bioinformatics, 2005,21,10-19.
+    [2]: Chou,K.C. and Cai Y.D. (2005). Prediction of membrane protein types by incorporating 
+         amphipathic effects, J Chem Inf Model, 45(2):407-13
+    [3]: http://www.csbio.sjtu.edu.cn/bioinf/PseAAC/type2.htm
     """
-    return sum(listvalue) / len(listvalue)
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
+
+    #set lamda to its default value if <0, or > sequence len or not an int
+    if ((lamda < 0) or (lamda > len(sequence)) or not isinstance(lamda, int)):
+        lamda = 30
+
+    #keys of dicts should be AA not properties
+    aai_properties = {}
+    aai_property_vals = {}
+    aaindex = AAIndex()
+
+    #ensure properties is a list so it can be iterated over
+    if (isinstance(properties, list) or len(properties) == 1):
+        properties = [properties]
+
+    #get amino acid values from AAI for property 
+    for prop in properties: 
+        aai_properties[prop] = aaindex.get_values_from_record(prop)
+    rightpart = 0.0
+    for i in range(lamda):
+        rightpart = rightpart + sum(
+            GetSequenceOrderCorrelationFactorForAPAAC(sequence, k=i + 1)
+        )
+    aa_comp = AAComposition(sequence)
+
+    amppseudoAAComp = {}
+    temp = 1 + weight * rightpart
+    for index, i in enumerate(aminoAcids):
+        amppseudoAAComp["APAAC" + str(index + 1)] = round(aa_comp[i] / temp, 3)
+
+    #transform descriptor data into pandas dataframe
+    amppseudoAAComp_df = pd.DataFrame([list(amppseudoAAComp.values())], columns=list(amppseudoAAComp.keys()))
+
+    return amppseudoAAComp_df
 
 def _std(array, ddof=1):
     """
@@ -406,61 +473,3 @@ def _std(array, ddof=1):
     """
     return math.sqrt(sum([math.pow(i - sum(array) / len(array), 2) for i in array]) 
         / (len(array) - ddof))
-
-    #     def sequenceOrderCorrelationFactor(sequence, k=1, properties=[]):
-    # """
-    # Calculate the sequence order correlation factor with gap = k for the inputted
-    # physiochemical properties. 
-
-    # Parameters
-    # ----------
-    # :k : int (default = 1)
-    #     gap in sequence for calculating factor.
-    # :properties : list (default = [])
-    #     list of physiochemical properties.
-
-    # Returns
-    # -------
-    # :seqOrderCorrelationFactor : float
-    #     sequence order correlation factor with gap = k.
-    
-    # References
-    # ----------
-    # [1]: Manish C. Saraf, Gregory L. Moore, Costas D. Maranas, Using multiple 
-    #     sequence correlation analysis to characterize functionally important 
-    #     protein regions, Protein Engineering, Design and Selection, Volume 16, 
-    #     Issue 6, June 2003, Pages 397–406, https://doi.org/10.1093/protein/gzg053
-    
-    # """
-    # #ensure at least 1 property input to function and or properties is a list so it can be iterated over
-    # if (properties == "" or properties == []):
-    #     raise ValueError('At least one property value must be input to function.')
-
-    # #cast properties to list if str
-    # if (isinstance(properties, str)):   
-    #     properties = [properties]
-    
-    # res = []
-    # for i in range(len(sequence) - k):
-    #     AA1 = sequence[i]
-    #     AA2 = sequence[i + k]
-
-    #     theta = 0.0
-    #     for prop in properties:
-    #         print(prop)
-    #         temp_prop = np.array(list(properties[prop].values()))
-    #         print(temp_prop)
-    #         # temp_prop = np.array(list(properties[j].values()))
-    #         temp_prop = temp_prop.reshape(-1,1)
-
-    #         #normalise property values
-    #         # norm_prop = preprocessing.normalize(temp_prop)
-    #         norm_prop = ((sum(temp_prop) / len(properties[prop].values()))) / _std(temp_prop, ddof=0)
-
-    #         theta = theta + math.pow(norm_prop[AA1] - norm_prop[AA2], 2)
-
-    #     result = round(theta / len(properties), 3)
-    #     res.append(round(theta / len(properties), 3))
-
-    # result = round(sum(res) / (len(sequence) - k), 3)
-    # return result

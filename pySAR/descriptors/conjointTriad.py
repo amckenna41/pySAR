@@ -41,6 +41,10 @@ def conjoint_triad(sequence):
     [1]: J. Shen et al., “Predicting protein-protein interactions based only on sequences
         information,” Proc. Natl. Acad. Sci. U. S. A., vol. 104, no. 11, pp. 4337–4341, 2007.
     """
+    #check input sequence is a string, if not raise type error
+    if not isinstance(sequence, str):
+        raise TypeError('Input sequence must be a string, got input of type {}'.format(type(sequence)))
+
     con_triad = {}
     _aa_triads = {}
 
@@ -49,6 +53,7 @@ def conjoint_triad(sequence):
         for j in aa_triads[i]:
             _aa_triads[j] = i
 
+    #get protein number for each triad
     protein_num = sequence
     for i in _aa_triads:
         protein_num = protein_num.replace(i, str(_aa_triads[i]))

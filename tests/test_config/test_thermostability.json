@@ -11,7 +11,7 @@
     "model": [
       {
         "algorithm": "plsregression",
-        "parameters": "",
+        "parameters": {},
         "test_split": 0.2
       }
   
@@ -65,13 +65,13 @@
         "all": 1
       }],
       "composition":[{
-        "property":"hydrophobicity"
+        "property":"normalized_VDWV"
       }],
       "transition":[{
-        "property":"hydrophobicity"
+        "property":"polarity"
       }],
       "distribution":[{
-        "property":"hydrophobicity"
+        "property":"charge"
       }],
       "seq_order_coupling_number":[{
         "lag":30,

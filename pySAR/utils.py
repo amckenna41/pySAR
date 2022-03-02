@@ -7,9 +7,7 @@ pd.options.mode.chained_assignment = None  #stop pandas warnings, default='warn'
 import numpy as np
 import os
 import shutil
-import json
 import csv
-from pathlib import Path
 
 from .globals_ import DATA_DIR, OUTPUT_DIR, OUTPUT_FOLDER
 
@@ -23,12 +21,12 @@ def valid_sequence(sequences):
 
     Parameters
     ----------
-    sequences : list/np.ndarray
+    :sequences : list/np.ndarray
         list or array of protein sequences.
 
     Returns
     -------
-    None or invalid_indices : None/list
+    :None or invalid_indices : None/list
         if no invalid values found in the protein sequences, None returned. if
         invalid values found, list of dicts returned in the form
         {sequence index: invalid value in sequence index}.
@@ -37,7 +35,6 @@ def valid_sequence(sequences):
     if isinstance(sequences,str):
         sequences = [sequences]
 
-    # sequences = np.array(sequences).reshape((-1,1))
     #valid canonical amino acid letters
     valid_amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',\
         'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y','-']
@@ -45,13 +42,10 @@ def valid_sequence(sequences):
 
     #iterate through all sequences, validating that there are no invalid values
     #present in the sequences, if there are then append to list of invalid indices
-    try:
-        for seq in range(0,len(sequences)):
-            for aa in range(0,len(sequences[seq])):
-                if (sequences[seq][aa] not in valid_amino_acids):
-                    invalid_indices.append({'Sequence #'+str(seq) : 'Index #'+str(aa)})
-    except:
-        print('Error parsing sequences in datasets.')
+    for seq in range(0,len(sequences)):
+        for aa in range(0,len(sequences[seq])):
+            if (sequences[seq][aa] not in valid_amino_acids):
+                invalid_indices.append({'Sequence #'+str(seq) : 'Index #'+str(aa)})
 
     #if no invalid values found in sequences return None, else return list of
     #dicts containing invalid index and invalid values
@@ -66,24 +60,25 @@ def remove_gaps(sequences):
     The descriptors cannot be calculated if a '-' value is passsed into their
     respective funtions so gaps need to be removed. Removing the gaps has the same
     effect as setting the value at the index of the sequence to 0 and has no effect
-    on the descriptors calculation. Input can be string, list of array of sequences.
+    on the descriptors calculation. Input can be a string, list of array of sequences.
 
     Parameters
     ----------
-    sequences : str/list/np.ndarray
+    :sequences : str/list/np.ndarray
         string of 1 protein sequence or array/list of protein sequences.
 
     Returns
     -------
-    protein_seqs : np.ndarray
+    :protein_seqs : np.ndarray
         returns the same inputted protein sequences but with any gaps ('-') removed.
     """
+    #bool needed to ensure correct output format if input is str
+    is_string=False   
 
-    is_string=False   #bool needed to ensure correct output format if input is str
-
+    #convert single string into 1 element list
     if isinstance(sequences, str):
       is_string = True
-      sequences = [sequences]     #convert single string into 1 element list
+      sequences = [sequences]     
 
     #concatenate multiple sequences into 1 iterable list
     if isinstance(sequences, list) and \
@@ -115,12 +110,12 @@ def flatten(array):
 
     Parameters
     ----------
-    array : np.ndarray / list
+    :array : np.ndarray / list
         array of arrays or list of lists to be flattened.
 
     Returns
     -------
-    flatten(array/list) : np.ndarray/list
+    :flatten(array/list) : np.ndarray/list
         flattened 1 dimensional list or array.
     """
     #if input is a string then return input as cannot be flattened
@@ -150,18 +145,17 @@ def zero_padding(sequences):
 
     Parameters
     ----------
-    sequences : np.ndarray / list
+    :sequences : np.ndarray / list
         array or list of encoded protein sequences.
 
     Returns
     -------
-    sequences: np.ndarray / list
+    :sequences: np.ndarray / list
         input sequences but with every sequence in the object now zero paddded
         to be the same length.
     """
     #no need to zero-pad if only one sequence passed in
     if len(sequences) == 1:
-        print('Only one element passed in as input, no need for zero-padding.')
         return sequences
 
     #get maximum length of all sequences
@@ -170,7 +164,6 @@ def zero_padding(sequences):
     #iterate through all sequences, padding with 0's to max_len
     for s in range(0,len(sequences)):
         if len(sequences[s])<max_len:
-            # sequences[s]+= [0] * (max_len - len(sequences[s]))
             sequences[s]+= str(0) * (max_len - len(sequences[s]))
 
     return sequences
@@ -187,8 +180,8 @@ def create_output_dir():
     if not os.path.isdir(OUTPUT_DIR):
         try:
             os.makedirs(OUTPUT_DIR)
-        except OSError:
-            print('Error creating directory {} '.format(OUTPUT_DIR))
+        except:
+            raise OSError('Error creating directory {} '.format(OUTPUT_DIR))
 
     #if output folder already exists then delete it
     if os.path.isdir(OUTPUT_FOLDER):
@@ -197,38 +190,35 @@ def create_output_dir():
     #create output folder in directory
     try:
         os.makedirs(OUTPUT_FOLDER)
-    except OSError:
-        print('Error creating directory {} '.format(OUTPUT_FOLDER))
+    except:
+        raise OSError('Error creating directory {} '.format(OUTPUT_FOLDER))
 
 def save_results(results, name):
     """
     Save object DataFrame/Series containing metric names and their values captured from
-    the encoding process. Save the results in this object to a CSV file named as
-    name input parameter. Function can also accept a dict of results.
+    the encoding process. Save the results in this object to a CSV file named according
+    to name input parameter. Function can also accept a dict of results.
 
     Parameters
     ----------
-    results : dict/pd.DataFrame/pd.Series
+    :results : dict/pd.DataFrame/pd.Series
         object of the metrics and results from the encoding process. Ideally should
         be a dataframe/series but function also accepts a dict of results.
-    name : str
+    :name : str
         name to call results file.
     """
     #output results to csv if results variable is a dictionary
     if isinstance(results,dict):
-
-        with open(os.path.join(OUTPUT_FOLDER, name+'.csv'), 'w') as f:
+        with open(os.path.join(OUTPUT_FOLDER, name + '.csv'), 'w') as f:
             w = csv.DictWriter(f, results.keys())
             w.writeheader()
             w.writerow(results)
 
     #output results to csv if results variable is a dataframe or Series
-    elif isinstance(results, pd.DataFrame) or \
-        isinstance(results,pd.Series):
-
+    elif isinstance(results, pd.DataFrame) or isinstance(results,pd.Series):
         results.reset_index(drop=True, inplace=True)
         results.to_csv(os.path.join(OUTPUT_FOLDER, name+'.csv'))
 
     else:
-        raise TypeError('Results Object must be of type: dict, pd.Series or \
-            pd.DataFrame, got object of type {}'.format(type(results)))
+        raise TypeError('Results Object must be of type: dict, pd.Series or pd.DataFrame, got object of type {}'
+            .format(type(results)))

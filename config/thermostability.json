@@ -20,7 +20,7 @@
     "descriptors":
       [
         {
-          "descriptors_csv": "descripto.csv",
+          "descriptors_csv": "descriptors_thermostability.csv",
           "descriptors": {
             "all_desc": 0,
             "aa_composition": 1,
@@ -94,7 +94,7 @@
 
     "pyDSP":[
       {
-        "use_dsp": 1,
+        "use_dsp": 0,
         "spectrum": "power",
         "window": {
           "type": "hamming",
