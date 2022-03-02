@@ -11,4 +11,4 @@ tqdm==4.48.2
 pytest==6.2.4
 varname
 biopython
-urllib3==1.26
+urllib3==1.26.5
