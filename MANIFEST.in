@@ -1,3 +1,2 @@
-recursive-include data/*.json
-recursive-include data/*.txt
-include aaindex1 aaindex2 aaindex3
+graft pySAR/data*
+graft data*
