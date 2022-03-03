@@ -8,14 +8,14 @@ TO DO List:
 - [X] Change descriptor functions to accept sequences themselves.
 - [X] Add references for all descriptors
 - [ ] Look over and add some encoding unit tests.
-- [ ] Update version in init
+- [X] Update version in init
 - [ ] Look into pssm: https://nanx.me/protr/reference/extractPSSM.html
 - [X] Change AAP parameter in descriptors.
 - [X] Split up CTD to C, T and D.
 - [X] Add lag arg to Autocorrelation descriptors.
 - [X] Descriptors accewpt AAI code for property names.
 - [X] Add DPC and TPC lists to files.
-- [ ] Correct supplementary_materials
+- [X] Correct supplementary_materials
 - [ ] Add example comments to func definitions
 - [ ] Incorpate AAI 2 & 3
 - [X] Installation from source in readme
@@ -26,7 +26,7 @@ TO DO List:
 - [X] Add config file to README
 - [X] Change Explained Var to Explained Variance
 - [X] Add : to parameters in functions 
-- [ ] Change descriptor comments to account for each descriptor func working per sequence. 
+- [X] Change descriptor comments to account for each descriptor func working per sequence. 
 - [X] Change workflow name from deploy_to_testpypi -> deploy_testpypi
 - [ ] Look at rename some functions in AAIndex file
 - [ ] Move parse functions to bottom of file
@@ -35,8 +35,10 @@ TO DO List:
 - [X] Add filter/window/convolution metaparameters to config
 - [X] Remove 'Description' from comments of functions
 - [X] Ensure outputs are Series not DF's
-- [ ] Lower case input before searching DB in func get_record_from_name
-- [ ] Change get_record_from_name to get_record_from_desc
-- [ ] For each descriptor function, if input is single string (single seq) return 
+- [X] Lower case input before searching DB in func get_record_from_name
+- [X] Change get_record_from_name to get_record_from_desc
+- [X] For each descriptor function, if input is single string (single seq) return 
 - [ ] Add wiki to pySAR
-- [ ] Catch TypeError on each descriptor func (add typerror to descriptor tests)
+- [X] Catch TypeError on each descriptor func (add typerror to descriptor tests)
+- [ ] Create a 2nd branch with results in it
+- [ ] Swap any 'pySAR' for self.pySAR_module_path = os.path.dirname(os.path.abspath(sys.modules[self.__module__].__file__))

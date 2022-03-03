@@ -63,7 +63,7 @@ pip3 install pySAR
 
 Installation from source:
 ```bash
-git clone https://github.com/amckenna41/pySAR.git
+git clone -b master https://github.com/amckenna41/pySAR.git
 python3 setup.py install
 cd pySAR
 ```

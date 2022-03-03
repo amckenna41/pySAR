@@ -82,10 +82,10 @@ def seq_order_coupling_number(sequence, lag=30,
 
     #get filepath to distance matrix json
     if not (os.path.isfile(distance_matrix)):
-        if not (os.path.isfile(os.path.join('pySAR', DATA_DIR, distance_matrix))):
-            raise OSError('Distance Matrix json ({}) not found.'.format(os.path.join('pySAR', DATA_DIR, distance_matrix)))
+        if not (os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(sys.modules['pySAR'].__file__)), DATA_DIR, distance_matrix))):
+            raise OSError('Distance Matrix json ({}) not found.'.format(os.path.join(os.path.dirname(os.path.abspath(sys.modules['pySAR'].__file__)), DATA_DIR, distance_matrix)))
         else:
-            distance_matrix_path = os.path.join('pySAR', DATA_DIR, distance_matrix)
+            distance_matrix_path = os.path.join(os.path.dirname(os.path.abspath(sys.modules['pySAR'].__file__)), DATA_DIR, distance_matrix)
     else:
         distance_matrix_path = distance_matrix
     

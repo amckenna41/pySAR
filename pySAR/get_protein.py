@@ -4,6 +4,7 @@ import requests
 from contextlib import closing
 import shutil
 import os
+import sys
 from Bio import SeqIO
 from Bio import Entrez
 
@@ -30,7 +31,7 @@ def get_protein_from_fasta(fasta_path):
 
     return sequence
 
-def download_protein_from_uniprot(prot_id, save_dir=os.path.join('pySAR', DATA_DIR)):
+def download_protein_from_uniprot(prot_id, save_dir=os.path.join(os.path.dirname(os.path.abspath(sys.modules['pySAR'].__file__)), DATA_DIR)):
     """
     Download protein sequence from Uniprot database using its Uniprot ID.
 
@@ -57,7 +58,7 @@ def download_protein_from_uniprot(prot_id, save_dir=os.path.join('pySAR', DATA_D
     except requests.exceptions.RequestException:
         print('Error downloading protein with ID {} from the url {}.'.format(prot_id, url))
 
-def download_protein_from_ncbi(prot_id,db="protein", email="email@example.com", save_dir=os.path.join('pySAR', DATA_DIR)):
+def download_protein_from_ncbi(prot_id,db="protein", email="email@example.com", save_dir=os.path.join(os.path.dirname(os.path.abspath(sys.modules['pySAR'].__file__)), DATA_DIR)):
     """
     Download protein sequence from NCBI database using its protein ID.
 
@@ -98,7 +99,7 @@ def download_protein_from_ncbi(prot_id,db="protein", email="email@example.com", 
 
     print('Fasta file downloaded from NCBI, saved as {}'.format(os.path.join(save_dir, prot_id + ".fasta")))
 
-def download_protein_from_pdb(pdb_id, save_dir=os.path.join('pySAR', DATA_DIR)):
+def download_protein_from_pdb(pdb_id, save_dir=os.path.join(os.path.dirname(os.path.abspath(sys.modules['pySAR'].__file__)), DATA_DIR)):
     """
     Download protein from the PDB (Protein Data Bank) using its ID.
 

@@ -95,7 +95,7 @@ class AAIndex():
         return total number of records in AAI database.
     get_record_names():
         return list of all descriptions for all records in AAI database.
-    get_record_from_name():
+    get_record_from_desc():
         return AAI record from its description.
     get_values_from_record(code):
         return amino acid index values for AAI record usings its accession number.
@@ -121,6 +121,7 @@ class AAIndex():
 
         self.aaindex_filename = aaindex_filename
         self.download_using = download_using
+        self.pySAR_module_path = os.path.dirname(os.path.abspath(sys.modules[self.__module__].__file__))
 
         #download AAI database using ftp or https
         if self.download_using=='ftp':
@@ -131,12 +132,12 @@ class AAIndex():
             self.url = "ftp://ftp.genome.jp/pub/db/community/aaindex/aaindex1"
 
         #if AAIndex database not found in data directory then call download method
-        if not (os.path.isfile(os.path.join('pySAR', DATA_DIR, self.aaindex_filename))):
+        if not (os.path.isfile(os.path.join(self.pySAR_module_path, DATA_DIR, self.aaindex_filename))):
             self.download_aaindex()
 
         #if parsed json of AAIndex already in file then read it and return 
-        if (os.path.isfile(os.path.join('pySAR', DATA_DIR, self.aaindex_filename + '.json'))):
-            with open(os.path.join('pySAR', DATA_DIR, self.aaindex_filename +'.json')) as aai_json:
+        if (os.path.isfile(os.path.join(self.pySAR_module_path, DATA_DIR, self.aaindex_filename + '.json'))):
+            with open(os.path.join(self.pySAR_module_path, DATA_DIR, self.aaindex_filename +'.json')) as aai_json:
                 self.aaindex_json = json.load(aai_json)
         else:
             #parse AAIndex database file into JSON format
@@ -170,7 +171,7 @@ class AAIndex():
 
         #open AAI file for reading and parsing, by default it should be stored in DATA_DIR
         try:
-            tmp_filepath = os.path.join('pySAR', DATA_DIR, self.aaindex_filename)
+            tmp_filepath = os.path.join(self.pySAR_module_path, DATA_DIR, self.aaindex_filename)
             f = open(tmp_filepath,'r')
         except IOError:
             print('Error opening file, check filename = {} and is stored in {} directory.'.format(self.aaindex_filename, DATA_DIR))
@@ -277,7 +278,7 @@ class AAIndex():
                     aaindex_json[index]['values'][val] = 0
 
         #save parsed dictionary into JSON format to DATA_DIR
-        with open((os.path.join('pySAR', DATA_DIR, self.aaindex_filename + '.json')),'w') as output_F:
+        with open((os.path.join(self.pySAR_module_path, DATA_DIR, self.aaindex_filename + '.json')),'w') as output_F:
           json.dump(aaindex_json, output_F, indent=4, sort_keys=True)
 
         return aaindex_json
@@ -302,10 +303,10 @@ class AAIndex():
         """
         #fetch AAI database from URL if not present in DATA_DIR
         try:
-            if not(os.path.isfile(os.path.join('pySAR', save_dir, self.aaindex_filename))):
+            if not(os.path.isfile(os.path.join(self.pySAR_module_path, save_dir, self.aaindex_filename))):
                 try:
                     with closing(request.urlopen(self.url)) as r:
-                        with open((os.path.join('pySAR', save_dir, self.aaindex_filename)), 'wb') as f:
+                        with open((os.path.join(self.pySAR_module_path, save_dir, self.aaindex_filename)), 'wb') as f:
                             shutil.copyfileobj(r, f)
                     print('AAIndex1 successfully downloaded.')
                 except requests.exceptions.RequestException:
@@ -341,7 +342,7 @@ class AAIndex():
                     .format(aaindex_category_file))
         else:
             try:
-                f = open((os.path.join('pySAR', DATA_DIR, aaindex_category_file)),'r')
+                f = open((os.path.join(self.pySAR_module_path, DATA_DIR, aaindex_category_file)),'r')
             except IOError:
                 print('Error opening AAIndex1 category file, check {} in {} directory'
                     .format(aaindex_category_file, DATA_DIR))
@@ -352,7 +353,7 @@ class AAIndex():
         #open new file in data directory to store parsed category file
         f.seek(0)
         category_output_file = "aaindex_categories.txt"
-        f_out = open((os.path.join('pySAR', DATA_DIR, category_output_file)), "w")
+        f_out = open((os.path.join(self.pySAR_module_path, DATA_DIR, category_output_file)), "w")
 
         #lines starting with '#' are file metadata so don't write these to parsed output file
         for line in f.readlines():
@@ -363,7 +364,7 @@ class AAIndex():
         f_out.close()
 
         #open parsed category file for reading
-        with open(os.path.join('pySAR', DATA_DIR, category_output_file)) as f_out:
+        with open(os.path.join(self.pySAR_module_path, DATA_DIR, category_output_file)) as f_out:
             reader = csv.reader(f_out, delimiter="\t")
             d = list(reader)
 
@@ -395,12 +396,12 @@ class AAIndex():
             Dictionary that maps each AAI record into 1 of 8 categories.
         """
         #if parsed categories file doesn't exist in DATA_DIR then call function
-        if not (os.path.isfile(os.path.join('pySAR', DATA_DIR, category_file))):
+        if not (os.path.isfile(os.path.join(self.pySAR_module_path, DATA_DIR, category_file))):
             self.parse_categories()
 
         #read categories file and its content
         try:
-            with open(os.path.join('pySAR', DATA_DIR, category_file)) as f_out:
+            with open(os.path.join(self.pySAR_module_path, DATA_DIR, category_file)) as f_out:
                 reader = csv.reader(f_out, delimiter="\t")
                 d = list(reader)
         except IOError:
@@ -501,7 +502,7 @@ class AAIndex():
 
        return desc
 
-    def get_record_from_name(self, description, all_matches=False):
+    def get_record_from_desc(self, description, all_matches=False):
         """
         Return full AAI database record details from its description. Search
         through the descriptions/names of all records in the database, returning
@@ -528,10 +529,10 @@ class AAIndex():
 
         #iterate through all records in AAI finding matching records with description
         for index, value in self.aaindex_json.items():
-            all_desc.append(value['description'])
+            all_desc.append(value['description'].lower())
 
         #use closeness function to calculate whether description mostly matches record description
-        record_matches = get_close_matches(description, all_desc, cutoff=0.5)
+        record_matches = get_close_matches(description.lower(), all_desc, cutoff=0.5)
 
         #if no matches found, return empty list
         if (record_matches==[]):
@@ -798,12 +799,12 @@ class AAIndex():
 #             self.url = "ftp://ftp.genome.jp/pub/db/community/aaindex/aaindex2"
 
 #         #if AAIndex database not found in data directory then call download method
-#         if not (os.path.isfile(os.path.join('pySAR',DATA_DIR,self.aaindex_filename))):
+#         if not (os.path.isfile(os.path.join(self.pySAR_module_path,DATA_DIR,self.aaindex_filename))):
 #             self.download_aaindex()
 
 #         #if parsed json of AAIndex already in file then read it and return  <- Not working at the moment
-#         # if (os.path.isfile(os.path.join('pySAR','data', self.aaindex_filename +'.json'))):
-#         #     with open(os.path.join('pySAR',DATA_DIR, self.aaindex_filename +'.json')) as aai_json:
+#         # if (os.path.isfile(os.path.join(self.pySAR_module_path,'data', self.aaindex_filename +'.json'))):
+#         #     with open(os.path.join(self.pySAR_module_path,DATA_DIR, self.aaindex_filename +'.json')) as aai_json:
 #         #         self.aaindex_json = json.load(aai_json)
 #         # else:
 #         #     #parse AAIndex database file into JSON format
@@ -836,7 +837,7 @@ class AAIndex():
 #         #open AAI file for reading and parsing, by default it should be stored in DATA_DIR
 #         try:
 #             # tmp_filepath = os.path.join(DATA_DIR,self.aaindex_filename)
-#             tmp_filepath = os.path.join('pySAR','data',self.aaindex_filename)
+#             tmp_filepath = os.path.join(self.pySAR_module_path, 'data',self.aaindex_filename)
 #             f = open(tmp_filepath,'r')
 #         except IOError:
 #             print('Error opening file, check filename = {} and is stored in \
@@ -941,7 +942,7 @@ class AAIndex():
 #                     aaindex_json[index]['values'][val] = 0
 
 #         #save parsed dictionary into JSON format to DATA_DIR
-#         with open((os.path.join('pySAR','data', self.aaindex_filename + '.json')),'w') as output_F:
+#         with open((os.path.join(self.pySAR_module_path, 'data', self.aaindex_filename + '.json')),'w') as output_F:
 #           json.dump(aaindex_json, output_F, indent=4, sort_keys=True)
 
 #         return aaindex_json
@@ -962,10 +963,10 @@ class AAIndex():
 #         """
 #         #fetch AAI database from URL if not present in DATA_DIR
 #         try:
-#             if not(os.path.isfile(os.path.join('pySAR',DATA_DIR, self.aaindex_filename))):
+#             if not(os.path.isfile(os.path.join(self.pySAR_module_path, DATA_DIR, self.aaindex_filename))):
 #                 try:
 #                     with closing(request.urlopen(self.url)) as r:
-#                         with open((os.path.join('pySAR',DATA_DIR,self.aaindex_filename)), 'wb') as f:
+#                         with open((os.path.join(self.pySAR_module_path, DATA_DIR,self.aaindex_filename)), 'wb') as f:
 #                             shutil.copyfileobj(r, f)
 #                     print('AAIndex2 successfully downloaded.')
 #                 except requests.exceptions.RequestException:

@@ -1,0 +1,3 @@
+recursive-include data/*.json
+recursive-include data/*.txt
+include aaindex1 aaindex2 aaindex3
