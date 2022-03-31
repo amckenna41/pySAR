@@ -47,7 +47,7 @@ class DescriptorTests(unittest.TestCase):
             self.assertTrue(desc.aa_composition.empty, 'Attribute should be initialised to an empty dataframe')
             self.assertTrue(desc.dipeptide_composition.empty, 'Attribute should be initialised to an empty dataframe')
             self.assertTrue(desc.tripeptide_composition.empty, 'Attribute should be initialised to an empty dataframe')
-            self.assertTrue(desc.normalized_moreaubroto_autocorrelation.empty, 'Attribute should be initialised to an empty dataframe')
+            self.assertTrue(desc.moreaubroto_autocorrelation.empty, 'Attribute should be initialised to an empty dataframe')
             self.assertTrue(desc.moran_autocorrelation.empty, 'Attribute should be initialised to an empty dataframe')
             self.assertTrue(desc.geary_autocorrelation.empty, 'Attribute should be initialised to an empty dataframe')
             self.assertTrue(desc.ctd.empty, 'Attribute should be initialised to an empty dataframe')
@@ -96,7 +96,7 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(desc.descriptor_groups['tripeptide_composition'], "Composition")
             self.assertEqual(desc.descriptor_groups['moran_autocorrelation'], "Autocorrelation")
             self.assertEqual(desc.descriptor_groups['geary_autocorrelation'], "Autocorrelation")
-            self.assertEqual(desc.descriptor_groups['normalized_moreaubroto_autocorrelation'], "Autocorrelation")
+            self.assertEqual(desc.descriptor_groups['moreaubroto_autocorrelation'], "Autocorrelation")
             self.assertEqual(desc.descriptor_groups['ctd'], "CTD")
             self.assertEqual(desc.descriptor_groups['comp'], "CTD")
             self.assertEqual(desc.descriptor_groups['distribution'], "CTD")
@@ -131,7 +131,7 @@ class DescriptorTests(unittest.TestCase):
         self.assertIsInstance(valid_desc, list)
         self.assertIn('seq_order_coupling_number', valid_desc)
         self.assertIn('geary_autocorrelation', valid_desc)
-        self.assertIn('normalized_moreaubroto_autocorrelation', valid_desc)
+        self.assertIn('moreaubroto_autocorrelation', valid_desc)
         self.assertIn('distribution', valid_desc)
         self.assertIn('pseudo_aa_composition', valid_desc)
         self.assertIn('aa_composition', valid_desc)
@@ -185,19 +185,19 @@ class DescriptorTests(unittest.TestCase):
             self.assertIsInstance(tripeptide_comp, pd.DataFrame, 'Descriptor not of type DataFrame.')
             self.assertTrue(tripeptide_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
 
-    def test_normalized_moreaubroto_autocorrelation(self):
-        """ Testing normalized moreaubroto autocorrelation descriptor attributes and methods. """
+    def test_moreaubroto_autocorrelation(self):
+        """ Testing moreaubroto autocorrelation descriptor attributes and methods. """
         #run tests on all test datasets
         for dataset in range(0, len(self.all_config_files)):
             desc = descr.Descriptors(self.all_config_files[dataset])
 
             #get descriptor values
-            norm_moreaubroto = desc.get_norm_moreaubroto_autocorrelation()
+            moreaubroto = desc.get_moreaubroto_autocorrelation()
 #1.)
-            self.assertFalse(norm_moreaubroto.empty, 'Descriptor dataframe should not be empty')
-            self.assertEqual(norm_moreaubroto.shape, (self.num_seqs[dataset],240), 'Descriptor not of correct ({},240)'.format(self.num_seqs[dataset]))
-            self.assertIsInstance(norm_moreaubroto, pd.DataFrame)
-            self.assertTrue(norm_moreaubroto.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
+            self.assertFalse(moreaubroto.empty, 'Descriptor dataframe should not be empty')
+            self.assertEqual(moreaubroto.shape, (self.num_seqs[dataset],240), 'Descriptor not of correct ({},240)'.format(self.num_seqs[dataset]))
+            self.assertIsInstance(moreaubroto, pd.DataFrame)
+            self.assertTrue(moreaubroto.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
 
     def test_moran_autocorrelation(self):
         """ Testing Moran autocorrelation descriptor attributes and methods. """
@@ -343,7 +343,7 @@ class DescriptorTests(unittest.TestCase):
 
         valid_desc = [
             'aa_composition', 'dipeptide_composition', \
-            'normalized_moreaubroto_autocorrelation', 'moran_autocorrelation', 'geary_autocorrelation', \
+            'moreaubroto_autocorrelation', 'moran_autocorrelation', 'geary_autocorrelation', \
             'ctd', 'comp', 'transition', 'distribution', 'conjoint_triad', \
             'seq_order_coupling_number', 'tripeptide_composition', 'seq_order_coupling_number', \
                 'quasi_seq_order', 'pseudo_aa_composition'

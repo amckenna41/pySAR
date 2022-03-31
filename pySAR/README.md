@@ -317,15 +317,12 @@ desc = Descriptors("test_config6")
 The AAIndex class offers diverse functionalities for obtaining any element from any record in the database. Each record is stored in json format in a class attribute called <em>aaindex_json</em>. You can search for a particular record by its index code, description or reference. You can also get the index category, and importantly its associated amino acid values.
 
 ```python
-import pySAR.aaindex as aai   #import aaindex module from pySAR
+from aaindex.aaindex import aaindex #import aaindex module from pySAR
 
-#create AAIndex object
-aaindex = aai.AAIndex()
-
-record = aaindex.get_record_from_code('CHOP780206')   #get full AAI record
-category = aaindex.get_category_from_record('CHOP780206') #get record's category
-values = aaindex.get_values_from_record('CHOP780206')    #get amino acid values from record
-refs = aaindex.get_ref_from_record('CHOP780206')      #get references from record
+record = aaindex['CHOP780206']   #get full AAI record
+category = aaindex['CHOP780206'] #get record's category
+values = aaindex['CHOP780206']  #get amino acid values from record
+refs = aaindex['CHOP780206']     #get references from record
 num_record = aaindex.get_num_records()                #get total number of records
 record_names = aaindex.get_record_names()             #get list of all record names
 

@@ -3,7 +3,6 @@
 ################################################################################
 
 import numpy as np
-import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, \
     explained_variance_score, max_error, mean_poisson_deviance
 

@@ -7,8 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 import math
-
-from ..aaindex import *
+from aaindex.aaindex import aaindex
 
 #list of amino acids
 aminoAcids = [
@@ -35,9 +34,9 @@ aminoAcids = [
     "Y",
 ]
 
-def norm_moreaubroto_autocorrelation(
+def moreaubroto_autocorrelation(
     sequence, lag=30, properties=["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
-    "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
+    "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"], normalize=True
     ):
     """
     Calculate Normalized MoreauBrotoAuto Autocorrelation (NMBAuto) descriptor.
@@ -70,10 +69,13 @@ def norm_moreaubroto_autocorrelation(
         protein sequence in str form.
     :lag : int (default = 30)
         A value for a lag, the max value is equal to the length of shortest peptide minus one.
+    :properties : list (default=)
+        list of AAI index record codes/accession numbers for the physiochemical properties to 
+        use in the calculation of descriptor.
 
     Returns
     -------
-    :norm_moreaubroto_autocorr_df : pd.Dataframe
+    :moreaubroto_autocorr_df : pd.Dataframe
         pandas Dataframe of NMBAuto values for protein sequence. Output will
         be of the shape N x 1, where N is the number of features calculated from
         the descriptor. By default, the shape will be 240 x 1 (30 features per 
@@ -106,7 +108,6 @@ def norm_moreaubroto_autocorrelation(
     
     #initialise dicts to store AAI properties and values
     aai_properties = {}
-    aaindex = AAIndex()
     for prop in properties:
         aai_properties[prop] = {}
 
@@ -117,11 +118,12 @@ def norm_moreaubroto_autocorrelation(
         aaindex[prop]['values'].pop('-', None)
         prop_aminoacid_values = aaindex[prop]['values']
      
-        #normalise property values, calculate mean and std dev
+        #normalise property values if applicable, calculate mean and std dev
         aai_property_vals = {}
-        for i, j in prop_aminoacid_values.items():
-            aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / 
-                len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
+        if (normalize):
+            for i, j in prop_aminoacid_values.items():
+                aai_property_vals[i] = (j - (sum(prop_aminoacid_values.values()) / 
+                    len(prop_aminoacid_values.values()))) / _std(prop_aminoacid_values.values(), ddof=0)
 
         aa_counter = 0
         #assign property and associated amino acid values to aai_property_vals array
@@ -200,7 +202,6 @@ def moran_autocorrelation(
 
     #initialise dicts to store AAI properties and values
     aai_properties = {}
-    aaindex = AAIndex()
     for prop in properties:
         aai_properties[prop] = {}
 
@@ -307,7 +308,6 @@ def geary_autocorrelation(
         
     #initialise dicts to store AAI properties and values
     aai_properties = {}
-    aaindex = AAIndex()
     for prop in properties:
         aai_properties[prop] = {}
 

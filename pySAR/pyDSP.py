@@ -21,8 +21,6 @@ import json
 from json import JSONDecodeError
 
 from .utils import *
-from .globals_ import DATA_DIR, OUTPUT_DIR, OUTPUT_FOLDER
-from .aaindex import AAIndex
 class PyDSP():
     """
     Transform protein sequences into their spectral form via a Fast Fourier Transform (FFT).

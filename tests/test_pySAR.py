@@ -10,6 +10,7 @@ import shutil
 import unittest
 unittest.TestLoader.sortTestMethodsUsing = None
 
+import pySAR as pysar_
 import pySAR.pySAR as pysar
 import pySAR.globals_ as _globals
 
@@ -30,6 +31,16 @@ class PySARTests(unittest.TestCase):
         _globals.OUTPUT_DIR = os.path.join('tests', _globals.OUTPUT_DIR)
         _globals.OUTPUT_FOLDER = os.path.join('tests', _globals.OUTPUT_FOLDER)
 
+    def test_pySAR_version(self):
+        """ Testing correct pySAR version. """
+        self.assertEqual(pysar_.__version__, "2.0.5", "pySAR version is not correct, got: {}".format(pysar_.__version__))
+        self.assertEqual(pysar_.__name__, "pySAR", "pySAR software name is not correct, got: {}".format(pysar_.__name__))
+        self.assertEqual(pysar_.__author__, "AJ McKenna, https://github.com/amckenna41", "pySAR author is not correct, got: {}".format(pysar_.__author__))
+        self.assertEqual(pysar_.__authorEmail__, "amckenna41@qub.ac.uk", "pySAR author email is not correct, got: {}".format(pysar_.__authorEmail__))
+        self.assertEqual(pysar_.__url__, "https://github.com/amckenna41/aaindex", "pySAR repo URL is not correct, got: {}".format(pysar_.__url__))
+        self.assertEqual(pysar_.__credits__, ['AJ McKenna'], "pySAR credits is not correct, got: {}".format(pysar_.__credits__))
+        self.assertEqual(pysar_.__license__, "MIT", "pySAR license type is not correct, got: {}".format(pysar_.__license__))
+
     def test_pySAR(self):
         """ Testing pySAR intialisation process and associated methods & attributes. """
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[0])
@@ -49,8 +60,6 @@ class PySARTests(unittest.TestCase):
         self.assertIsNone(test_pySAR.descriptors)
         self.assertEqual(test_pySAR._parameters, {},
             'Parameters attribute expected to be empty, got {}.'.format(test_pySAR.parameters))
-        self.assertEqual(str(type(test_pySAR.aaindex)), "<class 'pySAR.aaindex.AAIndex'>",
-            'AAIndex expected to be an instance of the AAIndex class, got {}.'.format(type(test_pySAR.aaindex)))
         self.assertIsInstance(test_pySAR.data, pd.DataFrame,
             'Data expected to be a DataFrame, got {}.'.format(type(test_pySAR.data)))
         self.assertEqual(test_pySAR.data.isnull().sum().sum(), 0,
@@ -69,7 +78,7 @@ class PySARTests(unittest.TestCase):
             test_pySAR1 = pysar.PySAR(config_file="blahblahblah")
 
         with self.assertRaises(TypeError, msg='Type Error raised, config file parameter not correct data type.'):
-            test_pySAR1 = pysar.PySAR(config_file=101)
+            test_pySAR2 = pysar.PySAR(config_file=101)
 
     def test_get_seqs(self):
         """ Testing getting the protein sequences from the dataset. """

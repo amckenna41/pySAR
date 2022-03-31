@@ -6,7 +6,7 @@ import re
 from typing import Type
 import pandas as pd
 import math
-from ..aaindex import *
+from aaindex.aaindex import aaindex
 
 #list of amino acids
 aminoAcids = [
@@ -218,7 +218,6 @@ def pseudoAAC(sequence, lamda=30, weight=0.05, properties=["ARGP820101", "KUHL95
 
     #initialise dicts to store AAI properties and values
     aai_properties = {}
-    aaindex = AAIndex()
     for prop in properties:
         aai_properties[prop] = {}
 
@@ -431,7 +430,6 @@ def amphiphilicPseudoAAC(sequence, lamda=30, weight=0.5, properties=["ARGP820101
     #keys of dicts should be AA not properties
     aai_properties = {}
     aai_property_vals = {}
-    aaindex = AAIndex()
 
     #ensure properties is a list so it can be iterated over
     if (isinstance(properties, list) or len(properties) == 1):

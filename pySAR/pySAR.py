@@ -11,7 +11,7 @@ import json
 from json import JSONDecodeError
 
 from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-from .aaindex import AAIndex
+from aaindex.aaindex import aaindex
 from .model import Model
 from .pyDSP import PyDSP
 from .evaluate import Evaluate
@@ -127,9 +127,6 @@ class PySAR():
         #get number of rows and cols of dataset
         self.num_seqs = len(self.data[self.sequence_col])
         self.seq_len = len(max(self.data[self.sequence_col], key=len))
-
-        #create instance of AAIndex class
-        self.aaindex = AAIndex()
 
         #create instance of Descriptors class
         self.descriptor = Descriptors(self.config_file, protein_seqs=self.data[self.sequence_col])
@@ -252,7 +249,7 @@ class PySAR():
         if not isinstance(indices, list):
 
             #get dict of amino acid encoding values for index specified by indices
-            encoded_aai = self.aaindex[indices]['values']
+            encoded_aai = aaindex[indices]['values']
 
             #initialise temp arrays to store encoded sequences
             temp_seq_vals = []
@@ -286,7 +283,7 @@ class PySAR():
             #if multiple indices used then calcualte AAI index encoding for each and
             #then concatenate after each calculation
             for ind in range(0,len(indices)):
-                encoded_aai = self.aaindex[indices[ind]]['values']
+                encoded_aai = aaindex[indices[ind]]['values']
 
                 #initialise temp arrays to store encoded sequences
                 temp_seq_vals = []
@@ -318,7 +315,7 @@ class PySAR():
 
             return encoded_seqs
 
-    def encode_aai(self, indices=None, show_plot=False):
+    def encode_aai(self, indices=None, show_plot=False, print_results=True):
         """
         Encode using AAI indices. If multiple indices input then calculate each
         and concatenate them. Build predictive model from AAI feature data. The
@@ -330,12 +327,15 @@ class PySAR():
 
         Parameters
         ----------
-        :indices : str/list (default = None)
+        :indices : str/list (default=None)
             string or list of indices from the AAI.
-        :show_plot : bool (default = False)
+        :show_plot : bool (default=False)
             display regression plot of best predictive model. If False then the plot
             will just be saved to the output folder, else it'll be displayed & saved.
-
+        :print_results : bool (default=True)
+            if true, output verbose output of results and parameters from encoding process,
+            mainly used for testing. 
+            
         Returns
         -------
         :aai_df : pd.Series
@@ -388,9 +388,9 @@ class PySAR():
             index_cat = ""
             for i in range(0,len(self.aai_indices)):
                 index_cat += index_cat + ', '+ \
-                    self.aaindex.get_category_from_record(self.aai_indices[i])
+                    aaindex.get_category_from_record(self.aai_indices[i])
         else:
-            index_cat = self.aaindex.get_category_from_record(self.aai_indices)
+            index_cat = aaindex.get_category_from_record(self.aai_indices)
 
         #set results Series variables
         aai_df['Index'] = indices
@@ -401,9 +401,10 @@ class PySAR():
         aai_df['RPD'] = eval.rpd
         aai_df['MAE'] = eval.mae
         aai_df['Explained Variance'] = eval.explained_var
-
+        
         #print out results from encoding
-        self.output_results(aai_df)
+        if (print_results):
+            self.output_results(aai_df)
 
         #plot regression plot for predictive model
         plot_reg(Y_test, Y_pred, eval.r2, show_plot)
@@ -496,7 +497,7 @@ class PySAR():
 
         return encoded_desc
 
-    def encode_desc(self, descriptor=None, show_plot=False):
+    def encode_desc(self, descriptor=None, show_plot=False, print_results=True):
         """
         Encode protein sequences using protein physiochemical and or structural
         descriptors and build predictive model from the descriptor feature data.
@@ -511,6 +512,9 @@ class PySAR():
         :show_plot : bool (default = False)
             display regression plot of best predictive model. If False then the plot
             will just be saved to the output folder, else it'll be displayed & saved.
+        :print_results : bool (default=True)
+            if true, output verbose output of results and parameters from encoding process,
+            mainly used for testing. 
 
         Returns
         -------
@@ -596,7 +600,8 @@ class PySAR():
             self.aai_indices = None
 
         #print out results from encoding
-        self.output_results(desc_df)
+        if (print_results):
+            self.output_results(desc_df)
 
         #plot regression plot for predictive model
         plot_reg(Y_test, Y_pred, eval.r2, show_plot)
@@ -609,7 +614,7 @@ class PySAR():
 
         return desc_df
 
-    def encode_aai_desc(self, indices=None, descriptors=None, show_plot=False):
+    def encode_aai_desc(self, indices=None, descriptors=None, show_plot=False, print_results=True):
         """
         Encode using both AAI indices and the descriptors. The two outputs from
         the individual encoding strategies will be concatenated together and
@@ -628,7 +633,10 @@ class PySAR():
         :show_plot : bool (default = False)
             display regression plot of best predictive model. If False then the plot
             will just be saved to the output folder, else it'll be displayed & saved.
-
+        :print_results : bool (default=True)
+            if true, output verbose output of results and parameters from encoding process,
+            mainly used for testing. 
+            
         Returns
         -------
         :aai_desc_df : pd.Series
@@ -696,9 +704,9 @@ class PySAR():
         if isinstance(self.aai_indices, list):
             for i in range(0,len(self.aai_indices)):
                 index_cat += index_cat + ', ' + \
-                    self.aaindex.get_category_from_record(self.aai_indices[i])
+                    aaindex.get_category_from_record(self.aai_indices[i])
         else:
-            index_cat = self.aaindex.get_category_from_record(self.aai_indices)
+            index_cat = aaindex.get_category_from_record(self.aai_indices)
 
         desc_group = ""
         desc_cat = ""
@@ -724,7 +732,8 @@ class PySAR():
         aai_desc_df['Explained Variance'] = eval.explained_var
 
         #print out results from encoding
-        self.output_results(aai_desc_df)
+        if (print_results):
+            self.output_results(aai_desc_df)
 
         #plot regression plot for predictive model
         plot_reg(Y_test, Y_pred, eval.r2, show_plot)

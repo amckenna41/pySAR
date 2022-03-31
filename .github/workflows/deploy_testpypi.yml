@@ -52,5 +52,5 @@ jobs:
     # download package of pySAR from Test PYPI server to ensure it uploaded correctly
     - name: Install pySAR from Test PyPI
       run: |
-        pip install -i https://test.pypi.org/simple/ pySAR
+        pip install -i https://test.pypi.org/simple/ pySAR --upgrade
         echo "pySAR successfully installed"

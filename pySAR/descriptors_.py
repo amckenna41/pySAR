@@ -10,13 +10,9 @@ from json import JSONDecodeError
 import itertools
 from tqdm import tqdm
 
-from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-from .aaindex import  AAIndex
-from .model import Model
-from .pyDSP import PyDSP
-from .evaluate import Evaluate
+from .globals_ import DATA_DIR
 from .utils import *
-from .descriptors.autocorrelation import moran_autocorrelation, geary_autocorrelation, norm_moreaubroto_autocorrelation
+from .descriptors.autocorrelation import moran_autocorrelation, geary_autocorrelation, moreaubroto_autocorrelation
 from .descriptors.composition import AAComposition, DipeptideComposition, TripeptideComposition, \
     sequenceOrderCorrelationFactor, pseudoAAC, amphiphilicPseudoAAC
 from .descriptors.conjointTriad import conjoint_triad
@@ -167,7 +163,7 @@ class Descriptors():
         self.aa_composition = pd.DataFrame()
         self.dipeptide_composition = pd.DataFrame()
         self.tripeptide_composition = pd.DataFrame()
-        self.normalized_moreaubroto_autocorrelation = pd.DataFrame()
+        self.moreaubroto_autocorrelation = pd.DataFrame()
         self.moran_autocorrelation = pd.DataFrame()
         self.geary_autocorrelation = pd.DataFrame()
         self.ctd = pd.DataFrame()
@@ -251,8 +247,8 @@ class Descriptors():
 
         #dimension of autocorrelation descriptors depends on the max lag value and number of properties
         norm_moreaubroto_dim = (8420,
-            8420 + (self.descr_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["lag"]*len(self.descr_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["properties"])))
-        self.normalized_moreaubroto_autocorrelation = descriptor_df.iloc[:,norm_moreaubroto_dim[0]:norm_moreaubroto_dim[1]]
+            8420 + (self.descr_parameters[0]["moreaubroto_autocorrelation"][0]["lag"]*len(self.descr_parameters[0]["moreaubroto_autocorrelation"][0]["properties"])))
+        self.moreaubroto_autocorrelation = descriptor_df.iloc[:,norm_moreaubroto_dim[0]:norm_moreaubroto_dim[1]]
 
         moran_auto_dim = (norm_moreaubroto_dim[1], norm_moreaubroto_dim[1] +
             (self.descr_parameters[0]["moran_autocorrelation"][0]["lag"]*len(self.descr_parameters[0]["moran_autocorrelation"][0]["properties"])))
@@ -388,41 +384,42 @@ class Descriptors():
 
         return self.tripeptide_composition
 
-    def get_norm_moreaubroto_autocorrelation(self):
+    def get_moreaubroto_autocorrelation(self):
         """
-        Calculate Normalized Moreau-Broto Autocorrelation (NMBAuto) of protein sequences using the
+        Calculate Moreau-Broto Autocorrelation (NMBAuto) of protein sequences using the
         respective function in the autocorrelation.py module in the descriptors directory.
 
         Returns
         -------
-        :normalized_moreaubroto_autocorrelation : pd.Dataframe
+        :moreaubroto_autocorrelation : pd.Dataframe
             pandas Dataframe of NMBAuto values for protein sequence. Output will
             be of the shape N x M, where M is the number of features calculated from
             the descriptor. By default, the shape will be N x 240 (30 features per 
             property - using 8 properties).
         """
-        print('\nGetting Normalized Moreaubroto Autocorrelation Descriptors...')
+        print('\nGetting Moreaubroto Autocorrelation Descriptors...')
         print('#############################################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.normalized_moreaubroto_autocorrelation.empty:
-            return self.normalized_moreaubroto_autocorrelation
+        if not self.moreaubroto_autocorrelation.empty:
+            return self.moreaubroto_autocorrelation
 
         #get descriptor-specific parameters from config file
-        lag = self.descr_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["lag"]
-        properties = self.descr_parameters[0]["normalized_moreaubroto_autocorrelation"][0]["properties"]
+        lag = self.descr_parameters[0]["moreaubroto_autocorrelation"][0]["lag"]
+        properties = self.descr_parameters[0]["moreaubroto_autocorrelation"][0]["properties"]
+        normalize = self.descr_parameters[0]["moreaubroto_autocorrelation"][0]["normalize"]
 
         #initialise dataframe
         norm_moreaubroto_df = pd.DataFrame()
 
         #calculate descriptor value, concatenate descriptor values
         for seq in self.protein_seqs:
-            norm_moreaubroto_seq = norm_moreaubroto_autocorrelation(seq, lag=lag, properties=properties)
+            norm_moreaubroto_seq = moreaubroto_autocorrelation(seq, lag=lag, properties=properties, normalize=normalize)
             norm_moreaubroto_df = pd.concat([norm_moreaubroto_df, norm_moreaubroto_seq])
             
-        self.normalized_moreaubroto_autocorrelation = norm_moreaubroto_df
+        self.moreaubroto_autocorrelation = norm_moreaubroto_df
 
-        return self.normalized_moreaubroto_autocorrelation
+        return self.moreaubroto_autocorrelation
 
     def get_moran_autocorrelation(self):
         """
@@ -851,10 +848,10 @@ class Descriptors():
             if (getattr(self, desc).empty):
                 self.get_tripeptide_composition()
             desc_encoding = self.tripeptide_composition
-        elif desc == 'normalized_moreaubroto_autocorrelation':
+        elif desc == 'moreaubroto_autocorrelation':
             if (getattr(self, desc).empty):
-              self.get_norm_moreaubroto_autocorrelation()
-            desc_encoding = self.normalized_moreaubroto_autocorrelation
+              self.get_moreaubroto_autocorrelation()
+            desc_encoding = self.moreaubroto_autocorrelation
         elif desc == 'moran_autocorrelation':
             if (getattr(self, desc).empty):
               self.get_moran_autocorrelation()
@@ -967,8 +964,8 @@ class Descriptors():
         if (getattr(self, "tripeptide_composition").empty):
                 self.tripeptide_composition = self.get_tripeptide_composition()
 
-        if (getattr(self, "normalized_moreaubroto_autocorrelation").empty):
-            self.normalized_moreaubroto_autocorrelation = self.get_norm_moreaubroto_autocorrelation()
+        if (getattr(self, "moreaubroto_autocorrelation").empty):
+            self.moreaubroto_autocorrelation = self.get_moreaubroto_autocorrelation()
 
         if (getattr(self, "moran_autocorrelation").empty):
             self.moran_autocorrelation = self.get_moran_autocorrelation()
@@ -1006,7 +1003,7 @@ class Descriptors():
         #append all calculated descriptors to list
         all_desc = [
             self.aa_composition, self.dipeptide_composition, self.tripeptide_composition,
-            self.normalized_moreaubroto_autocorrelation, self.moran_autocorrelation,
+            self.moreaubroto_autocorrelation, self.moran_autocorrelation,
             self.geary_autocorrelation, self.comp, self.transition,
             self.distribution, self.ctd, self.conjoint_triad, self.seq_order_coupling_number,
             self.quasi_seq_order, self.pseudo_aa_composition
@@ -1029,7 +1026,7 @@ class Descriptors():
         """
         valid_desc = [
             'aa_composition', 'dipeptide_composition', 'tripeptide_composition',
-            'normalized_moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation',
+            'moreaubroto_autocorrelation','moran_autocorrelation','geary_autocorrelation',
             'ctd', 'comp', 'transition', 'distribution', 'conjoint_triad',
             'seq_order_coupling_number','quasi_seq_order',
             'pseudo_aa_composition', 'amp_pseudo_aa_composition'
@@ -1071,12 +1068,12 @@ class Descriptors():
         self._tripeptide_composition = val
 
     @property
-    def normalized_moreaubroto_autocorrelation(self):
-        return self._normalized_moreaubroto_autocorrelation
+    def moreaubroto_autocorrelation(self):
+        return self._moreaubroto_autocorrelation
 
-    @normalized_moreaubroto_autocorrelation.setter
-    def normalized_moreaubroto_autocorrelation(self, val):
-        self._normalized_moreaubroto_autocorrelation = val
+    @moreaubroto_autocorrelation.setter
+    def moreaubroto_autocorrelation(self, val):
+        self._moreaubroto_autocorrelation = val
 
     @property
     def moran_autocorrelation(self):
@@ -1181,7 +1178,7 @@ class Descriptors():
         del self._aa_composition
         del self._dipeptide_composition
         del self._tripeptide_composition
-        del self._normalized_moreaubroto_autocorrelation
+        del self._moreaubroto_autocorrelation
         del self._moran_autocorrelation
         del self._geary_autocorrelation
         del self._ctd
@@ -1215,7 +1212,7 @@ class Descriptors():
     # get_aa_composition()
     # get_dipeptide_composition()
     # get_tripeptide_composition()
-    # get_norm_moreaubroto_autocorrelation()
+    # get_moreaubroto_autocorrelation()
     # get_moran_autocorrelation()
     # get_geary_autocorrelation()
     # ......

@@ -3,11 +3,8 @@
 ################################################################################
 
 import os
-import pandas as pd
 import numpy as np
-import pySAR.aaindex as aaindex
 import pySAR.pyDSP as pyDSP_
-import pySAR.pySAR as pysar
 import unittest
 
 @unittest.skip("")

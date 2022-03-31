@@ -1,1 +1,2 @@
 graft pySAR/data*
+graft images/pySAR.png

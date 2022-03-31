@@ -13,6 +13,7 @@
 [![Build](https://img.shields.io/github/workflow/status/amckenna41/pySAR/Deploy%20to%20PyPI%20%F0%9F%93%A6)](https://github.com/amckenna41/pySAR/actions)
 [![Build Status](https://travis-ci.com/amckenna41/pySAR.svg?branch=main)](https://travis-ci.com/amckenna41/pySAR)
 [![CircleCI](https://circleci.com/gh/amckenna41/pySAR.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/pySAR)
+[![DOI](https://zenodo.org/badge/344290370.svg)](https://zenodo.org/badge/latestdoi/344290370)
 [![Issues](https://img.shields.io/github/issues/amckenna41/pySAR)](https://github.com/amckenna41/pySAR/issues)
 [![Size](https://img.shields.io/github/repo-size/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
 [![Commits](https://img.shields.io/github/commit-activity/w/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
@@ -44,6 +45,7 @@ After finding the optimal technique and feature set at which to encode your data
 Requirements
 ------------
 * [Python][python] >= 3.6
+* [aaindex][aaindex] >= 0.0.2
 * [numpy][numpy] >= 1.16.0
 * [pandas][pandas] >= 1.1.0
 * [sklearn][sklearn] >= 0.24
@@ -386,15 +388,12 @@ desc = Descriptors("test_config6")
 The AAIndex class offers diverse functionalities for obtaining any element from any record in the database. Each record is stored in json format in a class attribute called <em>aaindex_json</em>. You can search for a particular record by its index code, description or reference. You can also get the index category, and importantly its associated amino acid values.
 
 ```python
-import pySAR.aaindex as aai   #import aaindex module from pySAR
+from aaindex.aaindex import aaindex #import aaindex module from pySAR
 
-#create AAIndex object
-aaindex = aai.AAIndex()
-
-record = aaindex.get_record_from_code('CHOP780206')   #get full AAI record
-category = aaindex.get_category_from_record('CHOP780206') #get record's category
-values = aaindex.get_values_from_record('CHOP780206')    #get amino acid values from record
-refs = aaindex.get_ref_from_record('CHOP780206')      #get references from record
+record = aaindex['CHOP780206']   #get full AAI record
+category = aaindex['CHOP780206'] #get record's category
+values = aaindex['CHOP780206']  #get amino acid values from record
+refs = aaindex['CHOP780206']     #get references from record
 num_record = aaindex.get_num_records()                #get total number of records
 record_names = aaindex.get_record_names()             #get list of all record names
 
@@ -433,6 +432,23 @@ Contact
 If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab. <br><br>
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/adam-mckenna-7a5b22151/)
 
+How to cite
+-----------
+```
+@article{MCKENNA2022104016,
+title = {Machine learning based predictive model for the analysis of sequence activity relationships using protein spectra and protein descriptors},
+journal = {Journal of Biomedical Informatics},
+volume = {128},
+pages = {104016},
+year = {2022},
+issn = {1532-0464},
+doi = {https://doi.org/10.1016/j.jbi.2022.104016},
+url = {https://www.sciencedirect.com/science/article/pii/S1532046422000326},
+author = {Adam Mckenna and Sandhya Dubey},
+keywords = {Digital Signal Processing, Directed Evolution, Machine Learning, Protein Spectra, Physiochemical Descriptors},
+abstract = {Accurately establishing the connection between a protein sequence and its function remains a focal point within the field of protein engineering, especially in the context of predicting the effects of mutations. From this, there has been a continued drive to build accurate and reliable predictive models via machine learning that allow for the virtual screening of many protein mutant sequences, measuring the relationship between sequence and ‘fitness’ or ‘activity’, commonly known as a Sequence-Activity-Relationship (SAR). An important preliminary stage in the building of these predictive models is the encoding of the chosen sequences. Evaluated in this work is a plethora of encoding strategies using the Amino Acid Index database, where the indices are transformed into their spectral form via Digital Signal Processing (DSP) techniques, as well as numerous protein structural and physiochemical descriptors. The encoding strategies are explored on a dataset curated to measure the thermostability of various mutants from a recombination library, designed from parental cytochrome P450s. In this work it was concluded that the implementation of protein spectra in concatenation with protein descriptors, together with the Partial Least Squares Regression (PLS) algorithm, gave the most noteworthy increase in the quality of the predictive models (as described in Encoding Strategy C), highlighting their utility in identifying an SAR. The accompanying software produced for this paper is termed pySAR (Python Sequence-Activity-Relationship), which allows for a user to find the optimal arrangement of structural and or physiochemical properties to encode their specific mutant library dataset; the source code is available at: https://github.com/amckenna41/pySAR.}
+}
+```
 References
 ----------
 \[1\]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6888668/ <br>
@@ -449,6 +465,7 @@ References
 <!-- |Logo| image:: https://raw.githubusercontent.com/pySAR/pySAR/master/pySAR.png -->
 
 [python]: https://www.python.org/downloads/release/python-360/
+[aaindex]: https://github.com/amckenna41/aaindex
 [numpy]: https://numpy.org/
 [pandas]: https://pandas.pydata.org/
 [sklearn]: https://scikit-learn.org/stable/

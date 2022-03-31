@@ -9,11 +9,8 @@ import itertools
 import sys
 # from tqdm import tqdm
 from tqdm.auto import tqdm
-from os import path, makedirs, remove
-from difflib import get_close_matches
 
-from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, DATA_DIR
-from .aaindex import  AAIndex
+from aaindex.aaindex import aaindex
 from .model import Model
 from .pyDSP import PyDSP
 from .evaluate import Evaluate
@@ -121,7 +118,7 @@ class Encoding(PySAR):
 
         #if no indices passed into aai_list then use all indices by default
         if aai_list == None or aai_list == [] or aai_list == "":
-            all_indices = self.aaindex.record_codes()
+            all_indices = aaindex.record_codes()
         elif isinstance(aai_list, str):   #if single descriptor input, cast to list
             all_indices = [aai_list]
         else:
@@ -183,7 +180,7 @@ class Encoding(PySAR):
 
             #append values/results from current AAI encoding iteration to lists
             index_.append(index)
-            category_.append(self.aaindex.get_category_from_record(index))
+            category_.append(aaindex.get_category_from_record(index))
             r2_.append(eval.r2)
             rmse_.append(eval.rmse)
             mse_.append(eval.mse)
@@ -399,7 +396,7 @@ class Encoding(PySAR):
 
         return desc_metrics_df_
 
-    def aai_descriptor_encoding(self, aai_list=None, desc_list=None, desc_combo=1, cutoff_index=1, sort_by='R2'):
+    def aai_descriptor_encoding(self, aai_list=None, desc_list=None, desc_combo=1, cutoff_index=1, sort_by='R2', print_results=True):
         """
         Encoding all protein sequences using each of the indices in the AAI as well
         as the protein descriptors. The sequences can be encoded using 1 AAI + 1 Descriptor,
@@ -462,7 +459,7 @@ class Encoding(PySAR):
 
         #if no indices passed into aai_list then use all indices by default
         if aai_list == None or aai_list == [] or aai_list == "":
-            all_indices = self.aaindex.record_codes()
+            all_indices = aaindex.record_codes()
         elif isinstance(aai_list, str):   #if single descriptor input, cast to list
             all_indices = [aai_list]
         else:
@@ -519,7 +516,7 @@ class Encoding(PySAR):
         for index in tqdm(all_indices[:cutoff_index], unit=" indices", desc="AAI Indices"):
 
             #get AAI indices encoding for sequences according to index var
-            encoded_seqs = self.get_aai_encoding(index)
+            encoded_seqs = self.get_aai_encoding(index, print_results=True)
 
             #generate protein spectra from pyDSP class if use_dsp is true
             if self.use_dsp:
@@ -580,7 +577,7 @@ class Encoding(PySAR):
 
                 #append values/results from current encoding iteration to lists
                 index_.append(index)
-                index_category_.append(self.aaindex.get_category_from_record(index))
+                index_category_.append(aaindex.get_category_from_record(index))
                 descriptor_.append(descr)
                 r2_.append(eval.r2)
                 rmse_.append(eval.rmse)

@@ -1,7 +1,7 @@
 TO DO List:
 
 - [X] Add Config files instead of individual parameters in function
-- [ ] Add Manifest file?
+- [X] Add Manifest file?
 - [ ] Add License & Releases
 - [X] Add distance matrices to SOCNum
 - [ ] Add coveralls
@@ -40,5 +40,10 @@ TO DO List:
 - [X] For each descriptor function, if input is single string (single seq) return 
 - [ ] Add wiki to pySAR
 - [X] Catch TypeError on each descriptor func (add typerror to descriptor tests)
-- [ ] Create a 2nd branch with results in it
-- [ ] Swap any 'pySAR' for self.pySAR_module_path = os.path.dirname(os.path.abspath(sys.modules[self.__module__].__file__))
+- [X] Create a 2nd branch with results in it
+- [X] Swap any 'pySAR' for self.pySAR_module_path = os.path.dirname(os.path.abspath(sys.modules[self.__module__].__file__))
+- [ ] I think AAI_descriptor encoding func is adding empty descriptor DF's onto AAI indices
+- [ ] Amp pseudo aacomp descriptor func.  
+- [ ] Add print parameter to encoding functions.
+- [ ] Add readthedocs badge - [![Documentation Status](https://readthedocs.org/projects/ansicolortags/badge/?version=latest)](http://ansicolortags.readthedocs.io/?badge=latest)
+- [ ] Update AAIndex module to use similar setup as aaindex package - removeing aaindex.py and test_aaindex.py files

@@ -58,7 +58,8 @@ setup(name='pySAR',
           'tqdm',
           'pytest',
           'varname',
-          'biopython'
+          'biopython',
+          'aaindex'
       ],
      # packages=find_packages(), #create Manifest file to ignore results folder in dist
      packages=find_packages(exclude=["Results"]),
