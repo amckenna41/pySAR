@@ -78,7 +78,12 @@ jobs:
         echo "Testing using pytest..."
         python3 -m pytest tests/
         
-    - name: Coverage Report
-      run: |
-        echo "Running coverage report..."
-        pytest --cov-report term --cov=pySAR tests/
+    #generate coverage report
+     - name: Generate Report
+       run: pytest --cov .
+
+    #upload to Code Coverage
+     - name: Upload Coverage Report to Codecov
+       uses: codecov/codecov-action@v3
+       with:
+         flags: pySAR_workflow

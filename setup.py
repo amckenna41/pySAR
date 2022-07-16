@@ -33,18 +33,19 @@ setup(name='pySAR',
         'Intended Audience :: Information Technology',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',	
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
-        'Topic :: Scientific/Engineering :: Mathematics'
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-
       install_requires=[
           'numpy>=1.16.6',
           'pandas',
@@ -61,6 +62,7 @@ setup(name='pySAR',
           'biopython',
           'aaindex'
       ],
+     test_suite='tests',
      # packages=find_packages(), #create Manifest file to ignore results folder in dist
      packages=find_packages(exclude=["Results"]),
      include_package_data=True,

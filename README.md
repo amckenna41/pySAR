@@ -1,7 +1,7 @@
 
 
 <p align="center">
-<img src="images/pySAR.png" alt="logo" width="400"/>
+[<img src="https://raw.githubusercontent.com/amckenna41/pySAR/master/images/pySAR.png" alt="pySARLogo" width="400"/>](https://pypi.org/project/pySAR/)
 </p>
 
 # pySAR #
@@ -13,11 +13,11 @@
 [![Build](https://img.shields.io/github/workflow/status/amckenna41/pySAR/Deploy%20to%20PyPI%20%F0%9F%93%A6)](https://github.com/amckenna41/pySAR/actions)
 [![Build Status](https://travis-ci.com/amckenna41/pySAR.svg?branch=main)](https://travis-ci.com/amckenna41/pySAR)
 [![CircleCI](https://circleci.com/gh/amckenna41/pySAR.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/pySAR)
-[![DOI](https://zenodo.org/badge/344290370.svg)](https://zenodo.org/badge/latestdoi/344290370)
+<!-- [![DOI](https://zenodo.org/badge/344290370.svg)](https://zenodo.org/badge/latestdoi/344290370) -->
+<!-- [![codecov](https://codecov.io/gh/amckenna41/DCBLSTM_PSP/branch/master/graph/badge.svg?token=4PQDVGKGYN)](https://codecov.io/gh/amckenna41/DCBLSTM_PSP) -->
 [![Issues](https://img.shields.io/github/issues/amckenna41/pySAR)](https://github.com/amckenna41/pySAR/issues)
 [![Size](https://img.shields.io/github/repo-size/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
 [![Commits](https://img.shields.io/github/commit-activity/w/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
-<!-- [![CircleCI](https://circleci.com/gh/amckenna41/DCBLSTM_PSP.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/DCBLSTM_PSP) -->
 Table of Contents
 -----------------
 
@@ -25,7 +25,7 @@ Table of Contents
   * [Requirements](#requirements)
   * [Installation](#installation)
   * [Usage](#usage)
-  * [Directory Folders](#directories)
+  * [Directories](#directories)
   * [Tests](#tests)
   * [Issues](#Issues)
   * [Contact](#contact)
@@ -34,18 +34,25 @@ Table of Contents
 
 Research Article
 ----------------
-The research article that accompanied this software is: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as pySAR_research.pdf. The article was published in the Journal of Biomedical Informatics and is available [here][article].
+The research article that accompanied this software is: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as [pySAR_research.pdf][pdf]. The article was published in the Journal of Biomedical Informatics and is available [here][article]. There is also a quick jupyter notebook demo of pySAR available [here][demo].
+
+How to cite
+-----------
+```
+Mckenna, A., & Dubey, S. (2022). Machine learning based predictive model for the analysis of sequence activity relationships using protein spectra and protein descriptors. Journal of Biomedical Informatics, 128(104016), 104016. https://doi.org/10.1016/j.jbi.2022.104016
+```
 
 Introduction
 ------------
 
-pySAR is a Python library for analysing Sequence Activity Relationships (SARs) of protein sequences. pySAR offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features. The software uses physiochemical and biochemical features from the Amino Acid Index (AAI) database as well as allowing for the calculation of a range of structural protein descriptors.<br>
-After finding the optimal technique and feature set at which to encode your dataset of sequences, pySAR can then be used to build a predictive regression model with the training data being that of the encoded sequences, and training labels being the experimentally pre-calculated activity values for each protein sequence. This model maps a set of protein sequences to the sought-after activity value, being able to accurately predict the activity/fitness value of new unseen sequences. <br>The use-case for the software is within the field of protein engineering and Directed Evolution, where a user has a set of experimentally determined activity values for a library of mutant protein sequences and wants to computationally predict the sought activity value for a selection of mutated sequences, in the aim of finding the best sequence that minimises/maximises their activity value. <br>
+pySAR is a Python library for analysing Sequence Activity Relationships (SARs) of protein sequences. pySAR offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features. The software uses physiochemical and biochemical features from the Amino Acid Index (AAI) database as well as allowing for the calculation of a range of structural protein descriptors.<br><br>
+After finding the optimal technique and feature set at which to encode your dataset of sequences, pySAR can then be used to build a predictive regression model with the training data being that of the encoded sequences, and training labels being the experimentally pre-calculated activity values for each protein sequence. This model maps a set of protein sequences to the sought-after activity value, being able to accurately predict the activity/fitness value of new unseen sequences. <br><br>The use-case for the software is within the field of protein engineering and Directed Evolution, where a user has a set of experimentally determined activity values for a library of mutant protein sequences and wants to computationally predict the sought activity value for a selection of mutated sequences, in the aim of finding the best sequence that minimises/maximises their activity value. <br>
 
 Requirements
 ------------
 * [Python][python] >= 3.6
 * [aaindex][aaindex] >= 0.0.2
+* [requests][requests] >= 2.25.0
 * [numpy][numpy] >= 1.16.0
 * [pandas][pandas] >= 1.1.0
 * [sklearn][sklearn] >= 0.24
@@ -206,7 +213,7 @@ Output DataFrame showing the 4 predictive models built using the PLS algorithm, 
 |  3 | KARS160113 | meta        | 0.544129 | 4.04266 | 16.3431  | 1.48108 | 3.26047 |        0.544693 |
 
 ### Encoding protein sequences using their calculated protein descriptors
-Calculate the protein descriptor values for a dataset of protein sequences from the 15 available descriptors in the <em>descriptors</em> module. Use each descriptor as a feature set in the building of the predictive models used to predict the activity value of unseen sequences. By default, the function will look for a csv file pointed to by the <em>"descriptors_csv"</em> parameter in the config file that contains the pre-calculated descriptor values for a dataset. If file is not found then all descriptor values will be calculated for the dataset using the <em>descriptors_</em> module. If a descriptor in the config file is to be used in the feature data, its parameter is set to true/1. If <em>all_desc</em> is set to true/1 then all available descriptors are calculated using their respective functions. 
+Calculate the protein descriptor values for a dataset of protein sequences from the 15 available descriptors in the <em>descriptors</em> module. Use each descriptor as a feature set in the building of the predictive models used to predict the activity value of unseen sequences. By default, the function will look for a csv file pointed to by the <em>"descriptors_csv"</em> parameter in the config file that contains the pre-calculated descriptor values for a dataset. If file is not found then all descriptor values will be calculated for the dataset using the <em>descriptors_</em> module. If a descriptor in the config file is to be used in the feature data, its parameter is set to true/1. If <em>all_desc</em> is set to true/1 then all available descriptors are calculated using their respective functions.
 
 ```python
 from pySAR.encoding import *
@@ -232,13 +239,13 @@ from pySAR.encoding import *
     "all_desc": 0,
     "aa_composition": 1,
     "dipeptide_composition": 1,
-    .... 
+    ....
   }
 '''
 #create instance of Encoding class using AdaBoost algorithm, using 100 estimators & a learning rate of 1.5
 encoding = Encoding(config_file='test_config3.json')
 
-#building predictive models using all available descriptors 
+#building predictive models using all available descriptors
 #   calculating evaluation metrics values for models and storing into desc_results_df DataFrame
 desc_results_df = encoding.descriptor_encoding()
 
@@ -280,7 +287,7 @@ from pySAR.encoding import *
     "all_desc": 0,
     "aa_composition": 1,
     "dipeptide_composition": 1,
-    .... 
+    ....
   }
 "pyDSP": [{
   "use_dsp": 1,
@@ -332,7 +339,7 @@ import pySAR as pysar   #import pySAR package
     "all_desc": 0,
     "aa_composition": 1,
     "dipeptide_composition": 0,
-    .... 
+    ....
   }
 "pyDSP": [{
   "use_dsp": 1,
@@ -375,7 +382,7 @@ from pySAR.descriptors_ import *
     "all_desc": 1,
     "aa_composition": 0,
     "dipeptide_composition": 0,
-    .... 
+    ....
   }
 "pyDSP": [{
   ...
@@ -411,6 +418,8 @@ Directories
 
 Issues
 -----
+Any issues, errors or bugs can be raised via the [Issues](https://github.com/amckenna41/pySAR/issues) tab in the repository.
+
 Tests
 -----
 To run all tests, from the main pySAR repo folder run:
@@ -432,23 +441,6 @@ Contact
 If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab. <br><br>
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/adam-mckenna-7a5b22151/)
 
-How to cite
------------
-```
-@article{MCKENNA2022104016,
-title = {Machine learning based predictive model for the analysis of sequence activity relationships using protein spectra and protein descriptors},
-journal = {Journal of Biomedical Informatics},
-volume = {128},
-pages = {104016},
-year = {2022},
-issn = {1532-0464},
-doi = {https://doi.org/10.1016/j.jbi.2022.104016},
-url = {https://www.sciencedirect.com/science/article/pii/S1532046422000326},
-author = {Adam Mckenna and Sandhya Dubey},
-keywords = {Digital Signal Processing, Directed Evolution, Machine Learning, Protein Spectra, Physiochemical Descriptors},
-abstract = {Accurately establishing the connection between a protein sequence and its function remains a focal point within the field of protein engineering, especially in the context of predicting the effects of mutations. From this, there has been a continued drive to build accurate and reliable predictive models via machine learning that allow for the virtual screening of many protein mutant sequences, measuring the relationship between sequence and ‘fitness’ or ‘activity’, commonly known as a Sequence-Activity-Relationship (SAR). An important preliminary stage in the building of these predictive models is the encoding of the chosen sequences. Evaluated in this work is a plethora of encoding strategies using the Amino Acid Index database, where the indices are transformed into their spectral form via Digital Signal Processing (DSP) techniques, as well as numerous protein structural and physiochemical descriptors. The encoding strategies are explored on a dataset curated to measure the thermostability of various mutants from a recombination library, designed from parental cytochrome P450s. In this work it was concluded that the implementation of protein spectra in concatenation with protein descriptors, together with the Partial Least Squares Regression (PLS) algorithm, gave the most noteworthy increase in the quality of the predictive models (as described in Encoding Strategy C), highlighting their utility in identifying an SAR. The accompanying software produced for this paper is termed pySAR (Python Sequence-Activity-Relationship), which allows for a user to find the optimal arrangement of structural and or physiochemical properties to encode their specific mutant library dataset; the source code is available at: https://github.com/amckenna41/pySAR.}
-}
-```
 References
 ----------
 \[1\]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6888668/ <br>
@@ -466,6 +458,7 @@ References
 
 [python]: https://www.python.org/downloads/release/python-360/
 [aaindex]: https://github.com/amckenna41/aaindex
+[requests]: https://requests.readthedocs.io/en/latest/
 [numpy]: https://numpy.org/
 [pandas]: https://pandas.pydata.org/
 [sklearn]: https://scikit-learn.org/stable/
@@ -475,4 +468,8 @@ References
 [varname]: https://pypi.org/project/varname/
 [biopython]: https://biopython.org/
 [article]: https://www.sciencedirect.com/science/article/abs/pii/S1532046422000326
+[pdf]: https://github.com/amckenna41/pySAR/blob/master/pySAR_research.pdf
+[ppt]: https://github.com/amckenna41/pySAR/blob/master/pySAR_demo.key
+[demo]: https://github.com/amckenna41/pySAR/blob/master/pySAR_tutorial.ipynb
+
 [Issues]: https://github.com/amckenna41/pySAR/issues

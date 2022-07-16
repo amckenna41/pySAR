@@ -5,9 +5,10 @@
 import os
 import numpy as np
 import pySAR.pyDSP as pyDSP_
+import pySAR.pySAR as pySAR
 import unittest
 
-@unittest.skip("")
+# @unittest.skip("")
 class pyDSPTests(unittest.TestCase):
 
     def setUp(self):
@@ -20,19 +21,20 @@ class pyDSPTests(unittest.TestCase):
             os.path.join(config_path, "test_absorption.json"), 
             os.path.join(config_path, "test_localization.json")
         ]
+        self.pysar = pySAR.PySAR(config_file=self.all_config_files[0])
 
     def test_pyDSP(self):
         """ Test class input parameters and attributes. """
 #1.)   
-        # encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)            
+        # encoded_seq1 = self.pysar.get_aai_encoding(test_aaindices1)            
         pyDSP = pyDSP_.PyDSP(dsp_config=self.all_config_files[0]) #test_thermostability
         self.assertEqual(pyDSP.spectrum, "power")
         self.assertEqual(pyDSP.window_type, "hamming")
         self.assertIsInstance(pyDSP.window, np.ndarray)
         self.assertIsNone(pyDSP.filter_)
-        self.assertEqual(pyDSP.encoded_sequences.shape, (self.pySAR.num_seqs, self.pySAR.seq_len))
-        self.assertEqual(pyDSP.num_seqs, self.pySAR.num_seqs)
-        self.assertEqual(pyDSP.signal_len, self.pySAR.seq_len)
+        self.assertEqual(pyDSP.encoded_sequences.shape, (self.pysar.num_seqs, self.pysar.seq_len))
+        self.assertEqual(pyDSP.num_seqs, self.pysar.num_seqs)
+        self.assertEqual(pyDSP.signal_len, self.pysar.seq_len)
         # self.assertEqual(pyDSP.fft_power.shape, encoded_seq1.shape)
         self.assertTrue(pyDSP.fft_power.dtype, 'float64')
         # self.assertEqual(pyDSP.fft_real.shape, encoded_seq1.shape)
@@ -49,9 +51,9 @@ class pyDSPTests(unittest.TestCase):
         self.assertEqual(pyDSP.window_type, "hamming")
         self.assertIsInstance(pyDSP.window, np.ndarray)
         self.assertIsNone(pyDSP.filter_)
-        self.assertEqual(pyDSP.encoded_sequences.shape, (self.pySAR.num_seqs,self.pySAR.seq_len))
-        self.assertEqual(pyDSP.num_seqs, self.pySAR.num_seqs)
-        self.assertEqual(pyDSP.signal_len, self.pySAR.seq_len)
+        self.assertEqual(pyDSP.encoded_sequences.shape, (self.pysar.num_seqs,self.pysar.seq_len))
+        self.assertEqual(pyDSP.num_seqs, self.pysar.num_seqs)
+        self.assertEqual(pyDSP.signal_len, self.pysar.seq_len)
         # self.assertEqual(pyDSP.fft_power.shape, encoded_seq1.shape)
         self.assertTrue(pyDSP.fft_power.dtype, 'float64')
         # self.assertEqual(pyDSP.fft_real.shape, encoded_seq1.shape)
@@ -70,9 +72,9 @@ class pyDSPTests(unittest.TestCase):
         self.assertEqual(pyDSP.window_type, "hamming")
         self.assertIsInstance(pyDSP.window, np.ndarray)
         self.assertIsNone(pyDSP.filter_)
-        self.assertEqual(pyDSP.encoded_sequences.shape, (self.pySAR.num_seqs, self.pySAR.seq_len))
-        self.assertEqual(pyDSP.num_seqs, self.pySAR.num_seqs)
-        self.assertEqual(pyDSP.signal_len, self.pySAR.seq_len)
+        self.assertEqual(pyDSP.encoded_sequences.shape, (self.pysar.num_seqs, self.pysar.seq_len))
+        self.assertEqual(pyDSP.num_seqs, self.pysar.num_seqs)
+        self.assertEqual(pyDSP.signal_len, self.pysar.seq_len)
         # self.assertEqual(pyDSP.fft_power.shape, encoded_seq1.shape)
         self.assertTrue(pyDSP.fft_power.dtype, 'float64')
         # self.assertEqual(pyDSP.fft_real.shape, encoded_seq1.shape)
@@ -89,9 +91,9 @@ class pyDSPTests(unittest.TestCase):
         self.assertEqual(pyDSP.window_type, "hamming")
         self.assertIsInstance(pyDSP.window, np.ndarray)
         self.assertIsNone(pyDSP.filter_)
-        self.assertEqual(pyDSP.encoded_sequences.shape, (self.pySAR.num_seqs, self.pySAR.seq_len))
-        self.assertEqual(pyDSP.num_seqs, self.pySAR.num_seqs)
-        self.assertEqual(pyDSP.signal_len, self.pySAR.seq_len)
+        self.assertEqual(pyDSP.encoded_sequences.shape, (self.pysar.num_seqs, self.pysar.seq_len))
+        self.assertEqual(pyDSP.num_seqs, self.pysar.num_seqs)
+        self.assertEqual(pyDSP.signal_len, self.pysar.seq_len)
         # self.assertEqual(pyDSP.fft_power.shape, encoded_seq1.shape)
         self.assertTrue(pyDSP.fft_power.dtype, 'float64')
         # self.assertEqual(pyDSP.fft_real.shape, encoded_seq1.shape)
@@ -113,8 +115,8 @@ class pyDSPTests(unittest.TestCase):
         """ Testing preprocessing functionality of pyDSP class. """
         test_aaindices1 = "COHE430101"
 #1.)
-        encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)
-        pyDSP = pyDSP_.PyDSP(encoded_seq1)
+        encoded_seq1 = self.pysar.get_aai_encoding(test_aaindices1)
+        pyDSP = pyDSP_.PyDSP(dsp_config=self.all_config_files[0], protein_seqs=encoded_seq1)
         pyDSP.pre_processing()
         self.assertTrue(np.all((pyDSP.fft_power==0)))
         self.assertTrue(np.all((pyDSP.fft_real==0)))
@@ -127,8 +129,8 @@ class pyDSPTests(unittest.TestCase):
         """ Testing getting protein spectra from encoded protein sequences. """
         test_aaindices1 = "COHE430101"
 #1.)
-        encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)
-        pyDSP = pyDSP_.PyDSP(encoded_seq1)
+        encoded_seq1 = self.pysar.get_aai_encoding(test_aaindices1)
+        pyDSP = pyDSP_.PyDSP(dsp_config=self.all_config_files[0], protein_seqs=encoded_seq1)
         self.assertTrue(pyDSP.fft_power.dtype, "complex128")
         self.assertTrue(pyDSP.fft_real.dtype, "complex128")
         self.assertTrue(pyDSP.fft_imag.dtype, "complex128")
@@ -138,6 +140,7 @@ class pyDSPTests(unittest.TestCase):
         """ Testing max frequency functionality. """
 #1.)
         test_aaindices1 = "COHE430101"
-        encoded_seq1 = self.pySAR.get_aai_enoding(test_aaindices1)
-        pyDSP = pyDSP_.PyDSP(encoded_seq1)
+        encoded_seq1 = self.pysar.get_aai_encoding(test_aaindices1)
+        for config in self.all_config_files:
+                pyDSP = pyDSP_.PyDSP(dsp_config=config, protein_seqs=encoded_seq1)
 

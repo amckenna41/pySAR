@@ -2,7 +2,7 @@ TO DO List:
 
 - [X] Add Config files instead of individual parameters in function
 - [X] Add Manifest file?
-- [ ] Add License & Releases
+- [X] Add License & Releases
 - [X] Add distance matrices to SOCNum
 - [ ] Add coveralls
 - [X] Change descriptor functions to accept sequences themselves.
@@ -46,4 +46,7 @@ TO DO List:
 - [ ] Amp pseudo aacomp descriptor func.  
 - [ ] Add print parameter to encoding functions.
 - [ ] Add readthedocs badge - [![Documentation Status](https://readthedocs.org/projects/ansicolortags/badge/?version=latest)](http://ansicolortags.readthedocs.io/?badge=latest)
-- [ ] Update AAIndex module to use similar setup as aaindex package - removeing aaindex.py and test_aaindex.py files
+- [X] Update AAIndex module to use similar setup as aaindex package - removeing aaindex.py and test_aaindex.py files
+- [X] - Add images to pypi - https://stackoverflow.com/questions/41983209/how-do-i-add-images-to-a-pypi-readme-that-works-on-github
+- [ ] Add emojis to readme
+- [ ] read the docs
