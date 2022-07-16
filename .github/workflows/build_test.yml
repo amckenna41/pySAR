@@ -13,7 +13,6 @@ on:
 #build and test pySAR
 jobs:
   build:
-
     name: Build and test pySAR
     runs-on: ubuntu-latest         # platform: [ubuntu-latest, macos-latest, windows-latest]
     strategy:

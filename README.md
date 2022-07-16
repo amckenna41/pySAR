@@ -1,7 +1,7 @@
 
 
 <p align="center">
-[<img src="https://raw.githubusercontent.com/amckenna41/pySAR/master/images/pySAR.png" alt="pySARLogo" width="400"/>](https://pypi.org/project/pySAR/)
+<img src="https://raw.githubusercontent.com/amckenna41/pySAR/master/images/pySAR.png" alt="pySARLogo" width="400"/>
 </p>
 
 # pySAR #
