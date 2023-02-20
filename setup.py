@@ -48,7 +48,7 @@ setup(name=pySAR.__name__,
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
       install_requires=[
-          'numpy>=1.16.6',
+          'numpy',
           'pandas',
           'scipy',
           'delayed',
