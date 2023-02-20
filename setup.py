@@ -17,7 +17,7 @@ README = (HERE / 'README.md').read_text()
 
 setup(name=pySAR.__name__,
       version=pySAR.__version__,
-      description=pySAR.__description,
+      description=pySAR.__description__,
       long_description = README,
       long_description_content_type = "text/markdown",
       author=pySAR.__license__,

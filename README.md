@@ -1,7 +1,7 @@
 
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/amckenna41/pySAR/master/images/pySAR.png" alt="pySARLogo" height="200" width="400"/>
+<img src="https://raw.githubusercontent.com/amckenna41/pySAR/master/images/pySAR.png" alt="pySARLogo" height="300" width="400"/>
 </p>
 
 # pySAR #
@@ -10,9 +10,9 @@
 [![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
 [![PythonV](https://img.shields.io/pypi/pyversions/pySAR?logo=2)](https://pypi.org/project/pySAR/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
-[![Build](https://img.shields.io/github/workflow/status/amckenna41/pySAR/Deploy%20to%20PyPI%20%F0%9F%93%A6)](https://github.com/amckenna41/pySAR/actions)
+<!-- [![Build](https://img.shields.io/github/workflow/status/amckenna41/pySAR/Deploy%20to%20PyPI%20%F0%9F%93%A6)](https://github.com/amckenna41/pySAR/actions) -->
 <!-- [![Build Status](https://travis-ci.com/amckenna41/pySAR.svg?branch=main)](https://travis-ci.com/amckenna41/pySAR) -->
-[![CircleCI](https://circleci.com/gh/amckenna41/pySAR.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/pySAR)
+<!-- [![CircleCI](https://circleci.com/gh/amckenna41/pySAR.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/pySAR) -->
 <!-- [![DOI](https://zenodo.org/badge/344290370.svg)](https://zenodo.org/badge/latestdoi/344290370) -->
 <!-- [![codecov](https://codecov.io/gh/amckenna41/DCBLSTM_PSP/branch/master/graph/badge.svg?token=4PQDVGKGYN)](https://codecov.io/gh/amckenna41/DCBLSTM_PSP) -->
 [![Issues](https://img.shields.io/github/issues/amckenna41/pySAR)](https://github.com/amckenna41/pySAR/issues)
@@ -90,7 +90,7 @@ Usage
       {
         "dataset": "thermostability.txt",
         "sequence_col": "sequence",
-        "activity": "t50"
+        "activity": "T50"
       }
     ],
     "model": [
@@ -106,8 +106,8 @@ Usage
           "descriptors_csv": "descriptors.csv",
           "descriptors": {
             "all_desc": 0,
-            "aa_composition": 1,
-            "dipeptide_comp": 1,
+            "amino_acid_composition": 1,
+            "dipeptide_composition": 1,
             ...
         }
         }
@@ -437,10 +437,6 @@ To run tests for specific module, from the main `pySAR` repo folder run:
 python -m unittest tests.MODULE_NAME -v
 ```
 
-Branches
---------
-* results: stores all the results and data from research paper.
-
 Contact
 -------
 If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab. <br><br>
@@ -469,7 +465,7 @@ DOI: 10.1021/acs.jcim.0c00073 <br><br>
 
 [python]: https://www.python.org/downloads/release/python-360/
 [aaindex]: https://github.com/amckenna41/aaindex
-[aaindex]: https://github.com/amckenna41/protpy
+[protpy]: https://github.com/amckenna41/protpy
 [requests]: https://requests.readthedocs.io/en/latest/
 [numpy]: https://numpy.org/
 [pandas]: https://pandas.pydata.org/

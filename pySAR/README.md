@@ -332,3 +332,5 @@ num_record = aaindex1.num_records()  #get total number of records
 record_names = aaindex1.record_names() #get list of all record names
 amino_acids = aaindex1.amino_acids() #get list of all canonical amino acids
 ```
+
+[Back to top](#TOP)
