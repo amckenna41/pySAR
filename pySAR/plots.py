@@ -20,7 +20,7 @@ def plot_reg(Y_true, Y_pred, r2, show_plot=False):
         array of predicted values
     :r2 : float
         r2 score value
-    :show_plot : bool (default = False)
+    :show_plot : bool (default=False)
         whether to display plot or not when function is run, if False the plot is just
         saved to output folder. 
 
@@ -29,7 +29,7 @@ def plot_reg(Y_true, Y_pred, r2, show_plot=False):
     None
     """
     fig, ax = plt.subplots(figsize=(8, 8))
-    ax = sns.regplot(x=Y_true,y=Y_pred,  marker="+", truncate=False,fit_reg=True)
+    ax = sns.regplot(x=Y_true, y=Y_pred, marker="+", truncate=False, fit_reg=True)
     r2_annotation = 'R2: {:.3f} '.format(r2)
     ax.text(0.15, 0.92, r2_annotation, ha="left", va="top", fontsize=15, color="green",
         fontweight="bold", transform=ax.transAxes)

@@ -47,7 +47,7 @@ class Evaluate():
 
         #validate that predicted and observed input arrays are of the same length,
         #   if input predicted and observed arrays are not same shape then raise error
-        if (self.Y_true.shape) != (self.Y_pred.shape):
+        if (self.Y_true.shape != self.Y_pred.shape):
             raise ValueError('Observed and predicted values must be of the same length, \
                 Y_true = {} & Y_pred = {}.'.format(Y_true.shape, Y_pred.shape))
 
@@ -58,8 +58,8 @@ class Evaluate():
         self.mae = self.mae_()
         self.rpd = self.rpd_()
         self.explained_var = self.explained_var_()
-        # self.mean_poisson_deviance = self.mean_poisson_deviance_()
         self.max_error = self.max_error_()
+        # self.mean_poisson_deviance = self.mean_poisson_deviance_()
 
     def r2_(self, multioutput='uniform_average'):
         """
@@ -71,6 +71,7 @@ class Evaluate():
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
+
         Returns
         -------
         :r2 : float
@@ -85,10 +86,11 @@ class Evaluate():
 
         Parameters
         ----------
-        :multioutput : str (default = 'uniform_average')
+        :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
+
         Returns
         -------
         :mse : float
@@ -108,6 +110,7 @@ class Evaluate():
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
+
         Returns
         -------
         :rmse : float
@@ -143,6 +146,10 @@ class Evaluate():
         between the standard deviation of a variable and the standard error of
         prediction of that variable by a given model.
 
+        Parameters
+        ----------
+        None
+
         Returns
         -------
         :rpd : float
@@ -171,8 +178,11 @@ class Evaluate():
 
     def max_error_(self):
         """
-        Calculates the maximum residual error between observed and predicted
-        values.
+        Calculates the maximum residual error between observed and predicted values.
+
+        Parameters
+        ----------
+        None
 
         Returns
         -------
@@ -183,8 +193,13 @@ class Evaluate():
 
     def mean_poisson_deviance_(self):
         """
-        Calculate Mean Poisson deviance regression loss.
+        Calculate Mean Poisson deviance regression loss between observed and 
+        predicted values.
 
+        Parameters
+        ----------
+        None
+        
         Returns
         -------
         :mean_poisson_deviance : float
@@ -195,7 +210,7 @@ class Evaluate():
 ################################################################################
 
     def __repr__(self):
-        return "<Evaluate(Y_true: {} Y_pred: {})>".format(
+        return "<Evaluate(Y_true: {} Y_pred: {})>.".format(
             self.Y_true.shape, self.Y_pred.shape)
 
     def __str__(self):

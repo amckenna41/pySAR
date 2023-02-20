@@ -11,19 +11,22 @@ import pySAR
 if (sys.version_info[0] < 3):
     sys.exit('Python 3 is the minimum version requirement.')
 
-#get path to README file
+#parse README file
 HERE = pathlib.Path(__file__).parent
 README = (HERE / 'README.md').read_text()
 
-setup(name='pySAR',
+setup(name=pySAR.__name__,
       version=pySAR.__version__,
-      description='A Python package used to analysis Protein Sequence Activity Relationships',
+      description=pySAR.__description,
       long_description = README,
       long_description_content_type = "text/markdown",
       author=pySAR.__license__,
       author_email=pySAR.__authorEmail__,
+      maintainer=pySAR.__maintainer__,
       license=pySAR.__license__,
       url=pySAR.__url__,
+      download_url=pySAR.__download_url__,
+      keywords=pySAR.__keywords__,
       classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
@@ -33,12 +36,10 @@ setup(name='pySAR',
         'Intended Audience :: Information Technology',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',	
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
@@ -60,10 +61,10 @@ setup(name='pySAR',
           'pytest',
           'varname',
           'biopython',
-          'aaindex'
+          'aaindex',
+          'protpy'
       ],
-     test_suite='tests',
-     # packages=find_packages(), #create Manifest file to ignore results folder in dist
-     packages=find_packages(exclude=["Results"]),
+     test_suite=pySAR.__test_suite__,
+     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests", "Results"]), 
      include_package_data=True,
      zip_safe=False)

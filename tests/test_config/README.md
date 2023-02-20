@@ -1,3 +1,6 @@
 # PySAR: Configuration files for testing
 
-This directory contains all the test/dummy configuration files used for testing pySAR, they are replicas of the example config files found in the config folder. Further descriptions about each of these config files can be found in the README of the config dir.
+* `thermostability.json` - configuration file for using pySAR with the thermostability dataset in the /data folder.
+* `absorption.json` - configuration file for using pySAR with the absorption example dataset in the /example_datasets folder.
+* `enantioselectivity.json` - configuration file for using pySAR with the enantioselectivity example dataset in the /example_datasets folder.
+* `localization.json` - configuration file for using pySAR with the localization example dataset in the /example_datasets folder.

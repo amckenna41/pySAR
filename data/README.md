@@ -2,7 +2,7 @@
 
 Usage
 -----
-pySAR imports the dataset declared within the configuration file from this data directory as well as the pre-calculated descriptor values csv, if applicable and also instantiated in the config file. An error will throw if the dataset and or descriptors csv is not found within this data directory. Please refer to the CONFIG.md file of where to declare the two aforementioned parameters in the config file.
+pySAR imports the dataset declared within the configuration file from this data directory as well as the pre-calculated descriptor values csv, if applicable, which is also instantiated in the config file. An error will throw if the dataset and or descriptors csv is not found within this data directory. Please refer to the CONFIG.md file of where to declare the two aforementioned parameters in the config file.
 
 Data
 -----

@@ -1,4 +1,4 @@
-TO DO List:
+To Do List:
 
 - [X] Add Config files instead of individual parameters in function
 - [X] Add Manifest file?
@@ -17,7 +17,6 @@ TO DO List:
 - [X] Add DPC and TPC lists to files.
 - [X] Correct supplementary_materials
 - [ ] Add example comments to func definitions
-- [ ] Incorpate AAI 2 & 3
 - [X] Installation from source in readme
 - [ ] Parse descriptors into embedded JSON format
 - [ ] Seperate pySAR and descriptors into different softwares??
@@ -28,8 +27,7 @@ TO DO List:
 - [X] Add : to parameters in functions 
 - [X] Change descriptor comments to account for each descriptor func working per sequence. 
 - [X] Change workflow name from deploy_to_testpypi -> deploy_testpypi
-- [ ] Look at rename some functions in AAIndex file
-- [ ] Move parse functions to bottom of file
+- [X] Move parse functions to bottom of file
 - [X] Change lambda (key word) to lamda
 - [ ] Remove parameter instances of class Object in comments?
 - [X] Add filter/window/convolution metaparameters to config
@@ -50,3 +48,98 @@ TO DO List:
 - [X] - Add images to pypi - https://stackoverflow.com/questions/41983209/how-do-i-add-images-to-a-pypi-readme-that-works-on-github
 - [ ] Add emojis to readme
 - [ ] read the docs
+- [X] Upload bandit, package safety check etc to GCP bucket 
+- [ ] Add software dev report?
+- [ ] Make demo youtube vid.
+- [ ] Add future section to readme.
+- [ ] Read the docs (.readthedocs.yml)
+- [ ] Front-end react app.
+- [ ] Check variable naming conventions (https://peps.python.org/pep-0008/)
+- [ ] Check output of bandit and flake8 check.
+- [ ] Add updates.md file which outlines changes bw versions.
+- [X] Remove travis.ci workflows.
+- [X] Add maintainer and keywords to setup.py.
+- [X] Remove travis ci from readme.
+- [X] Remove some python versions from setup.py.
+- [X] Fix "How to Cite" section to display citation on multiple lines.
+- [ ] Add info about different branch in repo, maybe even remove it and move ot Google Drive.
+- [X] Correct naming in setup.cfg.
+- [X] Add "python3 -m twine upload --repository testpypi dist/*" to test pypi workflow.
+- [X] Change "secrets.PY_PI..." to "secrets.PYPI...".
+- [ ] Remove .Ds_Store and any pycache from github upload.
+- [X] Update build/test/deploy workflow syntax, look at iso3166-updates workflow for reference.
+- [X] Add comments to .circle/workflow.
+- [ ] Add spacing in between individual references, see if it improves readability, revert if not.
+- [ ] Include range of values for each activity value in example_datasets/readme.
+- [ ] Finish Config.md. Mention in pySAR/readme that explanation of all params available in config.md.
+- [ ] Update readme examples of software to include updated import structure of.
+- [ ] Fix badges on main repo.
+- [X] Can remove aaindex files from pySAR/pySAR/data as these are included in aaindex package now.
+- [X] Remove license.txt from pySAR/pySAR
+- [X] Could remove aaindex1 & aaindex1.json file from tests/test_data.
+- [X] Remove .coveralls.yml
+- [X] Move pySAR demo to Google Colab.
+- [ ] In descriptors/readme go into more detail about what each descriptor does.
+- [ ] Add documentation section in readme.
+- [ ] Add Assertion message to some unit tests.
+- [X] Change mentions of "descriptor_paramters" to "descriptor_properties".
+- [ ] Results branch - remove everything but results dir.
+- [ ] Be able to pass in JSON object to Encoding object. Parse objects in JSON that are present, all don't have to be but most important ones need to be there.
+- [X] Change Get record from AAIndex database section in readme to show new way aaindex is imported.
+- [X] Update refs on main readme to actually include authors/titles of works.
+- [X] Remove travis ci badge from readme.
+- [X] JSON object of descriptors can be passed into Descriptors class.
+- [X] Add path-ignore keywords to GitHub Action.
+- [X] Reorder software metadata in setup.py to be in order of main func, create __description__ var.
+- [X] Add download_url to setup.py - url of zipped package.
+- [ ] In some unit tests, may need to use self.assertAlmostEqual instead of self.assertEqual.
+- [ ] Remove 'get_' from functions.
+- [ ] Make self.params & other dicts in pySAR accessible via dot notation. 
+- [ ] Remove all camel casing function names/vars, change to underscores and lowercase (https://peps.python.org/pep-0008/#function-and-variable-names).
+- [ ] Usage example using fasta import function/module.
+- [ ] Use Map class to allow for config file and parameters accessible via dot notation. 
+- [X] In config files, change 'comp' to 'composition'
+- [X] Change protpy.aa_composition -> protpy.amino_acid_composition
+- [ ] Add normalize parameter to each autocorrelation func & config.
+- [X] Change all references of normalized_moreaubroto_autocorrelation to moreaubroto_autocorrelation
+- [X] Change 'Amp' -> 'amphiphilic' - config.md
+- [X] Change seq_order_... -> sequence_order... , quasi_seq_order -> quasi_sequence_order in config.md.
+- [ ] Mention custom built aaindex & protpy softwares.
+- [X] Change sec_struct to secondary_struct.
+- [ ] Add list of test cases to comments in each test suite.
+- [X] Change explainedVar -> explained_var.
+- [X] Test dtype of columns in output dataframes.
+- [X] Test correct naming convention for descriptor dataframe names using regex.
+- [X] Mention lag is similar to gap between 2 amino acids.
+- [X] Add all SOCN to configs.
+- [X] For Pseudo AAC, default hard-coded props of hydrophobicity, hydrophilicity and residue mass are used. User can input custom aaindex1 property codes, set prooperty config key to blank. 
+- [X] Add Amphiphilic to config files and MD - inputs of lamda, weight and properties.
+- [X] Add space between key and val in configs.
+- [X] Prepend 'ctd_' to the ctd descriptors names, attributes and function names.
+- [ ] Add reference numbers to comments in descriptor functions - double check existing ones are correct, reorder them.
+- [X] Change QSOrder to QSO.
+- [ ] Rewrite APAAComp descriptor comments to mention its dimensions change with lamda. 
+- [ ] Wrap all if statements in brackets.
+- [X] Remove convolution from pyDSP and config.
+- [X] Move Map class to utils.
+- [ ] Ensure all functions have Parameters and Returns in the comments, even if they are None
+- [ ] Add filter function to pyDSP.
+- [X] Change self.spectra to self.spectrum in pyDSP.
+- [X] In function comments change default = X to default=
+- [ ] For pseudo and amp composition, only test on 1 dataset as takes to long with all of them.
+- [ ] Double check output datatype of encoding functions, Series or DF? 
+- [X] Unit test for get_aai_encoding func, pass in list of multiple indices, test that dimension of output is 2 * length of sequences. 
+- [X] Remove string section of get_aai_encoding and just cast input to list if its a string.
+- [X] Error when passing in single index into encode_aai (N, A, K, H, 9, 2, 0, 1, 0, 2).
+- [ ] Unit test dtypes of each column in aai encoding - ['Index', 'Category', 'R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Variance']
+- [X] Test dtypes of activity column outputs.
+- [ ] Need to change max_lag to lag in protpy.quasi_sequence_order when new protpy software releases.
+- [X] In get_descriptor_encoding function, parse input as list, seperate multiple descriptors on comma.
+- [X] Potential issue when concatenating conjoint triad descriptor output with aa_indices descriptor as column names may clash.
+- [X] Change aaindex column names from incrementing numbers to - "aa_1", "aa_2" ...
+- [ ] Update aai encoding unit tests to take new naming convention into consideration.
+- [ ] Ensure output from encoding funcs is DF not a Series.
+- [ ] Remove "Getting X Descriptor" etc?
+<!-- - [ ] Add Contributing section to readme (https://github.com/arc298/instagram-scraper). -->
+
+

@@ -12,29 +12,46 @@ import pySAR.globals_ as _globals
 import pySAR.utils as utils
 
 class UtilsTest(unittest.TestCase):
+    """
+    Test suite for testing utils module and functionality in pySAR package. 
 
+    Test Cases
+    ----------
+    test_valid_sequence:
+        testing correct utils.valid_sequence functionality.
+    test_remove_gaps:
+        testing correct utils.remove_gaps functionality.
+    test_flatten:
+        testing correct utils.flatten functionality.
+    test_zero_padding:
+        testing correct utils.zero_padding functionality.
+    test_create_output_dir: 
+        testing correct utils.create_output_dir functionality.
+    test_save_results:
+        testing correct utils.save_results functionality.
+    """
     def setUp(self):
         """ Import all test datasets. """
         try:
             self.test_dataset1 = pd.read_csv(os.path.join('tests', 'test_data',
                 'test_thermostability.txt'), sep=",", header=0)
         except:
-            raise IOError('Error reading in test_dataset1.')
+            raise IOError('Error reading in test_thermostability.txt.')
         try:
             self.test_dataset2 = pd.read_csv(os.path.join('tests', 'test_data',
                 'test_enantioselectivity.txt'), sep=",", header=0)
         except:
-            raise IOError('Error reading in test_dataset2.')
+            raise IOError('Error reading in test_enantioselectivity.txt.')
         try:
             self.test_dataset3 = pd.read_csv(os.path.join('tests', 'test_data',
                 'test_localization.txt'), sep=",", header=0)
         except:
-            raise IOError('Error reading in test_dataset3.')
+            raise IOError('Error reading in test_localization.txt.')
         try:
             self.test_dataset4 = pd.read_csv(os.path.join('tests', 'test_data',
                 'test_absorption.txt'), sep=",", header=0)
         except:
-            raise IOError('Error reading in test_dataset4.')
+            raise IOError('Error reading in test_absorption.txt.')
 
         #append all datasets to a list
         self.all_test_datasets = [self.test_dataset1, self.test_dataset2, 
@@ -46,12 +63,11 @@ class UtilsTest(unittest.TestCase):
 
     def test_valid_sequence(self):
         """ Test Valid/Invalid Sequences utility function. """
-        invalid_seqs = [["A", "B", "C", "D"],["E","F","J"]]
+        invalid_seqs = [["A", "B", "C", "D"], ["E", "F", "J"]]
         invalid_seqs1 = ["ZZZZZZ"]
         invalid_seqs2 = [["Z", 2, "Y", "X", 321]]
         invalid_seqs3 = "XXZXXZXXZ"
 #1.)
-        #testing with invalid sequences
         self.assertIsNotNone(utils.valid_sequence(invalid_seqs))
         self.assertIsNotNone(utils.valid_sequence(invalid_seqs1))
         self.assertIsNotNone(utils.valid_sequence(invalid_seqs2))
@@ -171,7 +187,7 @@ class UtilsTest(unittest.TestCase):
         self.assertIsInstance(padded_seqs3, np.ndarray)
         self.assertTrue(padded_seqs3.any() == seq3.any())
 
-    @unittest.skip('')
+    @unittest.skip('Skipping as dont need to create global output directories each time.')
     def test_create_output_dir(self):
         """ Testing create output directory utility function. """
         utils.create_output_dir()
@@ -179,8 +195,8 @@ class UtilsTest(unittest.TestCase):
         #verify folders and directories have been created
         self.assertTrue(os.path.isdir(_globals.OUTPUT_DIR))
         self.assertTrue(os.path.isdir(_globals.OUTPUT_FOLDER))
-
-    @unittest.skip('')
+        
+    @unittest.skip('Skipping as dont need to create global output directories each time.')
     def test_save_results(self):
         """ Testing save results utility function. """
         #create output dir to save results
@@ -195,11 +211,11 @@ class UtilsTest(unittest.TestCase):
         utils.save_results(test_results1, 'test_results1')
         self.assertTrue(os.path.isfile(os.path.join(_globals.OUTPUT_FOLDER, 'test_results1.csv')))
 #3.)
-        test_results2 = pd.DataFrame(np.random.randint(1,100, size=(5,3)), columns=['R2','MSE','RMSE'])
+        test_results2 = pd.DataFrame(np.random.randint(1,100, size=(5,3)), columns=['R2', 'MSE', 'RMSE'])
         utils.save_results(test_results2, 'test_results2')
         self.assertTrue(os.path.isfile(os.path.join(_globals.OUTPUT_FOLDER, 'test_results2.csv')))
 #4.)
-        test_results3 = pd.Series(np.random.randint(1,100), index=['Col1','Col2','Col3','Col4'])
+        test_results3 = pd.Series(np.random.randint(1,100), index=['Col1', 'Col2', 'Col3', 'Col4'])
         utils.save_results(test_results3, 'test_results3')
         self.assertTrue(os.path.isfile(os.path.join(_globals.OUTPUT_FOLDER, 'test_results3.csv')))
 #5.)

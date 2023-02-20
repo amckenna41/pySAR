@@ -1,10 +1,13 @@
 version: 2.1
 
+#import python and gcp cli
 orbs:
   python: circleci/python@0.3.2
-  gcp-cli: circleci/gcp-cli@2.4.0
+  codecov: codecov/codecov@1.0.2
+  # gcp-cli: circleci/gcp-cli@2.4.0
 
 jobs:
+  #build environment
   build-and-test:
     executor: python/default
     environment:
@@ -15,7 +18,8 @@ jobs:
       - python/install-deps
       - python/save-cache
       - python/test
-
+  
+  #linting and code coverage of project
   lint-and-coverage:
     executor: python/default
     description: |
@@ -40,8 +44,10 @@ jobs:
             pip install codecov
             pip install pytest-cov
             pytest --cov-report term --cov=test_pySAR tests/ > /tmp/coverage_report.txt || true
+            cat /tmp/coverage_report.txt
         # coverage run 
         # coverage report > /tmp/coverage_report.txt || true
+     #upload temp artifacts
       - store_artifacts:
           path: /tmp/coverage_report.txt
           destination: artifacts-file
@@ -60,27 +66,29 @@ jobs:
         - python/load-cache
         - python/install-deps
         - python/save-cache
+        #package vulnerability check
         - run:
             name: Safety
             command: |
               pip install safety
               safety check > /tmp/package_safety_output.txt || true
+              cat /tmp/package_safety_output.txt
+        #bandit security check
         - run:
             name: Bandit
             command: |
               pip install bandit
-              bandit -r pySAR > /tmp/bandit_output.txt || true
-              bandit -r tests > /tmp/bandit_output_tests.txt || true
+              bandit -r . > /tmp/bandit_output.txt || true
+              cat /tmp/bandit_ouput.txt
+        #store temp artifacts 
         - store_artifacts:
             path: /tmp/package_safety_output.txt
             destination: safety-output.txt
         - store_artifacts:
             path: /tmp/bandit_output.txt
             destination: bandit-output.txt
-        - store_artifacts:
-            path: /tmp/bandit_output_tests.txt
-            destination: bandit-output-tests.txt
 
+  #check successful installation of latest pySAR version
   pySAR-pipeline:
       executor: python/default
       description: |
@@ -95,8 +103,9 @@ jobs:
         - run:
             name: PySAR pipeline test
             command: |
-              pip3 install pySAR
-              
+              pip3 install pySAR --upgrade
+
+#execute individual jobs in workflow        
 workflows:
   main:
     jobs:
