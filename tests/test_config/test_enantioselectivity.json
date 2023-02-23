@@ -42,54 +42,54 @@
         }
       ],
     
-    "descriptor_properties":[{
+    "descriptor_properties": [{
   
-      "moreaubroto_autocorrelation":[{
-        "lag":30,
-        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+      "moreaubroto_autocorrelation": [{
+        "lag": 30,
+        "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
       }],
-      "moran_autocorrelation":[{
-        "lag":30,
-        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+      "moran_autocorrelation": [{
+        "lag": 30,
+        "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
       }],
-      "geary_autocorrelation":[{
-        "lag":30,
-        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+      "geary_autocorrelation": [{
+        "lag": 30,
+        "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
       }],
-      "ctd":[{
-        "property":"hydrophobicity",
-        "all": 1
+      "ctd": [{
+        "property": "hydrophobicity",
+        "all": 0
       }],
-      "ctd_composition":[{
-        "property":"normalized_VDWV"
+      "ctd_composition": [{
+        "property": "normalized_VDWV"
       }],
-      "ctd_transition":[{
-        "property":"polarity"
+      "ctd_transition": [{
+        "property": "polarity"
       }],
-      "ctd_distribution":[{
-        "property":"charge"
+      "ctd_distribution": [{
+        "property": "charge"
       }],
-      "sequence_order_coupling_number":[{
-        "lag":30,
-        "distance_matrix":"schneider-wrede-physiochemical-distance-matrix.json"
+      "sequence_order_coupling_number": [{
+        "lag": 30,
+        "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
       }],
-      "quasi_sequence_order":[{
-        "lag":30,
-        "weight":0.1,
-        "distance_matrix":"schneider-wrede-physiochemical-distance-matrix.json"
+      "quasi_sequence_order": [{
+        "lag": 30,
+        "weight": 0.1,
+        "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
       }],
-      "pseudo_amino_acid_composition":[{
-        "lambda":30,
-        "weight":0.05,
-        "properties":[]
+      "pseudo_amino_acid_composition": [{
+        "lambda": 30,
+        "weight": 0.05,
+        "properties": []
       }],
-      "amphiphilic_pseudo_amino_acid_composition":[{
+      "amphiphilic_pseudo_amino_acid_composition": [{
         "lambda": 30,
         "weight": 0.5
       }]

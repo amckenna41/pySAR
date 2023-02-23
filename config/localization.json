@@ -29,9 +29,9 @@
             "moreaubroto_autocorrelation": 1,
             "moran_autocorrelation": 1,
             "geary_autocorrelation": 1,
-            "composition": 1,
-            "transition": 1,
-            "distribution": 1,
+            "ctd_composition": 1,
+            "ctd_transition": 1,
+            "ctd_distribution": 1,
             "ctd": 1,
             "conjoint_triad": 1,
             "sequence_order_coupling_number": 1,
@@ -63,18 +63,18 @@
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
       }],
-      "composition":[{
+      "ctd_composition":[{
         "property": "hydrophobicity"
       }],
-      "transition":[{
+      "ctd_transition":[{
         "property": "hydrophobicity"
       }],
-      "distribution":[{
+      "ctd_distribution":[{
         "property": "hydrophobicity"
       }],
       "ctd":[{
         "property": "hydrophobicity",
-        "all": 1
+        "all": 0
       }],
       "sequence_order_coupling_number":[{
         "lag": 30,

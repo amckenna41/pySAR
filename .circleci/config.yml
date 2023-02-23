@@ -1,36 +1,33 @@
 version: 2.1
 
-#import python and gcp cli
+#create Python env
 orbs:
-  python: circleci/python@0.3.2
+  python: circleci/python@2.1.1
   codecov: codecov/codecov@1.0.2
-  # gcp-cli: circleci/gcp-cli@2.4.0
 
 jobs:
-  #build environment
+  #run unittests
   build-and-test:
     executor: python/default
-    environment:
-      PYTHONPATH=./pySAR
     steps:
       - checkout
-      - python/load-cache
-      - python/install-deps
-      - python/save-cache
-      - python/test
-  
-  #linting and code coverage of project
+      - run:
+          name: Run tests
+          command: python -m unittest discover tests/
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
+
+  #linter and code coverage
   lint-and-coverage:
     executor: python/default
     description: |
-      Running lint using flake8 and coverage report
-    environment:
-      PYTHONPATH=./pySAR
+      Running lint using flake8 and coverage report on package.
     steps:
       - checkout
-      - python/load-cache
-      - python/install-deps
-      - python/save-cache
+      - python/install-packages:
+          pkg-manager: pip 
       - run:
           name: Linter
           command: |
@@ -44,10 +41,9 @@ jobs:
             pip install codecov
             pip install pytest-cov
             pytest --cov-report term --cov=test_pySAR tests/ > /tmp/coverage_report.txt || true
-            cat /tmp/coverage_report.txt
         # coverage run 
         # coverage report > /tmp/coverage_report.txt || true
-     #upload temp artifacts
+      #store linter and coverage artifacts in tmp folder
       - store_artifacts:
           path: /tmp/coverage_report.txt
           destination: artifacts-file
@@ -55,57 +51,53 @@ jobs:
           path: /tmp/flake8_output.txt
           destination: flake8-output.txt
 
+  #package safety and bandit security check
   safety-and-bandit:
       executor: python/default
       description: |
-        Running package safety and bandit security check modules
-      environment:
-        PYTHONPATH=./pySAR
+        Running package safety and bandit security check on package.
+      #install python dependancies and libraries, checkout repo
       steps:
         - checkout
-        - python/load-cache
-        - python/install-deps
-        - python/save-cache
-        #package vulnerability check
+        - python/install-packages:
+            pkg-manager: pip 
         - run:
             name: Safety
             command: |
               pip install safety
               safety check > /tmp/package_safety_output.txt || true
-              cat /tmp/package_safety_output.txt
-        #bandit security check
         - run:
             name: Bandit
             command: |
               pip install bandit
-              bandit -r . > /tmp/bandit_output.txt || true
-              cat /tmp/bandit_ouput.txt
-        #store temp artifacts 
+              bandit -r pySAR > /tmp/bandit_output.txt || true
+              bandit -r tests > /tmp/bandit_output_tests.txt || true
+        #store safety and bandit artifacts in tmp folder
         - store_artifacts:
             path: /tmp/package_safety_output.txt
             destination: safety-output.txt
         - store_artifacts:
             path: /tmp/bandit_output.txt
             destination: bandit-output.txt
+        - store_artifacts:
+            path: /tmp/bandit_output_tests.txt
+            destination: bandit-output-tests.txt
 
-  #check successful installation of latest pySAR version
-  pySAR-pipeline:
+  pysar-pipeline:
       executor: python/default
       description: |
-        Running pySAR example pipeline
-      environment:
-        PYTHONPATH=./pySAR
+        Running pySAR pipeline to check installation and version of package.
+      #install python dependancies and libraries, checkout repo
       steps:
         - checkout
-        - python/load-cache
-        - python/install-deps
-        - python/save-cache
+        - python/install-packages:
+            pkg-manager: pip 
         - run:
-            name: PySAR pipeline test
+            name: pySAR pipeline test
             command: |
-              pip3 install pySAR --upgrade
-
-#execute individual jobs in workflow        
+              pip3 install pySAR
+              echo -e "import pySAR as pysar\nprint(pysar.__version__)" | python3
+#initialise all above jobs into a workflow
 workflows:
   main:
     jobs:
@@ -130,10 +122,14 @@ workflows:
             branches:
               only:
                 - master
-      - pySAR-pipeline:
+      - pysar-pipeline:
+          requires:
+            - build-and-test
           filters:
             tags:
               only: /.*/
             branches:
               only:
                 - master
+
+                

@@ -9,6 +9,7 @@ irreversibly denatured after 10 mins of incubation, ranging from 39.2 to 64.4 de
 * `test_enantioselectivity.txt` - dataset consisting of 37 mutants and one WT (wild-type) sequence from the Aspergillus Niger organism and their calculated enantioselectivity. Enantioselectivity refers to the selectivity of a reaction towards one enantiomer and is expressed by the E-value with a range between 0 and 115. [[3]](#references)
 * `test_localization.txt` - dataset made up of 248 sequences made up of 2 seperate, 10-block recombination libraries that were designed from 3 parental ChR's (channelrhodopsin). Each chimeric ChR variant in these libraries consist of blocks of sequences from parental ChRs. Genes for these sequences were synthesized and expressed in human embryonic kidney (HEK) cells, and their membrane localization was measured as log_GFP. [[4]](#references)
 * `test_fasta.fasta` - Spike glycoprotein (P59594 · SPIKE_SARS). [[5]](#references)
+* `test_thermostability_descriptors.csv` - pre-calcualted descriptors for thermostability dataset, used for testing descriptors import functionality.
 
 References
 ----------

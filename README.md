@@ -37,7 +37,7 @@ Table of Contents
 
 Research Article
 ----------------
-The research article that accompanied this software is: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as [pySAR_demo.pdf][pdf]. The article was published in the Journal of Biomedical Informatics and is available [here][article]. There is also a quick jupyter notebook demo of `pySAR` available [here][demo].
+The research article that accompanied this software is: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as [pySAR_research.pdf][pdf]. The article was published in the Journal of Biomedical Informatics and is available [here][article]. There is also a quick jupyter notebook demo of `pySAR` available [here][demo].
 
 How to cite
 -----------
@@ -53,7 +53,7 @@ Requirements
 ------------
 * [Python][python] >= 3.6
 * [aaindex][aaindex] >= 1.0.4
-* [protpy][protpy] >= 1.0.5
+* [protpy][protpy] >= 1.0.7
 * [requests][requests] >= 2.25.0
 * [numpy][numpy] >= 1.16.0
 * [pandas][pandas] >= 1.1.0

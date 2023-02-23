@@ -61,7 +61,7 @@ class PySARTests(unittest.TestCase):
 
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.1.0", 
+        self.assertEqual(pysar_.__version__, "2.1.1", 
             "pySAR version is not correct, got: {}.".format(pysar_.__version__))
         self.assertEqual(pysar_.__name__, "pySAR", 
             "pySAR software name is not correct, got: {}.".format(pysar_.__name__))
@@ -395,7 +395,7 @@ class PySARTests(unittest.TestCase):
             'The number of sequences in the dataset expected to be {}, got {}.'.format((test_pySAR.num_seqs, 3), desc_encoding.shape))
                 #iterate over all columns, checking they follow naming convention using regex
         for col in list(desc_encoding.columns):
-            self.assertTrue((bool(re.search(r"polarity_CTD_[A-Z]{1}_[0-9][0-9]", col))), 
+            self.assertTrue((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_hydrophobicity", col))), 
                     "Column name does not follow expected format: {}.".format(col)) 
         self.assertTrue(all(col == np.float64 for col in list(desc_encoding.dtypes)), 
             "Descriptor values not of correct datatype: {}.".format(list(desc_encoding.dtypes)))
@@ -421,10 +421,10 @@ class PySARTests(unittest.TestCase):
         self.assertEqual(desc_encoding.shape, (test_pySAR.num_seqs, 400+3+240+30), #MAuto dim + QSO dim
             'The number of sequences in the dataset expected to be {}, got {}.'.format((test_pySAR.num_seqs, 240+50), desc_encoding.shape))
         #iterate over all columns, checking they follow naming convention using regex
-        for col in list(desc_encoding.columns):
+        for col in list(desc_encoding.columns): 
             self.assertTrue(bool(re.match(r"GAuto_[A-Z0-9]{10}_[0-9]", col)) or bool(re.match(r'^[A-Z]{2}$', col)) or 
                 bool(re.match(r"SOCN_SW[0-9]", col)) or bool(re.match(r"QSO_SW[0-9][0-9]", col)) or                 
-                    bool(re.match(r"polarity_CTD_T_[0-9]", col)) or bool(re.match(r"polarity_CTD_T_[0-9][0-9]", col)),  
+                    bool(re.match(r"CTD_T_[0-9]_hydrophobicity", col)) or bool(re.match(r"CTD_T_[0-9]{2}_hydrophobicity", col)),  
                         "Column name doesn't match expected regex pattern: {}.".format(col))
         self.assertTrue(all(col == np.float64 for col in list(desc_encoding.dtypes)), 
             "Descriptor values not of correct datatype: {}.".format(list(desc_encoding.dtypes)))

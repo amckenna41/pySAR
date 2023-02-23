@@ -192,8 +192,9 @@ class Descriptors():
 
         #try importing descriptors csv with pre-calculated descriptor values,
         #  if not found then calculate all descriptors if all_desc is true
-        if os.path.isfile((os.path.join(DATA_DIR, self.descr_config.descriptors_csv))):
-            self.import_descriptors()
+        if (os.path.isfile(self.descr_config.descriptors_csv) or 
+            os.path.isfile((os.path.join(DATA_DIR, self.descr_config.descriptors_csv)))):
+            self.import_descriptors(self.descr_config.descriptors_csv)
             #get the total number of inputted protein sequences
             self.num_seqs = self.all_descriptors.shape[0]
         else:
@@ -201,6 +202,8 @@ class Descriptors():
             if (self.all_desc):
                 self.all_descriptors = self.get_all_descriptors()
                 #save all calculated descriptor values for next time
+                if (self.descr_config.descriptors_csv == "" or self.descr_config.descriptors_csv == None):
+                    self.descr_config.descriptors_csv = "descriptors_output.csv"
                 self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.descr_config.descriptors_csv), index=0)
 
         #create dictionary of descriptors and their associated groups
@@ -212,7 +215,7 @@ class Descriptors():
         #get shape of descriptors
         self.shape = self.all_descriptors.shape
 
-    def import_descriptors(self):
+    def import_descriptors(self, descriptor_filepath=""):
         """
         Import descriptors from descriptors csv, setting the class attrbutes to their values.
         It is reccommended that after calculating the descriptors for a dataset of sequences 
@@ -222,24 +225,24 @@ class Descriptors():
 
         Parameters
         ----------
-        None
+        :descriptor_filepath : str 
+            filepath to pre-calculated descriptor csv file.
 
         Returns
         -------
         None
         """
-        #get filepath to descriptors csv
-        descr_filepath = os.path.join(DATA_DIR, self.descr_config.descriptors_csv)
-
-        #verify descriptors csv exists
-        if not (os.path.isfile(descr_filepath)):
-            raise OSError('Descriptors csv file does not exist, at filepath: {}.'.format(descr_filepath))
+        #verify descriptors csv exists at filepath
+        if not (os.path.isfile(descriptor_filepath)):
+            descriptor_filepath = os.path.join(DATA_DIR, descriptor_filepath)
+            if not (os.path.isfile(descriptor_filepath)):
+                raise OSError('Descriptors csv file does not exist, at filepath: {}.'.format(descriptor_filepath))
 
         #import descriptors csv as dataframe
         try:
-            descriptor_df = pd.read_csv(descr_filepath)
+            descriptor_df = pd.read_csv(descriptor_filepath)
         except IOError:
-            print('Error reading descriptors csv file: {}.'.format(descr_filepath))
+            print('Error reading descriptors csv file: {}.'.format(descriptor_filepath))
 
         #replacing any +/- infinity or NAN values with 0
         descriptor_df.replace([np.inf, -np.inf], np.nan)
@@ -259,47 +262,84 @@ class Descriptors():
 
         #dimension of autocorrelation descriptors depends on the lag value and number of properties
         norm_moreaubroto_dim = (8420,
-            8420 + (self.descr_parameters.moreaubroto_autocorrelation[0]["lag"]*len(self.descr_parameters.moreaubroto_autocorrelation[0]["properties"])))
+            8420 + (self.descr_parameters.moreaubroto_autocorrelation[0]["lag"] * len(self.descr_parameters.moreaubroto_autocorrelation[0]["properties"])))
         self.moreaubroto_autocorrelation = descriptor_df.iloc[:,norm_moreaubroto_dim[0]:norm_moreaubroto_dim[1]]
 
         moran_auto_dim = (norm_moreaubroto_dim[1], norm_moreaubroto_dim[1] +
-            (self.descr_parameters.moran_autocorrelation[0]["lag"]*len(self.descr_parameters.moran_autocorrelation[0]["properties"])))
+            (self.descr_parameters.moran_autocorrelation[0]["lag"] * len(self.descr_parameters.moran_autocorrelation[0]["properties"])))
         self.moran_autocorrelation = descriptor_df.iloc[:,moran_auto_dim[0]: moran_auto_dim[1]]
 
         geary_auto_dim = (moran_auto_dim[1], moran_auto_dim[1] +
-            (self.descr_parameters.geary_autocorrelation[0]["lag"]*len(self.descr_parameters.geary_autocorrelation[0]["properties"])))
+            (self.descr_parameters.geary_autocorrelation[0]["lag"] * len(self.descr_parameters.geary_autocorrelation[0]["properties"])))
         self.geary_autocorrelation = descriptor_df.iloc[:,geary_auto_dim[0]:geary_auto_dim[1]]
 
-        ctd_dim = (geary_auto_dim[1], geary_auto_dim[1]+147)
-        self.ctd =  descriptor_df.iloc[:,ctd_dim[0]:ctd_dim[1]]
+        #get CTD parameters from config to determine the dimensions of the CTD descriptors
+        ctd_property = self.descr_parameters.ctd[0]["property"]
+        if not (isinstance(ctd_property, list)):
+            ctd_property = ctd_property.split(',')
+        ctd_all_ctd = self.descr_parameters.ctd[0]["all"]
+        
+        #if using all properties in CTD calculation, 147 features output, 21 features per 7 properties
+        if (ctd_all_ctd):
+            ctd_dim = (geary_auto_dim[1], geary_auto_dim[1]+147) #21 CTD features per 7 properties = 147
+            ctd_comp_dim = (geary_auto_dim[1], geary_auto_dim[1] + 21) #3 CTD_Comp features per 7 properties = 21
+            ctd_trans_dim = (ctd_comp_dim[1], ctd_comp_dim[1] + 21) #3 CTD_Distr features per 7 properties = 21
+            ctd_distr_dim = (ctd_trans_dim[1], ctd_trans_dim[1] + 105) #15 CTD_Distr features per 7 properties = 105
+        #only using a pre-determined list of physiochemical properties, 21 features per property
+        else:
+            ctd_dim = (geary_auto_dim[1], geary_auto_dim[1]+len(ctd_property)) #21 CTD features per property
+            ctd_comp_dim = (ctd_dim[1], ctd_dim[1] + (len(ctd_property) * 3)) #3 CTD_Comp features per property
+            ctd_trans_dim = (ctd_comp_dim[1], ctd_comp_dim[1] + (len(ctd_property) * 3)) #3 CTD_Distr features per property
+            ctd_distr_dim = (ctd_trans_dim[1], ctd_trans_dim[1] + (len(ctd_property) * 15)) #15 CTD_Distr features per property
 
-        composition_dim = (ctd_dim[1], ctd_dim[1]+21)
-        self.ctd_composition = descriptor_df.iloc[:,composition_dim[0]:composition_dim[1]]
+        self.ctd =  descriptor_df.iloc[:,ctd_dim[0]:ctd_dim[1]]  
+
+        self.ctd_composition = descriptor_df.iloc[:,ctd_comp_dim[0]:ctd_comp_dim[1]]
     
-        transition_dim = (composition_dim[1], composition_dim[1]+21)
-        self.ctd_transition = descriptor_df.iloc[:,transition_dim[0]:transition_dim[1]]
+        self.ctd_transition = descriptor_df.iloc[:,ctd_trans_dim[0]:ctd_trans_dim[1]]
 
-        distribution_dim = (transition_dim[1], transition_dim[1]+105)
-        self.ctd_distribution = descriptor_df.iloc[:,distribution_dim[0]:distribution_dim[1]]
+        self.ctd_distribution = descriptor_df.iloc[:,ctd_distr_dim[0]:ctd_distr_dim[1]]
 
-        conjoint_triad_dim = (distribution_dim[1], distribution_dim[1]+343)
+        conjoint_triad_dim = (ctd_distr_dim[1], ctd_distr_dim[1]+343)
         self.conjoint_triad = descriptor_df.iloc[:,conjoint_triad_dim[0]:conjoint_triad_dim[1]]
 
-        #dimension of SOCN depends on the lag value 
-        sequence_order_coupling_number_dim = (conjoint_triad_dim[1],
-            conjoint_triad_dim[1] + (self.descr_parameters.sequence_order_coupling_number[0]["lag"])*2)
-        self.sequence_order_coupling_number = descriptor_df.iloc[:,sequence_order_coupling_number_dim[0]:sequence_order_coupling_number_dim[1]]
+        socn_lag = self.descr_parameters.sequence_order_coupling_number[0]["lag"]
+        socn_distance_matrix = self.descr_parameters.sequence_order_coupling_number[0]["distance_matrix"]
 
-        quasi_sequence_order_dim = (sequence_order_coupling_number_dim[1], sequence_order_coupling_number_dim[1] + 100)
-        self.quasi_sequence_order = descriptor_df.iloc[:,quasi_sequence_order_dim[0]:quasi_sequence_order_dim[1]]
+        #if no distance matrix speciifed in config then both are used for descriptor calculation
+        if (socn_distance_matrix == "" or socn_distance_matrix == None):
+            socn_dim = (conjoint_triad_dim[1], conjoint_triad_dim[1] + (socn_lag * 2))
+        #distance matrix specified in config
+        else:
+            socn_dim = (conjoint_triad_dim[1], conjoint_triad_dim[1] + socn_lag)
 
-        pseudo_amino_acid_composition_dim = (quasi_sequence_order_dim[1], quasi_sequence_order_dim[1] + 50)
+        self.sequence_order_coupling_number = descriptor_df.iloc[:,socn_dim[0]:socn_dim[1]]
+
+        quasi_seq_order_lag = self.descr_parameters.quasi_sequence_order[0]["lag"]
+        quasi_seq_order_dist_matrix = self.descr_parameters.quasi_sequence_order[0]["distance_matrix"]
+
+        #if no distance matrix speciifed in config then both are used for descriptor calculation
+        if (quasi_seq_order_dist_matrix == "" or quasi_seq_order_dist_matrix == None):
+            quasi_seq_order_dim = (socn_dim[1], socn_dim[1] + ((quasi_seq_order_lag+20) * 2))
+        #distance matrix specified in config
+        else:
+            quasi_seq_order_dim = (socn_dim[1], socn_dim[1] + (quasi_seq_order_lag+20))
+
+        self.quasi_sequence_order = descriptor_df.iloc[:,quasi_seq_order_dim[0]:quasi_seq_order_dim[1]]
+
+        paac_lamda = self.descr_parameters.pseudo_amino_acid_composition[0]["lambda"]
+        
+        pseudo_amino_acid_composition_dim = (quasi_seq_order_dim[1], quasi_seq_order_dim[1] + (20 + paac_lamda))
         self.pseudo_amino_acid_composition = descriptor_df.iloc[:,pseudo_amino_acid_composition_dim[0]:pseudo_amino_acid_composition_dim[1]]
 
-        amphiphilic_pseudo_amino_acid_composition_dim = (pseudo_amino_acid_composition_dim[1], pseudo_amino_acid_composition_dim[1] + 80)
+        apaac_lamda = self.descr_parameters.amphiphilic_pseudo_amino_acid_composition[0]["lambda"]
+     
+        amphiphilic_pseudo_amino_acid_composition_dim = (pseudo_amino_acid_composition_dim[1], pseudo_amino_acid_composition_dim[1] + (20 + (2*apaac_lamda)))
         self.amphiphilic_pseudo_amino_acid_composition = descriptor_df.iloc[:,amphiphilic_pseudo_amino_acid_composition_dim[0]:amphiphilic_pseudo_amino_acid_composition_dim[1]]
 
         self.all_descriptors = descriptor_df.iloc[:,:]
+
+        print("All descriptors imported successfully.\n")
 
     def get_amino_acid_composition(self):
         """
@@ -478,7 +518,7 @@ class Descriptors():
             (30 features per property - using 8 properties, with lag=30).
         """
         print('\nGetting Moreaubroto Autocorrelation Descriptors...')
-        print('#############################################################\n')
+        print('##################################################\n')
 
         #if attribute already calculated & not empty then return it
         if not self.moreaubroto_autocorrelation.empty:
@@ -603,27 +643,39 @@ class Descriptors():
         -------
         :composition : pd.DataFrame
             pandas dataframe of C_CTD values for protein sequence. Output will
-            be of the shape N x 3, where N is the number of protein sequences 
-            and 3 is the number of features calculated fromthe descriptor.
+            be of the shape N x M, where N is the number of protein sequences 
+            and M is the (number of physiochemical properties * 3), with 3 
+            features being calculated per property. By default the 
+            "hydrophobicity" property will be used, generating an output of 
+            N x 3. 
         """
         print('\nGetting Composition (CTD) Descriptors...')
-        print('#########################################\n')
+        print('########################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.ctd_composition.empty:
+        if not (self.ctd_composition.empty):
             return self.ctd_composition
-
-        #get descriptor-specific parameters from config file
-        property = self.descr_parameters.ctd_composition[0]["property"]
+        
+        #calculate ctd descriptor if not already calculated
+        if (self.ctd.empty):
+            self.ctd = self.get_ctd()
 
         #initialise dataframe
         comp_df = pd.DataFrame()
 
-        #calculate descriptor value, concatenate descriptor values
-        for seq in self.protein_seqs:
-            comp_seq = protpy.ctd_composition(seq, property=property)
-            comp_df = pd.concat([comp_df, comp_seq])
+        #get ctd properties used for calculating descriptor
+        ctd_property = self.descr_parameters.ctd[0]["property"]
+        if not (isinstance(ctd_property, list)):
+            ctd_property = ctd_property.split(',')
+        all_ctd = self.descr_parameters.ctd[0]["all"]
 
+        #get composition descriptor from CTD dataframe, dependant on number of props,
+        # 3 features per property
+        if (all_ctd):
+            comp_df = self.ctd.iloc[:,0:21]
+        else:
+            comp_df = self.ctd.iloc[:,0:3 * len(ctd_property)]
+            
         self.ctd_composition = comp_df
 
         return self.ctd_composition
@@ -641,27 +693,39 @@ class Descriptors():
         -------
         :transition : pd.Dataframe
             pandas Dataframe of T_CTD values for protein sequence. Output will
-            be of the shape N x 1, where N is the number of protein sequences 
-            and 3 is the number of features calculated from the descriptor.
+            be of the shape N x M, where N is the number of protein sequences 
+            and M is the (number of physiochemical properties * 3), with 3 
+            features being calculated per property. By default the 
+            "hydrophobicity" property will be used, generating an output of 
+            N x 3. 
         """
         print('\nGetting Transition (CTD) Descriptors...')
-        print('#########################################\n')
+        print('#######################################\n')
 
         #if attribute already calculated & not empty then return it
         if not self.ctd_transition.empty:
             return self.ctd_transition
 
-        #get descriptor-specific parameters from config file
-        property = self.descr_parameters.ctd_transition[0]["property"]
+        #calculate ctd descriptor if not already calculated
+        if (self.ctd.empty):
+            self.ctd = self.get_ctd()
 
         #initialise dataframe
         transition_df = pd.DataFrame()
 
-        #calculate descriptor value, concatenate descriptor values
-        for seq in self.protein_seqs:
-            transition_seq = protpy.ctd_transition(seq, property=property)
-            transition_df = pd.concat([transition_df, transition_seq])
+        #get ctd properties used for calculating descriptor
+        ctd_property = self.descr_parameters.ctd[0]["property"]
+        if not (isinstance(ctd_property, list)):
+            ctd_property = ctd_property.split(',')
+        all_ctd = self.descr_parameters.ctd[0]["all"]
 
+        #get composition descriptor from CTD dataframe, dependant on number of props,
+        # 3 features per property
+        if (all_ctd):
+            transition_df = self.ctd.iloc[:,21:42]
+        else:
+            transition_df = self.ctd.iloc[:,3 * len(ctd_property):(3 * len(ctd_property) * 2)]
+        
         self.ctd_transition = transition_df
 
         return self.ctd_transition
@@ -679,8 +743,11 @@ class Descriptors():
         -------
         :distribution : pd.Dataframe
             pandas Dataframe of D_CTD values for protein sequence. Output will
-            be of the shape N x 15, where N is the number of proteins sequences
-            and 15 is the number of features calculated from the descriptor.
+            be of the shape N x M, where N is the number of protein sequences 
+            and M is the (number of physiochemical properties * 15), with 15
+            features being calculated per property. By default the 
+            "hydrophobicity" property will be used, generating an output of 
+            N x 15. 
         """
         print('\nGetting Distribution (CTD) Descriptors...')
         print('#########################################\n')
@@ -689,17 +756,26 @@ class Descriptors():
         if not self.ctd_distribution.empty:
             return self.ctd_distribution
 
-        #get descriptor-specific parameters from config file
-        property = self.descr_parameters.ctd_distribution[0]["property"]
+        #calculate ctd descriptor if not already calculated
+        if (self.ctd.empty):
+            self.ctd = self.get_ctd()
 
         #initialise dataframe
         distribution_df = pd.DataFrame()
 
-        #calculate descriptor value, concatenate descriptor values
-        for seq in self.protein_seqs:
-            distribution_seq = protpy.ctd_distribution(seq, property=property)
-            distribution_df = pd.concat([distribution_df, distribution_seq])
+        #get ctd properties used for calculating descriptor
+        ctd_property = self.descr_parameters.ctd[0]["property"]
+        if not (isinstance(ctd_property, list)):
+            ctd_property = ctd_property.split(',')
+        all_ctd = self.descr_parameters.ctd[0]["all"]
 
+        #get composition descriptor from CTD dataframe, dependant on number of props,
+        # 15 features per property
+        if (all_ctd):
+            distribution_df = self.ctd.iloc[:,42:]
+        else:
+            distribution_df = self.ctd.iloc[:,2 * (3 * len(ctd_property)):]
+        
         self.ctd_distribution = distribution_df
 
         return self.ctd_distribution
@@ -718,8 +794,12 @@ class Descriptors():
         -------
         :ctd : pd.Series
             pandas Series of CTD values for protein sequence. Output will
-            be of the shape N x 147, where N is the number of protein 
-            sequences and 147 is the number of features calculated from the descriptor.
+            be of the shape N x M, where N is the number of protein 
+            sequences and M is (number of physiochemical properties * 21),
+            with 21 being the number of features calculated for each of the
+            CTD descriptors per property. Using all properties will generate
+            an output of N x 147, by default the "hydrophobicity"
+            property is used, generating an output of N x 21. 
         """
         print('\nGetting CTD Descriptors...')
         print('##########################\n')
@@ -729,7 +809,7 @@ class Descriptors():
             return self.ctd
 
         #get descriptor-specific parameters from config file
-        property = self.descr_parameters.ctd[0]["property"]
+        ctd_property = self.descr_parameters.ctd[0]["property"]
         all_ctd = self.descr_parameters.ctd[0]["all"]
 
         #initialise dataframe
@@ -737,7 +817,7 @@ class Descriptors():
 
         #calculate descriptor value, concatenate descriptor values
         for seq in self.protein_seqs:
-            ctd_seq = protpy.ctd_(seq, property=property, all_ctd=all_ctd)
+            ctd_seq = protpy.ctd_(seq, property=ctd_property, all_ctd=all_ctd)
             ctd_df = pd.concat([ctd_df, ctd_seq])
 
         self.ctd = ctd_df
@@ -960,7 +1040,7 @@ class Descriptors():
             protein sequences.
         """
         print('\nGetting Amphiphilic Pseudo Amino Acid Composition Descriptors...')
-        print('###############################################################\n')
+        print('################################################################\n')
 
         #if attribute already calculated & not empty then return it
         if not self.amphiphilic_pseudo_amino_acid_composition.empty:
@@ -1004,7 +1084,6 @@ class Descriptors():
             of descriptor features. 
         """
         print('Calculating all descriptor values....\n')
-        print('#####################################\n')
 
         #if descriptor attribute DF is empty then call get_descriptor function
         if (getattr(self, "amino_acid_composition").empty):

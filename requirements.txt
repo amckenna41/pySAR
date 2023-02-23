@@ -1,4 +1,4 @@
-aaindex>=1.0.4
+aaindex>=1.0.5
 numpy>=1.16.6
 pandas==1.1.0
 # scipy==1.7.3
@@ -13,4 +13,4 @@ pytest==6.2.4
 varname
 biopython
 urllib3==1.26.5
-protpy>=1.0.5
+protpy>=1.0.7

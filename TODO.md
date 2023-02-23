@@ -140,6 +140,20 @@ To Do List:
 - [ ] Update aai encoding unit tests to take new naming convention into consideration.
 - [ ] Ensure output from encoding funcs is DF not a Series.
 - [ ] Remove "Getting X Descriptor" etc?
+- [ ] Rename software from pySAR -> pysar.
+- [ ] Go over import_descriptors func.
+- [ ] In test_descriptors, check if double import of descriptors module is needed.
+- [ ] Mention aaindex and protpy in readme of pysar.
+- [ ] Calcualte descriptor values for each example dataset and upload to repo, using default params in config, if file size not too big.
+- [ ] Replace descriptors csv with updated csv.
+- [ ] Rerun get all descriptors func on colab to take into account new conjoint triad and CTD column names.
+- [ ] If ["ctd"]["all"] = true this calculates ALL CTD descriptors for all 7 properties, if not true then CTD descriptors are calculated individually. 
+- [ ] Remove ctd_comp, distr, trans descriptors, just use parent CTD descriptors and slice from it.
+- [ ] Python unit tests using ctd with 1 property, and using all properties, check dimensions - 21 vs 147 (147/21=7). 21 dimensions per property. 3 C, 3 T, 15 D.
+- [X] Add spaces to test config files.
+- [ ] SOCN tests with distance matrix in config empty & non-empty, different SOCN functions.
+- [X] def quasi_sequence_order() - dimesnion (1,lag). def quasi_sequence_order_all() - dimension (1,lag*2)
+- [ ] Test descriptor import function.
 <!-- - [ ] Add Contributing section to readme (https://github.com/arc298/instagram-scraper). -->
 
 

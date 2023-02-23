@@ -10,7 +10,6 @@ import unittest
 unittest.TestLoader.sortTestMethodsUsing = None
 
 import pySAR.descriptors as descr
-from pySAR.descriptors import *
 
 class DescriptorTests(unittest.TestCase):
     """
@@ -64,6 +63,7 @@ class DescriptorTests(unittest.TestCase):
             os.path.join(config_path, "test_absorption.json"), 
             os.path.join(config_path, "test_localization.json")
         ]
+        self.test_descriptors_path = os.path.join('tests', 'test_data', 'test_thermostability_descriptors.csv')
 
         #array of the total number of protein seqs per dataset
         self.num_seqs = [261, 152, 81, 254]
@@ -196,6 +196,33 @@ class DescriptorTests(unittest.TestCase):
         self.assertIn('dipeptide_composition', valid_desc, "Descriptor should be in list of valid descriptors.")
         self.assertIn('quasi_sequence_order', valid_desc, "Descriptor should be in list of valid descriptors.")
         self.assertIn('amphiphilic_pseudo_amino_acid_composition', valid_desc, "Descriptor should be in list of valid descriptors.")
+
+    def test_descriptor_import(self):
+        """ Testing import function that allows for pre-calculated descriptors to be imported from a csv. """ 
+
+        desc = descr.Descriptors(self.all_config_files[0])
+#1.)
+        desc.import_descriptors(self.test_descriptors_path)
+
+        self.assertFalse(desc.amino_acid_composition.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.dipeptide_composition.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.tripeptide_composition.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.moreaubroto_autocorrelation.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.moran_autocorrelation.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.geary_autocorrelation.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.ctd.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.ctd_composition.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.ctd_transition.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.ctd_distribution.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.conjoint_triad.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.sequence_order_coupling_number.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.quasi_sequence_order.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.pseudo_amino_acid_composition.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.amphiphilic_pseudo_amino_acid_composition.empty, "Descriptor dataframe should not be empty.")
+        self.assertFalse(desc.all_descriptors.empty, "Descriptor dataframe should not be empty.")
+#2.)
+        with self.assertRaises(OSError):
+            desc.import_descriptors("invalid_filepath.csv")
 
     def test_amino_acid_composition(self):
         """ Testing Amino Acid Composition protein descriptor attributes and methods. """
@@ -334,7 +361,7 @@ class DescriptorTests(unittest.TestCase):
             ctd = desc.get_ctd()
 #1.)
             self.assertFalse(ctd.empty, 'Descriptor dataframe should not be empty')
-            self.assertEqual(ctd.shape, (self.num_seqs[dataset], 147), 'Descriptor not of correct ({}, 147).'.format(self.num_seqs[dataset]))
+            self.assertEqual(ctd.shape, (self.num_seqs[dataset], 21), 'Descriptor not of correct ({}, 21).'.format(self.num_seqs[dataset]))
             self.assertIsInstance(ctd, pd.DataFrame, "Descriptor should be of type DataFrame.")
             self.assertTrue(ctd.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
             self.assertTrue(all(col == np.float64 for col in list(ctd.dtypes)), "Column datatypes should be np.float64.")
@@ -343,10 +370,10 @@ class DescriptorTests(unittest.TestCase):
             for col in list(ctd.columns):
                 matching_col = False
                 for prop in properties:
-                    if (col.startswith(prop)):
+                    if (col.endswith(prop)):
                         matching_col = True
-                        self.assertTrue(((bool(re.search(prop + r"_CTD_[A-Z]_[0-9][0-9]", col))) or \
-                            (bool(re.search(prop + r"_CTD_[A-Z]{1}_[0-9][0-9]_[0-9][0-9]", col)))), 
+                        self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
+                            (bool(re.search(r"CTD_[A-Z]_[0-9]{2}_[0-9]{3}_" + prop , col)))), 
                                 "Column name does not follow expected format: {}.".format(col))
                 self.assertTrue(matching_col, "Column name's property name not found and doesn't match format: {}.".format(col))
                 
@@ -363,10 +390,10 @@ class DescriptorTests(unittest.TestCase):
             for col in list(ctd_comp.columns):
                 matching_col = False
                 for prop in properties:
-                    if (col.startswith(prop)):
+                    if (col.endswith(prop)):
                         matching_col = True
-                        self.assertTrue(((bool(re.search(prop + r"_CTD_[A-Z]_[0-9][0-9]", col))) or \
-                            (bool(re.search(prop + r"_CTD_[A-Z]{1}_[0-9][0-9]_[0-9][0-9]", col)))), 
+                        self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
+                            (bool(re.search(r"CTD_[A-Z]{1}_[0-9]{2}_[0-9]{2}_" + prop, col)))), 
                                 "Column name does not follow expected format: {}.".format(col))
                 self.assertTrue(matching_col, "Column name's property name not found and doesn't match format: {}.".format(col))
 
@@ -383,10 +410,10 @@ class DescriptorTests(unittest.TestCase):
             for col in list(ctd_trans.columns):
                 matching_col = False
                 for prop in properties:
-                    if (col.startswith(prop)):
+                    if (col.endswith(prop)):
                         matching_col = True
-                        self.assertTrue(((bool(re.search(prop + r"_CTD_[A-Z]_[0-9][0-9]", col))) or \
-                            (bool(re.search(prop + r"_CTD_[A-Z]{1}_[0-9][0-9]_[0-9][0-9]", col)))), 
+                        self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
+                            (bool(re.search(r"CTD_[A-Z]{1}_[0-9]{2}_[0-9]{2}_" + prop, col)))), 
                                 "Column name does not follow expected format: {}.".format(col))
                 self.assertTrue(matching_col, "Column name's property name not found and doesn't match format: {}.".format(col))
 #4.)
@@ -403,10 +430,10 @@ class DescriptorTests(unittest.TestCase):
             for col in list(ctd_distr.columns):
                 matching_col = False
                 for prop in properties:
-                    if (col.startswith(prop)):
+                    if (col.endswith(prop)):
                         matching_col = True
-                        self.assertTrue(((bool(re.search(prop + r"_CTD_[A-Z]_[0-9][0-9]", col))) or \
-                            (bool(re.search(prop + r"_CTD_[A-Z]{1}_[0-9][0-9]_[0-9][0-9]", col)))), 
+                        self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
+                            (bool(re.search(r"CTD_[A-Z]{1}_[0-9]{2}_[0-9]{3}_" + prop, col)))), 
                                 "Column name does not follow expected format: {}.".format(col))
                 self.assertTrue(matching_col, "Column name's property name not found and doesn't match format: {}.".format(col))
 
@@ -427,7 +454,7 @@ class DescriptorTests(unittest.TestCase):
 
             #iterate over all columns and check its name follows expected format
             for col in list(conjoint_triad.columns):
-                self.assertTrue(bool(re.match(r"[0-9]{3}", col)), 
+                self.assertTrue(bool(re.match(r"conj_triad_[0-9]{3}", col)), 
                     "Column name doesn't match expected regex pattern: {}.".format(col))   
 
     def test_sequence_order_coupling_number(self):
@@ -436,6 +463,7 @@ class DescriptorTests(unittest.TestCase):
         for dataset in range(0,len(self.all_config_files)):
             desc = descr.Descriptors(self.all_config_files[dataset])
 
+            print("self.all_config_files[dataset]", self.all_config_files[dataset])
             #get descriptor values
             sequence_order_coupling_number = desc.get_sequence_order_coupling_number()
 #1.)
