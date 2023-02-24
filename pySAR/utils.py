@@ -46,11 +46,11 @@ class Map(dict):
     def __init__(self, *args, **kwargs):
         super(Map, self).__init__(*args, **kwargs)
         for arg in args:
-            if isinstance(arg, dict):
+            if (isinstance(arg, dict)):
                 for k, v in arg.items():
                     self[k] = v
 
-        if kwargs:
+        if (kwargs):
             for k, v in kwargs.items():
                 self[k] = v
 
@@ -279,13 +279,13 @@ def save_results(results, name):
     None
     """
     #output results to csv if results variable is a dictionary
-    if isinstance(results,dict):
+    if (isinstance(results,dict)):
         with open(os.path.join(OUTPUT_FOLDER, name + '.csv'), 'w') as f:
             w = csv.DictWriter(f, results.keys())
             w.writeheader()
             w.writerow(results)
     #output results to csv if results variable is a dataframe or Series
-    elif isinstance(results, pd.DataFrame) or isinstance(results, pd.Series):
+    elif (isinstance(results, pd.DataFrame) or isinstance(results, pd.Series)):
         results.reset_index(drop=True, inplace=True)
         results.to_csv(os.path.join(OUTPUT_FOLDER, name + '.csv'))
     else:

@@ -293,7 +293,7 @@ class Model():
         self.test_split = test_size     
 
         #scale training data X, if scale=True
-        if scale:
+        if (scale):
             X = StandardScaler().fit_transform(X)
 
         #split X and Y into training and test data

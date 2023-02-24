@@ -107,7 +107,7 @@ class PyDSP():
             raise ValueError('Protein sequences input parameter cannot be empty or None.')
 
         for seq in protein_seqs:
-            if isinstance(seq, str):
+            if (isinstance(seq, str)):
                 raise ValueError("Protein sequences cannot be directly passed into the pyDSP class, you "
                                 "must first encode the protein sequences using a specific aaindex code, "
                                 "and then pass the resultant encoded sequence to the protein_seqs parameter.")

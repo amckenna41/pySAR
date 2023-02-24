@@ -7,8 +7,7 @@ pySAR imports the dataset declared within the configuration file from this data 
 Data
 -----
 * `thermostability.txt` - dataset studied in the associated work which consists of a dataset to measure the thermostability of various mutants from a recombination library designed from parental cytochrome P450's, measured using the T50 metric (temperature at which 50% of a protein is irreversibly denatured after 10 mins of incubation, ranging from 39.2 to 64.4 degrees C), which represents the protein activity of this dataset. [[1]](#references)
-* `descriptors.csv` - csv of all pre-calculated descriptors for thermostability dataset. 
-
+* `descriptors_thermostability.csv` - csv of all pre-calculated descriptors for thermostability dataset. 
 
 References
 ----------

@@ -119,41 +119,48 @@ To Do List:
 - [ ] Add reference numbers to comments in descriptor functions - double check existing ones are correct, reorder them.
 - [X] Change QSOrder to QSO.
 - [ ] Rewrite APAAComp descriptor comments to mention its dimensions change with lamda. 
-- [ ] Wrap all if statements in brackets.
+- [X] Wrap all if statements in brackets.
 - [X] Remove convolution from pyDSP and config.
 - [X] Move Map class to utils.
-- [ ] Ensure all functions have Parameters and Returns in the comments, even if they are None
+- [X] Ensure all functions have Parameters and Returns in the comments, even if they are None
 - [ ] Add filter function to pyDSP.
 - [X] Change self.spectra to self.spectrum in pyDSP.
 - [X] In function comments change default = X to default=
-- [ ] For pseudo and amp composition, only test on 1 dataset as takes to long with all of them.
-- [ ] Double check output datatype of encoding functions, Series or DF? 
+- [X] For pseudo and amp composition, only test on 1 dataset as takes to long with all of them.
+- [X] Double check output datatype of encoding functions, Series or DF? 
 - [X] Unit test for get_aai_encoding func, pass in list of multiple indices, test that dimension of output is 2 * length of sequences. 
 - [X] Remove string section of get_aai_encoding and just cast input to list if its a string.
 - [X] Error when passing in single index into encode_aai (N, A, K, H, 9, 2, 0, 1, 0, 2).
-- [ ] Unit test dtypes of each column in aai encoding - ['Index', 'Category', 'R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Variance']
+- [X] Unit test dtypes of each column in aai encoding - ['Index', 'Category', 'R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Variance']
 - [X] Test dtypes of activity column outputs.
-- [ ] Need to change max_lag to lag in protpy.quasi_sequence_order when new protpy software releases.
+- [X] Need to change max_lag to lag in protpy.quasi_sequence_order when new protpy software releases.
 - [X] In get_descriptor_encoding function, parse input as list, seperate multiple descriptors on comma.
 - [X] Potential issue when concatenating conjoint triad descriptor output with aa_indices descriptor as column names may clash.
 - [X] Change aaindex column names from incrementing numbers to - "aa_1", "aa_2" ...
-- [ ] Update aai encoding unit tests to take new naming convention into consideration.
-- [ ] Ensure output from encoding funcs is DF not a Series.
+- [X] Update aai encoding unit tests to take new naming convention into consideration.
+- [X] Ensure output from encoding funcs is DF not a Series.
 - [ ] Remove "Getting X Descriptor" etc?
 - [ ] Rename software from pySAR -> pysar.
-- [ ] Go over import_descriptors func.
-- [ ] In test_descriptors, check if double import of descriptors module is needed.
-- [ ] Mention aaindex and protpy in readme of pysar.
-- [ ] Calcualte descriptor values for each example dataset and upload to repo, using default params in config, if file size not too big.
-- [ ] Replace descriptors csv with updated csv.
-- [ ] Rerun get all descriptors func on colab to take into account new conjoint triad and CTD column names.
-- [ ] If ["ctd"]["all"] = true this calculates ALL CTD descriptors for all 7 properties, if not true then CTD descriptors are calculated individually. 
-- [ ] Remove ctd_comp, distr, trans descriptors, just use parent CTD descriptors and slice from it.
+- [X] Go over import_descriptors func.
+- [X] In test_descriptors, check if double import of descriptors module is needed.
+- [X] Mention aaindex and protpy in readme of pysar.
+- [X] Calcualte descriptor values for each example dataset and upload to repo, using default params in config, if file size not too big.
+- [X] Replace descriptors csv with updated csv.
+- [X] Rerun get all descriptors func on colab to take into account new conjoint triad and CTD column names.
+- [X] If ["ctd"]["all"] = true this calculates ALL CTD descriptors for all 7 properties, if not true then CTD descriptors are calculated individually. 
+- [X] Remove ctd_comp, distr, trans descriptors, just use parent CTD descriptors and slice from it.
 - [ ] Python unit tests using ctd with 1 property, and using all properties, check dimensions - 21 vs 147 (147/21=7). 21 dimensions per property. 3 C, 3 T, 15 D.
 - [X] Add spaces to test config files.
 - [ ] SOCN tests with distance matrix in config empty & non-empty, different SOCN functions.
 - [X] def quasi_sequence_order() - dimesnion (1,lag). def quasi_sequence_order_all() - dimension (1,lag*2)
-- [ ] Test descriptor import function.
+- [X] Test descriptor import function.
+- [X] If no extension on config param, dataset and or descriptors csv param then apend csv to it.
+- [ ] Input dataset can be in txt or csv form.
+- [ ] On encoding.descriptor_encoding(), parameters in comments is empty:
+- [X] Add all pre-calculated descriptors csv to example_datasets.
+<!-- # Algorithm: PLSRegression
+# Parameters: 
+# Test Split: 0.2  -->
 <!-- - [ ] Add Contributing section to readme (https://github.com/arc298/instagram-scraper). -->
 
 

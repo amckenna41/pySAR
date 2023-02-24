@@ -122,7 +122,7 @@ class Encoding(PySAR):
         #if no indices passed into aai_list then use all indices by default
         if (aai_list == None or aai_list == [] or aai_list == ""):
             all_indices = aaindex1.record_codes()
-        elif isinstance(aai_list, str):   #if single descriptor input, cast to list
+        elif (isinstance(aai_list, str)):   #if single descriptor input, cast to list
             all_indices = [aai_list]
         else:
             all_indices = aai_list
@@ -161,7 +161,7 @@ class Encoding(PySAR):
             encoded_seqs = self.get_aai_encoding(index)
 
             #generate protein spectra from pyDSP class if use_dsp is true
-            if self.use_dsp:
+            if (self.use_dsp):
                 pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
                 pyDSP.encode_seqs()
                 X = pd.DataFrame(pyDSP.spectrum_encoding)
@@ -291,7 +291,7 @@ class Encoding(PySAR):
             # desc = Descriptors(self.config_file)
             if (desc_combo == 2):
                 all_descriptors = list(itertools.combinations(desc_list, 2))
-            elif desc_combo == 3:
+            elif (desc_combo == 3):
                 all_descriptors = list(itertools.combinations(desc_list, 3))
             else:
                 all_descriptors = desc_list     #using default combination of descriptors
@@ -602,7 +602,7 @@ class Encoding(PySAR):
                 '''
 
                 #get train/test split, fit model and predict activity of test data.
-                if X.shape[1] == 1 and repr(self.model) == "PLSRegression":
+                if (X.shape[1] == 1 and repr(self.model) == "PLSRegression"):
                   tmp_model = Model('plsreg',parameters={'n_components':1})
                   X_train, X_test, Y_train, Y_test  = tmp_model.train_test_split(X, Y)
                   model_fit = tmp_model.fit()

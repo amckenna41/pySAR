@@ -103,15 +103,17 @@ class Descriptors():
 
         #desc_config input parameter can be a filepath to the config file,
         #but also a dict of config parameters can also input to it
-        if not isinstance(desc_config, dict):
-            if not isinstance(desc_config, str) or desc_config is None:
+        if not (isinstance(self.desc_config, dict)):
+            if not (isinstance(self.desc_config, str) or (self.desc_config is None)):
                 raise TypeError('JSON config file must be a filepath of type string, got type {}.'.format(type(desc_config)))
-            if os.path.isfile(self.desc_config):
+            if (os.path.splitext(self.desc_config)[1] == ''):
+                self.desc_config = self.desc_config + '.json' #append extension if only filename input        
+            if (os.path.isfile(self.desc_config)):
                 desc_config_filepath = self.desc_config
-            elif os.path.isfile(os.path.join('config', self.desc_config)):
+            elif (os.path.isfile(os.path.join('config', self.desc_config))):
                 desc_config_filepath = os.path.join('config', self.desc_config)
             else:
-                raise OSError('JSON config file not found at path: {}.'.format(desc_config_filepath))
+                raise OSError('JSON config file not found at path: {}.'.format(self.desc_config))
             #open json file and read config parameters
             try:
                 with open(desc_config_filepath) as f:
@@ -129,15 +131,19 @@ class Descriptors():
 
         #parameter of whether to read in / use all available descriptors 
         self.all_desc = self.descr_config.descriptors.all_desc 
+        
+        #create data directory if doesnt exist
+        if not (os.path.isdir(DATA_DIR)):
+            os.path.mkdir(DATA_DIR)
 
         #import protein sequences from dataset if not directly specified in protein_seqs input param
-        if not isinstance(self.protein_seqs, pd.Series):
+        if not (isinstance(self.protein_seqs, pd.Series)):
             if (self.protein_seqs is None or self.protein_seqs == ""): 
                 dataset_filepath = ""
                 #open dataset and read protein seqs if protein_seqs is empty/None
-                if os.path.isfile(self.dataset_parameters["dataset"]):
+                if (os.path.isfile(self.dataset_parameters["dataset"])):
                     dataset_filepath = self.dataset_parameters["dataset"]
-                elif os.path.isfile(os.path.join(DATA_DIR, self.dataset_parameters["dataset"])):
+                elif (os.path.isfile(os.path.join(DATA_DIR, self.dataset_parameters["dataset"]))):
                     dataset_filepath = os.path.join(DATA_DIR, self.dataset_parameters["dataset"])
                 else:
                     raise OSError('Dataset file not found at path: {}.'.format(dataset_filepath))
@@ -150,7 +156,7 @@ class Descriptors():
                     raise IOError('Error opening dataset file: {}.'.format(dataset_filepath))
             else: 
                 #if 1 protein sequence (1 string) input then convert to pandas Series object
-                if isinstance(self.protein_seqs, str):
+                if (isinstance(self.protein_seqs, str)):
                     self.protein_seqs = pd.Series(self.protein_seqs)
 
                 #only the sequences should be passed in, not all columns in a dataset etc.
@@ -189,6 +195,10 @@ class Descriptors():
         self.pseudo_amino_acid_composition = pd.DataFrame()
         self.amphiphilic_pseudo_amino_acid_composition = pd.DataFrame()
         self.all_descriptors = pd.DataFrame()
+        
+        #append extension if just the filename input as descriptors csv
+        if (os.path.splitext(self.descr_config.descriptors_csv)[1] == ''):
+            self.descr_config.descriptors_csv = self.descr_config.descriptors_csv + ".csv"
 
         #try importing descriptors csv with pre-calculated descriptor values,
         #  if not found then calculate all descriptors if all_desc is true
@@ -369,7 +379,7 @@ class Descriptors():
         print('#############################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.amino_acid_composition.empty:
+        if not (self.amino_acid_composition.empty):
             return self.amino_acid_composition
 
         #initialise dataframe
@@ -416,7 +426,7 @@ class Descriptors():
         print('############################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.dipeptide_composition.empty:
+        if not (self.dipeptide_composition.empty):
             return self.dipeptide_composition
 
         #initialise dataframe
@@ -463,7 +473,7 @@ class Descriptors():
         print('#############################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.tripeptide_composition.empty:
+        if not (self.tripeptide_composition.empty):
             return self.tripeptide_composition
 
         #initialise dataframe
@@ -521,7 +531,7 @@ class Descriptors():
         print('##################################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.moreaubroto_autocorrelation.empty:
+        if not (self.moreaubroto_autocorrelation.empty):
             return self.moreaubroto_autocorrelation
 
         #get descriptor-specific parameters from config file
@@ -565,7 +575,7 @@ class Descriptors():
         print('############################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.moran_autocorrelation.empty:
+        if not (self.moran_autocorrelation.empty):
             return self.moran_autocorrelation
 
         #get descriptor-specific parameters from config file
@@ -609,7 +619,7 @@ class Descriptors():
         print('############################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.geary_autocorrelation.empty:
+        if not (self.geary_autocorrelation.empty):
             return self.geary_autocorrelation
 
         #get descriptor-specific parameters from config file
@@ -703,7 +713,7 @@ class Descriptors():
         print('#######################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.ctd_transition.empty:
+        if not (self.ctd_transition.empty):
             return self.ctd_transition
 
         #calculate ctd descriptor if not already calculated
@@ -753,7 +763,7 @@ class Descriptors():
         print('#########################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.ctd_distribution.empty:
+        if not (self.ctd_distribution.empty):
             return self.ctd_distribution
 
         #calculate ctd descriptor if not already calculated
@@ -805,7 +815,7 @@ class Descriptors():
         print('##########################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.ctd.empty:
+        if not (self.ctd.empty):
             return self.ctd
 
         #get descriptor-specific parameters from config file
@@ -848,7 +858,7 @@ class Descriptors():
         print('#####################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.conjoint_triad.empty:
+        if not (self.conjoint_triad.empty):
             return self.conjoint_triad
 
         #initialise dataframe
@@ -889,7 +899,7 @@ class Descriptors():
         print('##############################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.sequence_order_coupling_number.empty:
+        if not (self.sequence_order_coupling_number.empty):
             return self.sequence_order_coupling_number
 
         #initialise dataframe
@@ -941,7 +951,7 @@ class Descriptors():
         print('###########################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.quasi_sequence_order.empty:
+        if not (self.quasi_sequence_order.empty):
             return self.quasi_sequence_order
 
         #initialise dataframe
@@ -996,7 +1006,7 @@ class Descriptors():
         print('####################################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.pseudo_amino_acid_composition.empty:
+        if not (self.pseudo_amino_acid_composition.empty):
             return self.pseudo_amino_acid_composition
 
         #initialise dataframe
@@ -1043,7 +1053,7 @@ class Descriptors():
         print('################################################################\n')
 
         #if attribute already calculated & not empty then return it
-        if not self.amphiphilic_pseudo_amino_acid_composition.empty:
+        if not (self.amphiphilic_pseudo_amino_acid_composition.empty):
             return self.amphiphilic_pseudo_amino_acid_composition
 
         #get descriptor-specific parameters from config file
@@ -1175,7 +1185,7 @@ class Descriptors():
 
         #validate input descriptor is a valid available descriptor, get its closest match
         desc_matches = get_close_matches(descriptor, self.valid_descriptors(), cutoff=0.4)
-        if desc_matches!=[]:
+        if (desc_matches != []):
             desc = desc_matches[0]  #set desc to closest descriptor match found
         else:
             raise ValueError('Could not find a match for the input descriptor {} \
@@ -1183,77 +1193,77 @@ class Descriptors():
 
         #if sought descriptor attribute dataframe is empty, call the descriptor's
         #   get_descriptor() function, set desc_encoding to descriptor attribute
-        if desc == 'amino_acid_composition':
+        if (desc == 'amino_acid_composition'):
             if (getattr(self, desc).empty):
                 self.get_amino_acid_composition()
             desc_encoding = self.amino_acid_composition
 
-        elif desc == 'dipeptide_composition':
+        elif (desc == 'dipeptide_composition'):
             if (getattr(self, desc).empty):
                 self.get_dipeptide_composition()
             desc_encoding = self.dipeptide_composition
 
-        elif desc == 'tripeptide_composition':
+        elif (desc == 'tripeptide_composition'):
             if (getattr(self, desc).empty):
                 self.get_tripeptide_composition()
             desc_encoding = self.tripeptide_composition
 
-        elif desc == 'moreaubroto_autocorrelation':
+        elif (desc == 'moreaubroto_autocorrelation'):
             if (getattr(self, desc).empty):
               self.get_moreaubroto_autocorrelation()
             desc_encoding = self.moreaubroto_autocorrelation
             
-        elif desc == 'moran_autocorrelation':
+        elif (desc == 'moran_autocorrelation'):
             if (getattr(self, desc).empty):
               self.get_moran_autocorrelation()
             desc_encoding = self.moran_autocorrelation
 
-        elif desc == 'geary_autocorrelation':
+        elif (desc == 'geary_autocorrelation'):
             if (getattr(self, desc).empty):
               self.get_geary_autocorrelation()
             desc_encoding = self.geary_autocorrelation
 
-        elif desc == 'ctd':
+        elif (desc == 'ctd'):
             if (getattr(self, desc).empty):
               self.get_ctd()
             desc_encoding = self.ctd
 
-        elif desc == 'ctd_composition':
+        elif (desc == 'ctd_composition'):
             if (getattr(self, desc).empty):
               self.get_ctd_composition()
             desc_encoding = self.ctd_composition
 
-        elif desc == 'ctd_transition':
+        elif (desc == 'ctd_transition'):
             if (getattr(self, desc).empty):
               self.get_ctd_transition()
             desc_encoding = self.ctd_transition
 
-        elif desc == 'ctd_distribution':
+        elif (desc == 'ctd_distribution'):
             if (getattr(self, desc).empty):
               self.get_ctd_distribution()
             desc_encoding = self.ctd_distribution
 
-        elif desc == 'conjoint_triad':
+        elif (desc == 'conjoint_triad'):
             if (getattr(self, desc).empty):
               self.get_conjoint_triad()
             desc_encoding = self.conjoint_triad
 
-        elif desc == 'sequence_order_coupling_number':
+        elif (desc == 'sequence_order_coupling_number'):
             if (getattr(self, desc).empty):
               self.get_sequence_order_coupling_number()
             desc_encoding = self.sequence_order_coupling_number
 
-        elif desc == 'quasi_sequence_order':
+        elif (desc == 'quasi_sequence_order'):
             if (getattr(self, desc).empty):
               self.get_quasi_sequence_order()
             desc_encoding = self.quasi_sequence_order
 
-        elif desc == 'pseudo_amino_acid_composition':
+        elif (desc == 'pseudo_amino_acid_composition'):
             if (getattr(self, desc).empty):
               self.get_pseudo_amino_acid_composition()
             desc_encoding = self.pseudo_amino_acid_composition
 
-        elif desc == 'amphiphilic_pseudo_amino_acid_composition':
+        elif (desc == 'amphiphilic_pseudo_amino_acid_composition'):
             if (getattr(self, desc).empty):
               self.get_amphiphilic_pseudo_amino_acid_composition()
             desc_encoding = self.amphiphilic_pseudo_amino_acid_composition
@@ -1286,9 +1296,9 @@ class Descriptors():
        all_descriptors = [de[1:] for de in all_descriptors]
 
        #get all combinations of 2 or 3 descriptors.
-       if desc_combo == 2:
+       if (desc_combo == 2):
            all_descriptors = list(itertools.combinations(all_descriptors, 2))
-       elif desc_combo == 3:
+       elif (desc_combo == 3):
            all_descriptors = list(itertools.combinations(all_descriptors, 3))
        else:
            pass     #if desc_combo not equal to 2 or 3 then use default all_descriptors

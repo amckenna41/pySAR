@@ -87,7 +87,7 @@ class PySAR():
         elif (os.path.isfile(os.path.join('config', self.config_file))):
             config_filepath = os.path.join('config', self.config_file)
         else:
-            raise OSError('JSON config file not found at path: {}.'.format(config_filepath))
+            raise OSError('JSON config file not found at path: {}.'.format(self.config_file))
         try:
             with open(config_filepath) as f:
                 self.params = json.load(f)
@@ -97,7 +97,9 @@ class PySAR():
 
         #create instance of Map class so parameters can be accessed via dot notation
         self.params = Map(self.params)
-        self.dataset = self.params.dataset[0]["dataset"]
+        self.dataset = self.params.dataset[0]["dataset"] 
+        if (os.path.splitext(self.dataset)[1] == ''):
+            self.dataset = self.dataset + ".txt" #append extension if just filename input
         self.sequence_col = self.params.dataset[0]["sequence_col"]
         self.activity = self.params.dataset[0]["activity"]
 
@@ -522,17 +524,17 @@ class PySAR():
         desc_df = pd.Series(index=['Descriptor', 'Group', 'R2', 'RMSE', 'MSE',
             'RPD', 'MAE', 'Explained Variance'], dtype='object')
 
-        # if isinstance(descriptors, list):
+        # if (isinstance(descriptors, list)):
         #     for de in range(0,len(descriptors)):
         #         desc_matches = get_close_matches(descriptors[de],
         #             descr.valid_descriptors(),cutoff=0.4)
         #         descriptors[de] = desc_matches[0]
-        #         if descriptors[de] == []:
+        #         if (descriptors[de] == []):
         #             raise ValueError('No approximate descriptor found from one entered: {}'.format(de))
         # else:
         #     desc_matches = get_close_matches(descriptors,descr.valid_descriptors(),cutoff=0.4)
         #     descriptors = desc_matches[0]
-        #     if descriptors == []:
+        #     if (descriptors == []):
         #         raise ValueError('No approximate descriptor found from one entered: {}'.format(descriptors))
 
         #set training data (X) to descriptor-encoded protein sequences
