@@ -50,7 +50,7 @@ class PyDSP():
 
     Parameters
     ----------
-    :dsp_config (str/json)
+    :config_file (str/json)
         path to configuration file containing DSP parameters OR JSON object of DSP parameters,
         depending on if the parameter is a valid filepath or not.
     :protein_seqs (np.ndarray)
@@ -63,29 +63,29 @@ class PyDSP():
         complete pre-processing steps before completeing DSP functionality.
     encode_seqs():
         calculate FFT/RFFT of protein seqeuences.
-    inverse_FFT():
+    inverse_fft():
         calculate inverse FFT of protein sequences.
     consensus_freq():
         calculate consensus frequency of FFT.
     max_freq():
         calculate max frequency of FFT
     """
-    def __init__(self, dsp_config="", protein_seqs=None):
+    def __init__(self, config_file="", protein_seqs=None):
 
         self.protein_seqs = protein_seqs
-        self.dsp_config = dsp_config
+        self.config_file = config_file
         self.parameters = {}
 
         config_filepath = ""
 
         #read protein seqs from dataset if protein_seqs is None,
-        if not (isinstance(dsp_config, str) or dsp_config is None):
+        if not (isinstance(config_file, str) or config_file is None):
             raise TypeError('JSON config file must be a filepath of type string, got type {}.'.
-                format(type(dsp_config)))
-        if (os.path.isfile(self.dsp_config)):
-            config_filepath = self.dsp_config
-        elif (os.path.isfile(os.path.join('config', self.dsp_config))):
-            config_filepath = os.path.join('config', self.dsp_config)
+                format(type(config_file)))
+        if (os.path.isfile(self.config_file)):
+            config_filepath = self.config_file
+        elif (os.path.isfile(os.path.join('config', self.config_file))):
+            config_filepath = os.path.join('config', self.config_file)
         else:
             raise OSError('JSON config file not found at path: {}.'.format(config_filepath))
         try:
@@ -98,24 +98,17 @@ class PyDSP():
         #create instance of Map class so parameters in config can be accessed via dot notation
         self.parameters = Map(self.parameters)
 
-        #read protein seqs from dataset if not input as parameter
+        #raise error if protein sequences parameter is not set
         if (self.protein_seqs is None):
-            # try:
-            #     self.protein_seqs = pd.read_csv(self.parameters.dataset[0]['dataset'], sep=",", header=0)
-            #     self.protein_seqs = self.protein_seqs[self.parameters.dataset[0]['sequence_col']]
-            # except:
             raise ValueError('Protein sequences input parameter cannot be empty or None.')
 
+        #direct protein sequences cannot be input to class, they must be encoded first, raise error if so
         for seq in protein_seqs:
             if (isinstance(seq, str)):
                 raise ValueError("Protein sequences cannot be directly passed into the pyDSP class, you "
                                 "must first encode the protein sequences using a specific aaindex code, "
                                 "and then pass the resultant encoded sequence to the protein_seqs parameter.")
         
-        #get number of rows and cols of dataset
-        # self.num_seqs = len(self.data[self.sequence_col])
-        # self.seq_len = len(max(self.data[self.sequence_col], key=len))
-
         #reshape protein sequences to 2 dimensions
         # if (self.protein_seqs.ndim != 2):
         #     try:
@@ -158,7 +151,7 @@ class PyDSP():
 
         #get shape parameters of proteins seqs
         self.num_seqs = self.protein_seqs.shape[0]
-        self.signal_len = len(self.protein_seqs[0])
+        self.signal_len = self.protein_seqs.shape[1]
         # self.signal_len = self.protein_seqs.shape[1]
 
         #replace any positive or negative infinity or NAN values with 0
@@ -375,7 +368,7 @@ class PyDSP():
         elif (self.spectrum == 'absolute'):
             self.spectrum_encoding = self.fft_abs
 
-    def inverse_FFT(self, a, n):
+    def inverse_fft(self, a, n):
         """
         Get the inverse Fourier Transform of FFT.
 
@@ -498,13 +491,13 @@ class PyDSP():
     def window_type(self, val):
         self._window_type = val
 
-    # @property
-    # def filter_(self):
-    #     return self._filter
+    @property
+    def filter_type(self):
+        return self._filter_type
 
-    # @filter_.setter
-    # def filter_(self, val):
-    #     self._filter = val
+    @filter_type.setter
+    def filter_type(self, val):
+        self._filter_type = val
 
 ################################################################################
 

@@ -8,6 +8,8 @@ import time
 import itertools
 import sys
 from tqdm.auto import tqdm
+from difflib import get_close_matches
+import json
 
 from aaindex import aaindex1
 from .model import Model
@@ -62,6 +64,12 @@ class Encoding(PySAR):
         self.config_file = config_file
         #pass config file into parent pySAR class
         super().__init__(self.config_file)
+        
+        #setting DSP params to None if not using them
+        if not (self.use_dsp):
+            self.spectrum = None
+            self.window_type = None
+            self.filter_type = None
 
         #create output directory to store all of the program's outputs
         create_output_dir()
@@ -70,7 +78,7 @@ class Encoding(PySAR):
         """
         Encoding all protein sequences using each of the available indices in the
         AAI. The protein spectra of the AAI indices will be generated if use_dsp is true,
-        dictated by the instance attributes: spectrum, window, convolution and filter. 
+        dictated by the instance attributes: spectrum, window and filter. 
         If not true then the encoced sequences from the AAI will be used. Each encoding will be
         used as the feature data to build the predictive regression models. To date,
         there are 566 indices in the AAI, therefore 566 total models can be built using
@@ -97,16 +105,9 @@ class Encoding(PySAR):
             be of the shape 566 x 8, where 566 is the number of indices that can be used
             for the encoding and 8 is the results/metric columns.
         """
-        #setting DSP params to None if not using them
-        if not (self.use_dsp):
-            self.spectrum = None
-            self.window = None
-            self.filter = None
-            self.convolution = None
-
         #initialise dataframe to store all output results of AAI encoding
         aaindex_metrics_df = pd.DataFrame(columns=['Index', 'Category', 'R2', 'RMSE',
-            'MSE', 'RPD', 'MAE', 'Explained Variance'])
+            'MSE', 'MAE', 'RPD', 'Explained Variance'])
 
         #lists to store results for each predictive model
         index_ = []
@@ -124,6 +125,8 @@ class Encoding(PySAR):
             all_indices = aaindex1.record_codes()
         elif (isinstance(aai_list, str)):   #if single descriptor input, cast to list
             all_indices = [aai_list]
+        elif ((not isinstance(aai_list, list)) and (not isinstance(aai_list, str))):
+            raise TypeError("Input AAI list is not of type list or str, got {}.".format(isinstance(aai_list, list)))
         else:
             all_indices = aai_list
 
@@ -131,8 +134,8 @@ class Encoding(PySAR):
         print('Encoding using {} AAI combination(s) with the parameters:\n\n# Algorithm -> {}\n# Parameters -> {} \
             \n# Test Split -> {}'.format(len(all_indices), repr(self.model), self.model.model.get_params(), self.test_split))
         if (self.use_dsp):
-            print('# Using DSP -> {}\n# Spectrum -> {}\n# Window Function -> {}\n# Filter -> {}\n# Convolution -> {}'.format(
-                self.use_dsp, self.spectrum, self.window, self.filter, self.convolution
+            print('# Using DSP -> {}\n# Spectrum -> {}\n# Window Function -> {}\n# Filter -> {}\n'.format(
+                self.use_dsp, self.spectrum, self.window_type, self.filter_type
             ))
         print('\n#######################################################################################\n')
 
@@ -142,7 +145,7 @@ class Encoding(PySAR):
         '''
         1.) Get AAI index encoding of protein sequences, if using DSP (use_dsp = True),
         create instance of pyDSP class and generate protein spectra from the AAI
-        indices, according to instance parameters: spectrum, window, convolution and filter.
+        indices, according to instance parameters: spectrum, window and filter.
         2.) Build model using encoded AAI indices or protein spectra as features.
         3.) Predict and evaluate the model using the test data.
         4.) Append index and calculated metrics to lists.
@@ -169,7 +172,7 @@ class Encoding(PySAR):
                 X = pd.DataFrame(encoded_seqs)
 
             #get observed activity values from the dataset
-            Y = self.get_activity()
+            Y = self.activity
 
             #split feature data and labels into train and test data
             X_train, X_test, Y_train, Y_test  = self.model.train_test_split(X, Y)
@@ -211,12 +214,21 @@ class Encoding(PySAR):
         aaindex_metrics_['MAE'] = mae_
         aaindex_metrics_['Explained Variance'] = explained_var_
 
+        #convert index and category from Object -> String datatypes
+        aaindex_metrics_['Index'] = aaindex_metrics_['Index'].astype(pd.StringDtype())
+        aaindex_metrics_['Category'] = aaindex_metrics_['Category'].astype(pd.StringDtype())
+
         #sort output dataframe by sort_by parameter, sorted by R2 by default
         if (sort_by not in aaindex_metrics_df.columns):
             sort_by = 'R2'
 
+        #sort ascending or descending depending on sort by metric
+        sort_ascending = False
+        if not (sort_by == "R2" or sort_by == "Explained Variance"):
+            sort_ascending = True
+
         #sort results according to sort_by parameter (R2 by default)
-        aaindex_metrics_ = aaindex_metrics_.sort_values(by=[sort_by], ascending=False)
+        aaindex_metrics_ = aaindex_metrics_.sort_values(by=[sort_by], ascending=sort_ascending)
 
         #save results dataframe, saved to OUTPUT_DIR by default.
         save_results(aaindex_metrics_, 'aaindex_results')
@@ -263,7 +275,7 @@ class Encoding(PySAR):
         """
         #create dataframe to store output results from models
         desc_metrics_df = pd.DataFrame(columns=['Descriptor', 'Group', 'R2', 'RMSE',
-            'MSE', 'RPD', 'MAE', 'Explained Variance'])
+            'MSE', 'MAE', 'RPD', 'Explained Variance'])
 
         #lists to store results for each predictive model
         descriptor = []
@@ -281,12 +293,12 @@ class Encoding(PySAR):
 
         #if no descriptors passed into desc_list then use all descriptors by default,
         #   get list of all descriptors according to desc_combo value
-        if (desc_list == None or desc_list == [] or desc_list == ""):
-            # desc = Descriptors(self.config_file)
+        if (desc_list == None or desc_list == [] or desc_list == "" ):
             all_descriptors = desc.all_descriptors_list(desc_combo)
         elif (isinstance(desc_list,str)):     #if single descriptor input, cast to list
-            # desc = Descriptors(self.config_file)
             all_descriptors = [desc_list]
+        elif ((not isinstance(desc_list, list)) and (not isinstance(desc_list, str))):
+            raise TypeError("Input Descriptor list is not of type list or str, got {}.".format(isinstance(desc_list, list)))
         else:
             # desc = Descriptors(self.config_file)
             if (desc_combo == 2):
@@ -296,10 +308,12 @@ class Encoding(PySAR):
             else:
                 all_descriptors = desc_list     #using default combination of descriptors
 
-        print('\n\n##############################################################\n')
-        print('Encoding using {} descriptor combination(s) with the parameters:\n \
-            \n# Algorithm: {}\n# Parameters: {}\n# Test Split: {}\n'.format(len(all_descriptors),\
-            repr(self.model), self.parameters, self.test_split))
+        #pretty print json config parameters
+        pretty_parameters = json.dumps(self.parameters, sort_keys=True, indent=1)
+
+        print('\n\n################################################################\n')
+        print('Encoding using {} descriptor combination(s) with the parameters:\n {}\n'.format(
+            len(all_descriptors), pretty_parameters))
         print('##################################################################\n')
 
         #set the proportion of iterations to actually complete -> mainly used for testing
@@ -329,18 +343,33 @@ class Encoding(PySAR):
             #if using 2 or 3 descriptors, append each descriptor & its category to list
             if (desc_combo == 2 or desc_combo == 3):
                 for de in descr:
+                    #get closest descriptor name match, required for appending its group name
+                    desc_matches = get_close_matches(de, desc.valid_descriptors, cutoff=0.4)
+                    if (desc_matches != []):
+                        desc_name = desc_matches[0]  #set desc to closest descriptor match found
+                    else:
+                        desc_name = None
                     descriptor_list.append(getattr(desc, de))
-                    descriptor_group_.append(desc.descriptor_groups[de])
+                    if not (desc_name is None): #only append group name if valid group found
+                        descriptor_group_.append(desc.descriptor_groups[desc_name])
                 desc_ = pd.concat(descriptor_list, axis=1) #concatenate descriptors
             else:
+                #get closest descriptor name match, required for appending its group name
+                desc_matches = get_close_matches(descr, desc.valid_descriptors, cutoff=0.4)
+                if (desc_matches != []):
+                    desc_name = desc_matches[0]  #set desc to closest descriptor match found
+                else:
+                    desc_name = None
                 desc_ = desc.get_descriptor_encoding(descr)
-                descriptor_group_.append(desc.descriptor_groups[descr])
+                print("desc", descr)
+                if not (desc_name is None): #only append group name if valid group found
+                    descriptor_group_.append(desc.descriptor_groups[desc_name])
 
             #set training data to desc_ dataframe
             X = desc_   
 
             #get protein activity values
-            Y  = self.get_activity()
+            Y  = self.activity
             '''
             Note: If using the PlsRegression algorithm and there is only 1 feature (1-dimension)
             in the feature data X (e.g SOCN) then create a new PLSReg model with the n_components
@@ -374,7 +403,7 @@ class Encoding(PySAR):
         end = time.time()           
         elapsed = end - start
 
-        print('\n\n##############################################################')
+        print('\n\n#########################################################')
         print('Elapsed Time for Descriptor Encoding: {0:.3f} seconds.\n'.format(elapsed))
 
         #if using combinations of 2 or 3 descriptors, group every 2 or 3 descriptor
@@ -397,12 +426,21 @@ class Encoding(PySAR):
         desc_metrics_df_['MAE'] = mae_
         desc_metrics_df_['Explained Variance'] = explained_var_
 
+        #convert descriptor and group columns from object to string datatype
+        desc_metrics_df_['Descriptor'] = desc_metrics_df_['Descriptor'].astype(pd.StringDtype())
+        desc_metrics_df_['Group'] = desc_metrics_df_['Group'].astype(pd.StringDtype())
+
         #sort output dataframe by sort_by parameter, sorted by R2 by default
         if (sort_by not in desc_metrics_df_.columns):
             sort_by = 'R2'
 
+        #sort ascending or descending depending on sort by metric
+        sort_ascending = False
+        if not (sort_by == "R2" or sort_by == "Explained Variance"):
+            sort_ascending = True
+
         #sort results according to sort_by parameter (R2 by default)
-        desc_metrics_df_ = desc_metrics_df_.sort_values(by=[sort_by], ascending=False)
+        desc_metrics_df_ = desc_metrics_df_.sort_values(by=[sort_by], ascending=sort_ascending)
 
         #set save path according to the descriptor combinations type
         if (desc_combo == 2):
@@ -425,7 +463,7 @@ class Encoding(PySAR):
         2 Descriptors or 3 Descriptors, dictated by the desc_combo input parameter:
         set this to 1, 2 or 3 for what encoding combination to use, default is 1.
         The protein spectra of the AAI indices will be generated if the config param 
-        use_dsp is true, along with the class attributes: spectrum, window, convolution and filter.
+        use_dsp is true, along with the class attributes: spectrum, window and filter.
         Each encoding will be used as the feature data to build the predictive
         regression models. To date, there are 566 indices and pySAR/protpy supports 15
         descriptors so the encoding process will generate 8490, ~59000 and ~257000
@@ -467,16 +505,9 @@ class Encoding(PySAR):
             descriptors to use with the indices. 10 represents the results/metrics
             columns of the dataframe.
         """
-        #setting DSP params to None if not using them
-        if not (self.use_dsp):
-            self.spectrum = None
-            self.window = None
-            self.filter_ = None
-            self.convolution = None
-
         #create dataframe to store output results from models
         aai_desc_metrics_df = pd.DataFrame(columns=['Index', 'Category', 'Descriptor',\
-            'Descriptor Group', 'R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Variance'])
+            'Group', 'R2', 'RMSE', 'MSE', 'RPD', 'MAE', 'Explained Variance'])
 
         #lists to store results for each predictive model
         index_ = []
@@ -498,6 +529,8 @@ class Encoding(PySAR):
             all_indices = aaindex1.record_codes()
         elif (isinstance(aai_list, str)):   #if single descriptor input, cast to list
             all_indices = [aai_list]
+        elif ((not isinstance(aai_list, list)) and (not isinstance(aai_list, str))):
+            raise TypeError("Input AAI list is not of type list or str, got {}.".format(isinstance(aai_list, list)))
         else:
             all_indices = aai_list
 
@@ -507,13 +540,12 @@ class Encoding(PySAR):
         #if no descriptors passed into desc_list then use all descriptors by default,
         #   get list of all descriptors according to desc_combo value
         if (desc_list == None or desc_list == [] or desc_list == ""):
-            # desc = Descriptors(self.config_file)
             all_descriptors = desc.all_descriptors_list(desc_combo)
         elif (isinstance(desc_list, str)):     #if single descriptor input, cast to list
-            # desc = Descriptors(self.config_file)
             all_descriptors = [desc_list]
+        elif ((not isinstance(desc_list, list)) and (not isinstance(desc_list, str))):
+            raise TypeError("Input Descriptor list is not of type list or str, got {}.".format(isinstance(desc_list, list)))
         else:
-            # desc = Descriptors(self.config_file)
             if (desc_combo == 2):
                 all_descriptors = list(itertools.combinations(desc_list, 2))
             elif (desc_combo == 3):
@@ -521,16 +553,19 @@ class Encoding(PySAR):
             else:
                 all_descriptors = desc_list
 
-        print('\n\n##############################################################\n')
+        #pretty print json config parameters
+        pretty_parameters = json.dumps(self.parameters, sort_keys=True, indent=1)
+        
+        print('\n\n#########################################################################\n')
         print('Encoding using {} AAI and {} descriptor combination(s) with the parameters:\n\
-            \n# Algorithm -> {}\n# Parameters -> {}\n# Test Split -> {}\n'.
+            \n# Algorithm -> {}\n# Parameters -> {}\n# Test Split -> {}'.
                 format(len(all_indices), len(all_descriptors), repr(self.model), self.parameters, self.test_split))
         if ((len(all_indices)<10) and (len(all_indices)>0)):
-            print('# AAI Indices -> {}\n'.format(len(all_indices)))
+            print('# AAI Indices -> {}'.format(len(all_indices)))
             if (self.use_dsp):
                 print('  # Using DSP -> {}\n  # Spectrum -> {}\n  # Window Function -> {} \
-                \n  # Filter Function -> {}\n  # Convolution -> {}'.format(
-                    self.use_dsp, self.spectrum, self.window, self.filter, self.convolution)) 
+                \n  # Filter Function -> {}'.format(
+                    self.use_dsp, self.spectrum, self.window_type, self.filter_type)) 
         if ((len(all_descriptors)<10) and (len(all_descriptors)>0)):
             print('# Descriptors -> {}\n'.format(len(all_descriptors)))
         print('##################################################################\n')
@@ -543,7 +578,7 @@ class Encoding(PySAR):
         '''
         1.) Get AAI index encoding of protein sequences. If using DSP, create instance
         of pyDSP class and generate protein spectra from the AAI indices, according to
-        instance parameters: spectrum, window, convolution and filter.
+        instance parameters: spectrum, window and filter.
         2.) Get all descriptor values and concatenate to AAI encoding features.
         3.) Build model using concatenated AAI and Descriptor features as the training data.
         4.) Predict and evaluate the model using the test data.
@@ -592,7 +627,7 @@ class Encoding(PySAR):
                 X = pd.concat([desc_, X_aai], axis=1)
 
                 #get protein activity values
-                Y  = self.get_activity()
+                Y  = self.activity
 
                 '''
                 Note: If using the PlsRegression algorithm and there is only 1 feature (1-dimension)
@@ -632,7 +667,7 @@ class Encoding(PySAR):
         end = time.time()           
         elapsed = end - start
 
-        print('\n##############################################################')
+        print('\n##########################################################')
         print('Elapsed Time for AAI + Descriptor Encoding: {0:.3f} seconds.'.format(elapsed))
 
         #if using combinations of 2 or 3 descriptors, group every 2 or 3 descriptor
@@ -649,7 +684,7 @@ class Encoding(PySAR):
         aai_desc_metrics_df_['Index'] = index_
         aai_desc_metrics_df_['Category'] = index_category_
         aai_desc_metrics_df_['Descriptor'] = descriptor_
-        aai_desc_metrics_df_['Descriptor Group'] = descriptor_group_
+        aai_desc_metrics_df_['Group'] = descriptor_group_
         aai_desc_metrics_df_['R2'] = r2_
         aai_desc_metrics_df_['RMSE'] = rmse_
         aai_desc_metrics_df_['MSE'] = mse_
@@ -657,12 +692,23 @@ class Encoding(PySAR):
         aai_desc_metrics_df_['MAE'] = mae_
         aai_desc_metrics_df_['Explained Variance'] = explained_var_
 
+        #convert index, category, descriptor and group columns from object to string datatype
+        aai_desc_metrics_df_['Index'] = aai_desc_metrics_df_['Index'].astype(pd.StringDtype())
+        aai_desc_metrics_df_['Category'] = aai_desc_metrics_df_['Category'].astype(pd.StringDtype())
+        aai_desc_metrics_df_['Descriptor'] = aai_desc_metrics_df_['Descriptor'].astype(pd.StringDtype())
+        aai_desc_metrics_df_['Group'] = aai_desc_metrics_df_['Group'].astype(pd.StringDtype())
+
         #sort output dataframe by sort_by parameter, sorted by R2 by default
         if (sort_by not in aai_desc_metrics_df_.columns):
             sort_by = 'R2'
 
+        #sort ascending or descending depending on sort by metric
+        sort_ascending = False
+        if not (sort_by == "R2" or sort_by == "Explained Variance"):
+            sort_ascending = True
+
         #sort results according to sort_by parameter (R2 by default)
-        aai_desc_metrics_df_ = aai_desc_metrics_df_.sort_values(by=[sort_by], ascending=False)
+        aai_desc_metrics_df_ = aai_desc_metrics_df_.sort_values(by=[sort_by], ascending=sort_ascending)
 
         #set save path according to the descriptor combinations type
         if (desc_combo == 2):

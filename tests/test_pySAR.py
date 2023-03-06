@@ -25,10 +25,10 @@ class PySARTests(unittest.TestCase):
         testing correct pysar software metadata.
     test_pySAR:
         testing overall pysar encoding functionality.
-    test_get_seqs:
-        testing correct get_seqs pysar encoding functionality.
-    test_get_activity:
-        testing correct get_activity pysar encoding functionality.
+    test_sequences:
+        testing correct sequences pysar encoding functionality.
+    test_activity:
+        testing correct activity pysar encoding functionality.
     test_get_aai_encoding:
         testing correct aai pysar encoding functionality.
     test_aai_encoding:
@@ -61,7 +61,7 @@ class PySARTests(unittest.TestCase):
 
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.1.3", 
+        self.assertEqual(pysar_.__version__, "2.1.4", 
             "pySAR version is not correct, got: {}.".format(pysar_.__version__))
         self.assertEqual(pysar_.__name__, "pySAR", 
             "pySAR software name is not correct, got: {}.".format(pysar_.__name__))
@@ -107,6 +107,10 @@ class PySARTests(unittest.TestCase):
             'Parameters attribute expected to be empty, got {}.'.format(test_pySAR.parameters))
         self.assertIsInstance(test_pySAR.data, pd.DataFrame,
             'Data expected to be a DataFrame, got {}.'.format(type(test_pySAR.data)))
+        self.assertIsInstance(test_pySAR.sequences, list,
+            'Sequences expected to be a list, got {}.'.format(type(test_pySAR.sequences)))
+        self.assertIsInstance(test_pySAR.activity, list,
+            'Activity expected to be a list, got {}.'.format(type(test_pySAR.activity)))
         self.assertEqual(test_pySAR.data.isnull().sum().sum(), 0,
             'Expected there to be no NAN/null values in data dataframe.')
         self.assertEqual(test_pySAR.num_seqs, 261,
@@ -125,11 +129,11 @@ class PySARTests(unittest.TestCase):
         with self.assertRaises(TypeError, msg='Type Error raised, config file parameter not correct data type.'):
             test_pySAR2 = pysar.PySAR(config_file=101)
 
-    def test_get_seqs(self):
+    def test_sequences(self):
         """ Testing getting the protein sequences from the dataset. """
 #1.)
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[0])
-        test_seqs = test_pySAR.get_seqs()
+        test_seqs = test_pySAR.sequences
 
         self.assertEqual(test_seqs.shape, (test_pySAR._num_seqs, ),
             'Shape of the sequences not correct, expected {}, got {}.'.format(test_seqs.shape, (test_pySAR._num_seqs, )))
@@ -141,7 +145,7 @@ class PySARTests(unittest.TestCase):
             'Sequence object expected to be of dtype object, got {}.'.format(test_seqs.dtype))
 #2.)
         test_pySAR_2 = pysar.PySAR(config_file=self.all_config_files[1])
-        test_seqs = test_pySAR_2.get_seqs()
+        test_seqs = test_pySAR_2.sequences
 
         self.assertEqual(test_seqs.shape, (test_pySAR_2._num_seqs, ),
             'Shape of the sequences not correct, expected {}, got {}.'.format(test_seqs.shape, (test_pySAR_2._num_seqs, )))
@@ -153,7 +157,7 @@ class PySARTests(unittest.TestCase):
             'Sequence object expected to be of dtype object, got {}.'.format(test_seqs.dtype))
 #3.)
         test_pySAR_3 = pysar.PySAR(config_file=self.all_config_files[2])
-        test_seqs = test_pySAR_3.get_seqs()
+        test_seqs = test_pySAR_3.sequences
 
         self.assertEqual(test_seqs.shape, (test_pySAR_3._num_seqs, ),
             'Shape of the sequences not correct, expected {}, got {}.'.format(test_seqs.shape, (test_pySAR_3._num_seqs, )))
@@ -165,7 +169,7 @@ class PySARTests(unittest.TestCase):
             'Sequence object expected to be of dtype object, got {}'.format(test_seqs.dtype))
 #4.)
         test_pySAR_4 = pysar.PySAR(config_file=self.all_config_files[3])
-        test_seqs = test_pySAR_4.get_seqs()
+        test_seqs = test_pySAR_4.sequences
 
         self.assertEqual(test_seqs.shape, (test_pySAR_4._num_seqs, ),
             'Shape of the sequences not correct, expected {}, got {}.'.format(test_seqs.shape, (test_pySAR_4._num_seqs, )))
@@ -176,11 +180,11 @@ class PySARTests(unittest.TestCase):
         self.assertEqual(test_seqs.dtype, object,
             'Sequence object expected to be of dtype object, got {}'.format(test_seqs.dtype))
 
-    def test_get_activity(self):
+    def test_activity(self):
         """ Testing function that gets activity from dataset. """
 #1.)
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[0])
-        activity = test_pySAR.get_activity()
+        activity = test_pySAR.activity
 
         self.assertIsInstance(activity, pd.Series, 'Output should be a Series, got {}.'.format(type(activity)))
         self.assertEqual(activity.shape, (test_pySAR.num_seqs,), 'Output should be a Series, got {}.'.format(type(activity)))
@@ -190,7 +194,7 @@ class PySARTests(unittest.TestCase):
         self.assertTrue(np.float64 == activity.dtypes, "Column datatypes should be np.float64, got {}.".format(activity.dtypes))
 #2.)
         test_pySAR_2 = pysar.PySAR(config_file=self.all_config_files[1])
-        activity_2 = test_pySAR_2.get_activity()
+        activity_2 = test_pySAR_2.activity
 
         self.assertIsInstance(activity_2, pd.Series, 'Output should be a Series, got {}.'.format(type(activity_2)))
         self.assertEqual(activity_2.shape, (test_pySAR_2.num_seqs,), 'Output should be a Series, got {}.'.format(type(activity_2)))
@@ -200,7 +204,7 @@ class PySARTests(unittest.TestCase):
         self.assertTrue(np.float64 == activity_2.dtypes, "Column datatypes should be np.float64, got {}.".format(activity_2.dtypes))
 #3.)
         test_pySAR_3 = pysar.PySAR(config_file=self.all_config_files[2])
-        activity_3 = test_pySAR_3.get_activity()
+        activity_3 = test_pySAR_3.activity
 
         self.assertIsInstance(activity_3, pd.Series, 'Output should be a Series, got {}.'.format(type(activity_3)))
         self.assertEqual(activity_3.shape, (test_pySAR_3.num_seqs,), 'Output should be a Series, got {}.'.format(type(activity_3)))
@@ -210,7 +214,7 @@ class PySARTests(unittest.TestCase):
         self.assertTrue(np.int64 == activity_3.dtypes, "Column datatypes should be np.float64, got {}.".format(activity_3.dtypes))
 #4.)
         test_pySAR_4 = pysar.PySAR(config_file=self.all_config_files[3])
-        activity_4 = test_pySAR_4.get_activity()
+        activity_4 = test_pySAR_4.activity
 
         self.assertIsInstance(activity_4, pd.Series, 'Output should be a Series, got {}.'.format(type(activity_4)))
         self.assertEqual(activity_4.shape, (test_pySAR_4.num_seqs,), 'Output should be a Series, got {}.'.format(type(activity_4)))

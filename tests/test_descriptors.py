@@ -177,7 +177,7 @@ class DescriptorTests(unittest.TestCase):
     def test_valid_descriptors(self):
         """ Testing function that returns the list of valid descriptors available in descriptors module. """
         desc = descr.Descriptors(desc_config=self.all_config_files[0])
-        valid_desc = desc.valid_descriptors()
+        valid_desc = desc.valid_descriptors
 #1.)
         self.assertEqual(len(valid_desc), 15, "Expected there to be 15 total descriptors, got {}.".format(len(valid_desc)))
         self.assertIsInstance(valid_desc, list)
@@ -445,12 +445,14 @@ class DescriptorTests(unittest.TestCase):
 
             #get descriptor values
             conjoint_triad = desc.get_conjoint_triad()
-#1.)
+#1.)    
+            print("conjoint_triad.dtypes")
+            print(conjoint_triad.dtypes)
             self.assertFalse(conjoint_triad.empty, 'Descriptor dataframe should not be empty.')
             self.assertEqual(conjoint_triad.shape, (self.num_seqs[dataset], 343), 'Descriptor not of correct shape (1, 343).')
             self.assertIsInstance(conjoint_triad, pd.DataFrame, 'Descriptor should be of type DataFrame.')
             self.assertTrue(conjoint_triad.any().isnull().sum()==0,'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.int64 for col in list(conjoint_triad.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.int64 for col in list(conjoint_triad.dtypes)), "Column datatypes should be np.int64.")
 
             #iterate over all columns and check its name follows expected format
             for col in list(conjoint_triad.columns):
@@ -463,7 +465,6 @@ class DescriptorTests(unittest.TestCase):
         for dataset in range(0,len(self.all_config_files)):
             desc = descr.Descriptors(self.all_config_files[dataset])
 
-            print("self.all_config_files[dataset]", self.all_config_files[dataset])
             #get descriptor values
             sequence_order_coupling_number = desc.get_sequence_order_coupling_number()
 #1.)

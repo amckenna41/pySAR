@@ -156,8 +156,22 @@ To Do List:
 - [X] Test descriptor import function.
 - [X] If no extension on config param, dataset and or descriptors csv param then apend csv to it.
 - [ ] Input dataset can be in txt or csv form.
-- [ ] On encoding.descriptor_encoding(), parameters in comments is empty:
+- [X] On encoding.descriptor_encoding(), parameters in comments is empty:
 - [X] Add all pre-calculated descriptors csv to example_datasets.
+- [ ] Double check difflib/closeness_matches on acitivty and sequence cols.
+- [X] Remove get_seqs from pySAR.
+- [X] Change self.activity -> self.activity_col, set self.activity to the actual column data.
+- [X] Change all references to config_path to config_file, including dsp_config.
+- [X] in aai_encoding func in Encoding, reorder columns such that MAE is before RPD.
+- [ ] when testing desc and aai + desc endoing, use test config with and without pre-calcualted descriptors csv.
+- [ ] Ensure example_datasets isnt in software packaging.
+- [X] Pretty print json when printing parameters in Encoding functions.
+- [X] Sort by for RMSE and MSE incorrect, smallest values should be first, largest values last. Sort asc instead of sort desc.
+ - [X] If None or empty params input to encoding functions then use all aai and or descriptors, if not then raise value error if invalid desc or aai input. 
+ - [X] Passing in invalid_test_desc5 = "invalid_descriptor_name"  to descriptor_encoding func should return value error or similar.
+ - [ ] Conjoint triad and CTD cols overlapping when importing.
+ - [ ] CTD Transition getting replaced by Distribution - double check. CTD_T not in exported CSV.
+ - [ ] Rerun get all descriptors for each dataset.
 <!-- # Algorithm: PLSRegression
 # Parameters: 
 # Test Split: 0.2  -->

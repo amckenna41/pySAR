@@ -20,7 +20,7 @@
     "descriptors":
       [
         {
-          "descriptors_csv": "descriptors.csv",
+          "descriptors_csv": "tests/test_data/test_thermostability_descriptors.csv",
           "descriptors": {
             "all_desc": 0,
             "amino_acid_composition": 1,
