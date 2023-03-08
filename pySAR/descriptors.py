@@ -133,7 +133,7 @@ class Descriptors():
         
         #create data directory if doesnt exist
         if not (os.path.isdir(DATA_DIR)):
-            os.mkdir(DATA_DIR)
+            os.makedirs(DATA_DIR)
 
         #import protein sequences from dataset if not directly specified in protein_seqs input param
         if not (isinstance(self.protein_seqs, pd.Series)):

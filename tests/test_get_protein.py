@@ -54,7 +54,7 @@ class GetProteinTests(unittest.TestCase):
         self.assertEqual(test_seq.find("B"), -1, "Expected B to not be found in sequence.")
         self.assertEqual(test_seq.find("Z"), -1, "Expected Z to not be found in sequence.")
 
-    # @unittest.skip("Don't want to overload the Uniprot server each time tests are run.")
+    @unittest.skip("Don't want to overload the Uniprot server each time tests are run.")
     def test_protein_uniprot(self):
         """ Testing getting protein sequence from Uniprot database. """
         protid_1 = "P94485"
@@ -76,7 +76,7 @@ class GetProteinTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.temp_test_dir, protid_4 + '.fasta')),
             "Protein file not found in download folder.")
 
-    # @unittest.skip("Don't want to overload the NCBI server each time tests are run.")
+    @unittest.skip("Don't want to overload the NCBI server each time tests are run.")
     def test_protein_ncbi(self):
         """ Testing getting protein sequence from NCBI database. """
         ncbi_1 = "P94485"
@@ -98,7 +98,7 @@ class GetProteinTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.temp_test_dir, ncbi_4 + '.fasta')),
             "Protein file not found in download folder.")
 
-    # @unittest.skip("Don't want to overload the PDB server each time tests are run.")
+    @unittest.skip("Don't want to overload the PDB server each time tests are run.")
     def test_protein_pdb(self):
         """ Testing getting protein sequence from PDB database. """
         pdb_1 = "7MLP"
