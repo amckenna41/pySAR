@@ -1,16 +1,16 @@
 aaindex
-numpy>=1.16.6
-pandas==1.1.0
+numpy
+pandas
 # scipy==1.7.3
 scipy
-delayed==0.11.0b1
+delayed
 # scikit-learn==0.24.1
 scikit-learn
-requests==2.25.0
-matplotlib==3.3.1
-seaborn==0.11.1
-tqdm==4.48.2
-pytest==6.2.4
+requests>=2.25.0
+matplotlib
+seaborn
+tqdm
+pytest
 varname
 biopython
 urllib3==1.26.5
