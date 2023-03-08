@@ -127,7 +127,7 @@ class PyDSP():
         
         #pre-processing of encoded protein sequences
         self.pre_processing()
-
+        
         #transform sequences into the various informational protein spectra
         self.encode_seqs()
 

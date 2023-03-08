@@ -29,9 +29,7 @@
             "moreaubroto_autocorrelation": 1,
             "moran_autocorrelation": 1,
             "geary_autocorrelation": 1,
-            "ctd_composition": 1,
-            "ctd_transition": 1,
-            "ctd_distribution": 1,
+            "ctd": 1,
             "conjoint_triad": 1,
             "sequence_order_coupling_number": 1,
             "quasi_sequence_order": 1,
@@ -65,15 +63,6 @@
       "ctd": [{
         "property":"hydrophobicity",
         "all": 0
-      }],
-      "ctd_composition": [{
-        "property": "normalized_VDWV"
-      }],
-      "ctd_transition": [{
-        "property": "polarity"
-      }],
-      "ctd_distribution": [{
-        "property": "charge"
       }],
       "sequence_order_coupling_number": [{
         "lag": 30,

@@ -36,9 +36,6 @@ Example configuration file for thermostability.json used in research:
             "moreaubroto_autocorrelation": 1,
             "moran_autocorrelation": 1,
             "geary_autocorrelation": 1,
-            "composition": 1,
-            "transition": 1,
-            "distribution": 1,
             "ctd": 1,
             "conjoint_triad": 1,
             "sequence_order_coupling_number": 1,
@@ -70,15 +67,6 @@ Example configuration file for thermostability.json used in research:
         "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
-      }],
-      "composition":[{
-        "property": "hydrophobicity"
-      }],
-      "transition":[{
-        "property": "hydrophobicity"
-      }],
-      "distribution":[{
-        "property": "hydrophobicity"
       }],
       "ctd":[{
         "property": "hydrophobicity",
@@ -153,9 +141,7 @@ Example configuration file for thermostability.json used in research:
 * `descriptors[descriptors][moreaubroto_autocorrelation]` - calculate or import from descriptors csv the Moreau-Broto Autocorreltaion descriptor values.
 * `descriptors[descriptors][moran_autocorrelation]` - calculate or import from descriptors csv the Moran Autocorreltaion descriptor values.
 * `descriptors[descriptors][geary_autocorrelation]` - calculate or import from descriptors csv the Geary Autocorreltaion descriptor values.
-* `descriptors[descriptors][composition]` - calculate or import from descriptors csv the Composition from CTD descriptor values.
-* `descriptors[descriptors][transition]` - calculate or import from descriptors csv the Transition from CTD descriptor values.
-* `descriptors[descriptors][distribution]` - calculate or import from descriptors csv the Distribution from CTD descriptor values.
+* `descriptors[descriptors][ctd]` - calculate or import from descriptors csv the Composition, Transition and Distribution from CTD descriptor values.
 * `descriptors[descriptors][conjoint_triad]` - calculate or import from descriptors csv the Conjoint Triad descriptor values.
 * `descriptors[descriptors][sequence_order_coupling_number]` - calculate or import from descriptors csv the Sequence Order Coupling number descriptor values.
 * `descriptors[descriptors][quasi_sequence_order]` - calculate or import from descriptors csv the Quasi Sequence Order descriptor values.
@@ -167,9 +153,9 @@ Example configuration file for thermostability.json used in research:
 * `descriptor_properties[moreaubroto_autocorrelation][properties] / descriptor_properties[moran_autocorrelation][properties] / descriptor_properties[geary_autocorrelation][properties]` - List of protein physiochemical and structural descriptors used in the calculation of each of the autocorrelation descriptors, properties must be a lit of their AAIndex number/accession number. There must be a least 1 property value input.
 * `descriptor_properties[moreaubroto_autocorrelation][normalize] / descriptor_properties[moran_autocorrelation][normalize] / descriptor_properties[geary_autocorrelation][normalize]` - rescale/normalize Autocorrelation values into range of 0-1.
 
-* `descriptor_properties[composition][property]` - list of 1 or more physiochemical properties using their accession number from aaindex1. If no properties input then hydrophobicity used by default.
-* `descriptor_properties[transition][property]` - list of 1 or more physiochemical properties using their accession number from aaindex1. If no properties input then hydrophobicity used by default.
-* `descriptor_properties[distribution][property]` - list of 1 or more physiochemical properties using their accession number from aaindex1. If no properties input then hydrophobicity used by default.
+* `descriptor_properties[ctd][property]` - list of 1 or more physiochemical properties to use when calculating CTD descriptors. List of available input properties: If no properties input then hydrophobicity used by default.
+* `descriptor_properties[ctd][all]` - if True then all 7 of the available physiochemical descriptors will be used when calculating the CTD descriptors. Each proeprty generates 21 features so using all properties will output 147 features. Only 1 property used by default. 
+
 
 * `descriptor_properties[sequence_order_coupling_number][maxlag]` - maximum lag; length of the protein must be not less than maxlag.
 * `descriptor_properties[sequence_order_coupling_number][distance_matrix]` - physiochemical distance matrix for calculating sequence order coupling number.

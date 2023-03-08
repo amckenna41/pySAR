@@ -29,6 +29,9 @@ MANIFEST
 old_stuff/
 outputs/
 
+#virtual env for testing
+pysar_venv/
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.

@@ -101,7 +101,6 @@ class Descriptors():
 
         desc_config_filepath = ""
 
-        #desc_config input parameter can be a filepath to the config file,
         #but also a dict of config parameters can also input to it
         if not (isinstance(self.desc_config, dict)):
             if not (isinstance(self.desc_config, str) or (self.desc_config is None)):
@@ -134,7 +133,7 @@ class Descriptors():
         
         #create data directory if doesnt exist
         if not (os.path.isdir(DATA_DIR)):
-            os.path.makedirs(DATA_DIR)
+            os.path.mkdir(DATA_DIR)
 
         #import protein sequences from dataset if not directly specified in protein_seqs input param
         if not (isinstance(self.protein_seqs, pd.Series)):
@@ -196,7 +195,6 @@ class Descriptors():
         self.amphiphilic_pseudo_amino_acid_composition = pd.DataFrame()
         self.all_descriptors = pd.DataFrame()
         
-        print("self.descr_config.descriptors_csv", self.descr_config.descriptors_csv)
         #append extension if just the filename input as descriptors csv
         if ((self.descr_config.descriptors_csv != '' and self.descr_config.descriptors_csv != None) 
             and (os.path.splitext(self.descr_config.descriptors_csv)[1] == '')):
@@ -300,7 +298,6 @@ class Descriptors():
             ctd_property = ctd_property.split(',')
         ctd_all_ctd = self.descr_parameters.ctd[0]["all"]
         
-        print("ctd_all_ctd", ctd_all_ctd)
         #if using all properties in CTD calculation, 147 features output, 21 features per 7 properties
         if (ctd_all_ctd):
             ctd_dim = (geary_auto_dim[1], geary_auto_dim[1]+147) #21 CTD features per 7 properties = 147
@@ -309,14 +306,12 @@ class Descriptors():
             ctd_distr_dim = (ctd_trans_dim[1], ctd_trans_dim[1] + 105) #15 CTD_Distr features per 7 properties = 105
         #only using a pre-determined list of physiochemical properties, 21 features per property
         else: 
-            print("geary_auto_dim", geary_auto_dim[1]) #****
             # ctd_dim = (geary_auto_dim[1], geary_auto_dim[1]+len(ctd_property)) #21 CTD features per property - maybe incorrect
             ctd_comp_dim = (geary_auto_dim[1], geary_auto_dim[1] + (len(ctd_property) * 3)) #3 CTD_Comp features per property
             ctd_trans_dim = (ctd_comp_dim[1], ctd_comp_dim[1] + (len(ctd_property) * 3)) #3 CTD_Distr features per property
             ctd_distr_dim = (ctd_trans_dim[1], ctd_trans_dim[1] + (len(ctd_property) * 15)) #15 CTD_Distr features per property
             ctd_dim = (geary_auto_dim[1], ctd_distr_dim[1]) #21 CTD features per property - maybe incorrect
         
-        print("ctd_dim", ctd_dim)
         self.ctd =  descriptor_df.iloc[:,ctd_dim[0]:ctd_dim[1]]  
 
         self.ctd_composition = descriptor_df.iloc[:,ctd_comp_dim[0]:ctd_comp_dim[1]]
@@ -327,12 +322,8 @@ class Descriptors():
 
         conjoint_triad_dim = (ctd_distr_dim[1], ctd_distr_dim[1]+343)
 
-        print("ctd_distr_dim", ctd_distr_dim)
-
-        print("conjoint_triad_dim", conjoint_triad_dim)
-
         self.conjoint_triad = descriptor_df.iloc[:,conjoint_triad_dim[0]:conjoint_triad_dim[1]]
-
+        
         socn_lag = self.descr_parameters.sequence_order_coupling_number[0]["lag"]
         socn_distance_matrix = self.descr_parameters.sequence_order_coupling_number[0]["distance_matrix"]
 
@@ -368,8 +359,6 @@ class Descriptors():
         self.amphiphilic_pseudo_amino_acid_composition = descriptor_df.iloc[:,amphiphilic_pseudo_amino_acid_composition_dim[0]:amphiphilic_pseudo_amino_acid_composition_dim[1]]
 
         self.all_descriptors = descriptor_df.iloc[:,:]
-
-        print("All descriptors imported successfully.\n")
 
     def get_amino_acid_composition(self):
         """
@@ -1166,7 +1155,7 @@ class Descriptors():
             self.amino_acid_composition, self.dipeptide_composition, self.tripeptide_composition,
             self.moreaubroto_autocorrelation, self.moran_autocorrelation,
             self.geary_autocorrelation, self.ctd_composition, self.ctd_transition,
-            self.ctd_distribution, self.ctd, self.conjoint_triad, self.sequence_order_coupling_number,
+            self.ctd_distribution, self.conjoint_triad, self.sequence_order_coupling_number,
             self.quasi_sequence_order, self.pseudo_amino_acid_composition, self.amphiphilic_pseudo_amino_acid_composition
             ]
 
@@ -1205,7 +1194,6 @@ class Descriptors():
 
         #validate input descriptor is a valid available descriptor, get its closest match
         desc_matches = get_close_matches(descriptor, self.valid_descriptors, cutoff=0.6)
-        print("desc_matches", desc_matches)
         if (desc_matches != []):
             desc = desc_matches[0]  #set desc to closest descriptor match found
         else:

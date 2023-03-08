@@ -5,7 +5,6 @@ All of the modules and functionalities of pySAR are thoroughly tested using the 
 
 * `test_descriptors` - tests for descriptors module and class
 * `test_encoding` - tests for encoding module and class.
-* `test_evaluate` - tests for evaluate module and class.
 * `test_model` - tests for model module and class.
 * `test_pyDSP` - tests for pyDSP module and class.
 * `test_pySAR` - tests for pySAR module and class.

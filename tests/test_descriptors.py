@@ -75,10 +75,54 @@ class DescriptorTests(unittest.TestCase):
     def test_descriptor(self):
         """ Test descriptor initialisation process. Verify the initial input parameters
             and descriptor attributes are correct. """
-        #testing on all 4 datasets/config files
-        for dataset in range(0, len(self.all_config_files)):
-            desc = descr.Descriptors(desc_config=self.all_config_files[dataset])
 #1.)
+        desc = descr.Descriptors(desc_config=self.all_config_files[0])
+
+        #verify num_seqs descriptors attribute is correct
+        self.assertEqual(desc.num_seqs, self.num_seqs[0], 
+            'Expected {} number of sequences, got {}.'.format(self.num_seqs[0], desc.num_seqs))
+
+        #verify that all input sequences dont have any gaps/missing amino acids
+        for seq in desc.protein_seqs:
+            self.assertNotIn('-', seq, 'There should be no gaps (-) in the sequences.')
+#2.)
+        self.assertEqual(desc.amino_acid_composition.shape, (self.num_seqs[0], 20), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 20, desc.amino_acid_composition.shape))
+        self.assertEqual(desc.dipeptide_composition.shape, (self.num_seqs[0], 400), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 400, desc.dipeptide_composition.shape))
+        self.assertEqual(desc.tripeptide_composition.shape, (self.num_seqs[0], 8000), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 8000, desc.tripeptide_composition.shape))
+        self.assertEqual(desc.moreaubroto_autocorrelation.shape, (self.num_seqs[0], 240), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 240, desc.moreaubroto_autocorrelation.shape))
+        self.assertEqual(desc.moran_autocorrelation.shape, (self.num_seqs[0], 240), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 240, desc.moran_autocorrelation.shape))
+        self.assertEqual(desc.geary_autocorrelation.shape, (self.num_seqs[0], 240), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 240, desc.geary_autocorrelation.shape))
+        self.assertEqual(desc.ctd.shape, (self.num_seqs[0], 21), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 21, desc.ctd.shape))
+        self.assertEqual(desc.ctd_composition.shape, (self.num_seqs[0], 3), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 3, desc.ctd_composition.shape))
+        self.assertEqual(desc.ctd_transition.shape, (self.num_seqs[0], 3), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 3, desc.ctd_transition.shape))
+        self.assertEqual(desc.ctd_distribution.shape, (self.num_seqs[0], 15), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 15, desc.ctd_distribution.shape))
+        self.assertEqual(desc.conjoint_triad.shape, (self.num_seqs[0], 343), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 343, desc.conjoint_triad.shape))
+        self.assertEqual(desc.sequence_order_coupling_number.shape, (self.num_seqs[0], 30), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 30, desc.sequence_order_coupling_number.shape))
+        self.assertEqual(desc.quasi_sequence_order.shape, (self.num_seqs[0], 50), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 50, desc.quasi_sequence_order.shape))
+        self.assertEqual(desc.pseudo_amino_acid_composition.shape, (self.num_seqs[0], 50), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 50, desc.pseudo_amino_acid_composition.shape))
+        self.assertEqual(desc.amphiphilic_pseudo_amino_acid_composition.shape, (self.num_seqs[0], 80), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 80, desc.amphiphilic_pseudo_amino_acid_composition.shape))
+        self.assertEqual(desc.all_descriptors.shape, (self.num_seqs[0], 9714), 
+            'Attribute shape should be [{}, {}], got {}.'.format(self.num_seqs[0], 9714, desc.all_descriptors.shape))
+#3.)
+        #testing on all 4 datasets/config files
+        for dataset in range(1, len(self.all_config_files)):
+            desc = descr.Descriptors(desc_config=self.all_config_files[dataset])
+
             #verify num_seqs descriptors attribute is correct
             self.assertEqual(desc.num_seqs, self.num_seqs[dataset], 
                 'Expected {} number of sequences, got {}.'.format(self.num_seqs[dataset], desc.num_seqs))
@@ -86,7 +130,7 @@ class DescriptorTests(unittest.TestCase):
             #verify that all input sequences dont have any gaps/missing amino acids
             for seq in desc.protein_seqs:
                 self.assertNotIn('-', seq, 'There should be no gaps (-) in the sequences.')
-#2.)
+#4.)
             #verify all descriptor attributes are initialised to empty dataframes
             self.assertTrue(desc.amino_acid_composition.empty, 'Attribute should be initialised to an empty dataframe.')
             self.assertTrue(desc.dipeptide_composition.empty, 'Attribute should be initialised to an empty dataframe.')
@@ -104,7 +148,7 @@ class DescriptorTests(unittest.TestCase):
             self.assertTrue(desc.pseudo_amino_acid_composition.empty, 'Attribute should be initialised to an empty dataframe.')
             self.assertTrue(desc.amphiphilic_pseudo_amino_acid_composition.empty, 'Attribute should be initialised to an empty dataframe.')
             self.assertTrue(desc.all_descriptors.empty, 'Attribute should be initialised to an empty dataframe.')
-#3.)
+#5.)
             #test Value and Type error exceptions are thrown if invalid parameters input
             with self.assertRaises(TypeError, msg='Type Error raised, incorrect datatype input to class.'):
                 fail_desc = descr.Descriptors(desc_config=123)
@@ -239,7 +283,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertIsInstance(aa_comp, pd.DataFrame, 'Descriptor should be of type DataFrame.')
             self.assertEqual(self.amino_acids, list(aa_comp.columns), 'Incorrect column values found in output dataframe: {}.'.format(aa_comp.columns))
             self.assertTrue(aa_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(aa_comp.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(aa_comp.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(aa_comp.dtypes)))
 
     def test_dipeptide_composition(self):
         """ Testing Dipeptide Composition protein descriptor attributes and methods. """
@@ -255,7 +300,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(dipeptide_comp.shape, (self.num_seqs[dataset], 400), 'Descriptor not of correct shape ({}, 400).'.format(self.num_seqs[dataset]))
             self.assertIsInstance(dipeptide_comp, pd.DataFrame, 'Descriptor should be of type DataFrame.')
             self.assertTrue(dipeptide_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(dipeptide_comp.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(dipeptide_comp.dtypes)),
+                "Column datatypes should be np.float64, got:\n{}".format(list(dipeptide_comp.dtypes)))
             for col in list(dipeptide_comp.columns):
                 #check all columns follow pattern of XY where x & y are amino acids 
                 self.assertTrue(bool(re.match(r'^[A-Z]{2}$', col)), "")      
@@ -277,7 +323,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertTrue(desc.tripeptide_composition.equals(tripeptide_comp), 'Output dataframe and class attribute dataframes must be the same.')
             self.assertIsInstance(tripeptide_comp, pd.DataFrame, 'Descriptor should be of type DataFrame.')
             self.assertTrue(tripeptide_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(tripeptide_comp.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(tripeptide_comp.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(tripeptide_comp.dtypes)))
             for col in list(tripeptide_comp.columns):
                 #check all columns follow pattern of XY where x & y are amino acids 
                 self.assertTrue(bool(re.match(r'^[A-Z]{3}$', col)), "")      
@@ -298,7 +345,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(moreaubroto.shape, (self.num_seqs[dataset], 240), 'Descriptor not of correct ({}, 240)'.format(self.num_seqs[dataset]))
             self.assertIsInstance(moreaubroto, pd.DataFrame, "Descriptor should be of type DataFrame.")
             self.assertTrue(moreaubroto.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(moreaubroto.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(moreaubroto.dtypes)),
+                "Column datatypes should be np.float64, got:\n{}".format(list(moreaubroto.dtypes)))
 
             #check all columns follow pattern of MoreauBrotoAuto_X_Y where x is the asscession number of
             #   the AAindex record and y is the count of the descriptor
@@ -319,7 +367,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertIsInstance(moran, pd.DataFrame, "Descriptor should be of type DataFrame.")
             self.assertFalse(moran.empty, 'Descriptor dataframe should not be empty.')
             self.assertTrue(moran.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(moran.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(moran.dtypes)),
+                "Column datatypes should be np.float64, got:\n{}".format(list(moran.dtypes)))
 
             #check all columns follow pattern of MoranAuto_X_Y where x is the asscession number of
             #   the AAindex record and y is the count of the descriptor
@@ -340,7 +389,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(geary.shape, (self.num_seqs[dataset], 240), 'Descriptor not of correct ({}, 240).'.format(self.num_seqs[dataset]))
             self.assertIsInstance(geary, pd.DataFrame, "Descriptor should be of type DataFrame.")
             self.assertTrue(geary.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(geary.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(geary.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(geary.dtypes)))
 
             #check all columns follow pattern of GearyAuto_X_Y where x is the asscession number of
             #   the AAindex record and y is the count of the descriptor
@@ -364,7 +414,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(ctd.shape, (self.num_seqs[dataset], 21), 'Descriptor not of correct ({}, 21).'.format(self.num_seqs[dataset]))
             self.assertIsInstance(ctd, pd.DataFrame, "Descriptor should be of type DataFrame.")
             self.assertTrue(ctd.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(ctd.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(ctd.dtypes)),
+                "Column datatypes should be np.float64, got:\n{}".format(list(ctd.dtypes)))
 
             #iterate over all columns and check its name follows expected format
             for col in list(ctd.columns):
@@ -384,7 +435,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(ctd_comp.shape, (self.num_seqs[dataset], 3), 'Descriptor not of correct ({}, 3).'.format(self.num_seqs[dataset]))
             self.assertIsInstance(ctd_comp, pd.DataFrame, "Descriptor should be of type DataFrame.")
             self.assertTrue(ctd_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(ctd_comp.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(ctd_comp.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(ctd_comp.dtypes)))
 
             #iterate over all columns and check its name follows expected format
             for col in list(ctd_comp.columns):
@@ -404,7 +456,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(ctd_trans.shape, (self.num_seqs[dataset], 3), 'Descriptor not of correct ({}, 3).'.format(self.num_seqs[dataset]))
             self.assertIsInstance(ctd_trans, pd.DataFrame, "Descriptor should be of type DataFrame.")
             self.assertTrue(ctd_trans.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(ctd_trans.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(ctd_trans.dtypes)),
+                "Column datatypes should be np.float64, got:\n{}".format(list(ctd_trans.dtypes)))
 
             #iterate over all columns and check its name follows expected format
             for col in list(ctd_trans.columns):
@@ -424,7 +477,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(ctd_distr.shape, (self.num_seqs[dataset], 15), 'Descriptor not of correct ({}, 15).'.format(self.num_seqs[dataset]))
             self.assertIsInstance(ctd_distr, pd.DataFrame, "Descriptor should be of type DataFrame.")
             self.assertTrue(ctd_distr.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(ctd_distr.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(ctd_distr.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(ctd_distr.dtypes)))
 
             #iterate over all columns and check its name follows expected format
             for col in list(ctd_distr.columns):
@@ -446,13 +500,12 @@ class DescriptorTests(unittest.TestCase):
             #get descriptor values
             conjoint_triad = desc.get_conjoint_triad()
 #1.)    
-            print("conjoint_triad.dtypes")
-            print(conjoint_triad.dtypes)
             self.assertFalse(conjoint_triad.empty, 'Descriptor dataframe should not be empty.')
             self.assertEqual(conjoint_triad.shape, (self.num_seqs[dataset], 343), 'Descriptor not of correct shape (1, 343).')
             self.assertIsInstance(conjoint_triad, pd.DataFrame, 'Descriptor should be of type DataFrame.')
             self.assertTrue(conjoint_triad.any().isnull().sum()==0,'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.int64 for col in list(conjoint_triad.dtypes)), "Column datatypes should be np.int64.")
+            self.assertTrue(all(col == np.int64 for col in list(conjoint_triad.dtypes)),
+                "Column datatypes should be np.float64, got:\n{}".format(list(conjoint_triad.dtypes)))
 
             #iterate over all columns and check its name follows expected format
             for col in list(conjoint_triad.columns):
@@ -462,7 +515,7 @@ class DescriptorTests(unittest.TestCase):
     def test_sequence_order_coupling_number(self):
         """ Testing sequence order coupling number descriptor attributes and methods. """
         #run tests on all test datasets
-        for dataset in range(0,len(self.all_config_files)):
+        for dataset in range(0, len(self.all_config_files)):
             desc = descr.Descriptors(self.all_config_files[dataset])
 
             #get descriptor values
@@ -472,7 +525,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(sequence_order_coupling_number.shape, (self.num_seqs[dataset], 30), 'Descriptor not of correct shape (1, 30).')
             self.assertIsInstance(sequence_order_coupling_number, pd.DataFrame, 'Descriptor should be of type DataFrame.')
             self.assertTrue(sequence_order_coupling_number.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(sequence_order_coupling_number.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(sequence_order_coupling_number.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(sequence_order_coupling_number.dtypes)))
 
             #check all columns follow pattern of SOCNX or SOCNXY where x & y integers between 0 and 9
             for col in list(sequence_order_coupling_number.columns):
@@ -492,7 +546,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(quasi_sequence_order.shape, (self.num_seqs[dataset], 50), 'Descriptor not of correct shape (1, 100).')
             self.assertIsInstance(quasi_sequence_order, pd.DataFrame, 'Descriptor should be of type DataFrame.')
             self.assertTrue(quasi_sequence_order.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-            self.assertTrue(all(col == np.float64 for col in list(quasi_sequence_order.dtypes)), "Column datatypes should be np.float64.")
+            self.assertTrue(all(col == np.float64 for col in list(quasi_sequence_order.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(quasi_sequence_order.dtypes)))
 
             #check all columns follow pattern of QSO_X, where x is an integer between 0 and 9
             for col in list(quasi_sequence_order.columns):
@@ -513,7 +568,8 @@ class DescriptorTests(unittest.TestCase):
         self.assertEqual(pseudo_aa_comp.shape, (self.num_seqs[0], 50), 'Descriptor not of correct shape (1,50).')
         self.assertIsInstance(pseudo_aa_comp, pd.DataFrame, 'Descriptor should be of type DataFrame.')
         self.assertTrue(pseudo_aa_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-        self.assertTrue(all(col == np.float64 for col in list(pseudo_aa_comp.dtypes)), "Column datatypes should be np.float64.")
+        self.assertTrue(all(col == np.float64 for col in list(pseudo_aa_comp.dtypes)),
+                "Column datatypes should be np.float64, got:\n{}".format(list(pseudo_aa_comp.dtypes)))
 
         #check all columns follow pattern of PAACX, where x is an integer between 0 and 9
         for col in list(pseudo_aa_comp.columns):
@@ -529,7 +585,8 @@ class DescriptorTests(unittest.TestCase):
         self.assertEqual(pseudo_aa_comp.shape, (self.num_seqs[0], 50), 'Descriptor not of correct shape (1,50).')
         self.assertIsInstance(pseudo_aa_comp, pd.DataFrame, 'Descriptor should be of type DataFrame.')
         self.assertTrue(pseudo_aa_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-        self.assertTrue(all(col == np.float64 for col in list(pseudo_aa_comp.dtypes)), "Column datatypes should be np.float64.")
+        self.assertTrue(all(col == np.float64 for col in list(pseudo_aa_comp.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(pseudo_aa_comp.dtypes)))
 
         #check all columns follow pattern of PAACX, where x is an integer between 0 and 9
         for col in list(pseudo_aa_comp.columns):
@@ -549,7 +606,8 @@ class DescriptorTests(unittest.TestCase):
         self.assertEqual(amphiphilic_pseudo_aac.shape, (self.num_seqs[1], 80), 'Descriptor not of correct shape (1, 80).')
         self.assertIsInstance(amphiphilic_pseudo_aac, pd.DataFrame, 'Descriptor should be of type DataFrame.')
         self.assertTrue(amphiphilic_pseudo_aac.any().isnull().sum()==0,'Descriptor should not contain any null values.')
-        self.assertTrue(all(col == np.float64 for col in list(amphiphilic_pseudo_aac.dtypes)), "Column datatypes should be np.float64.")
+        self.assertTrue(all(col == np.float64 for col in list(amphiphilic_pseudo_aac.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(amphiphilic_pseudo_aac.dtypes)))
 
         #check all columns follow pattern of APAAC_X, where x is an integer between 0 and 9
         for col in list(amphiphilic_pseudo_aac.columns):

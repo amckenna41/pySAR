@@ -361,7 +361,6 @@ class Encoding(PySAR):
                 else:
                     desc_name = None
                 desc_ = desc.get_descriptor_encoding(descr)
-                print("desc", descr)
                 if not (desc_name is None): #only append group name if valid group found
                     descriptor_group_.append(desc.descriptor_groups[desc_name])
 
@@ -559,7 +558,7 @@ class Encoding(PySAR):
         print('\n\n#########################################################################\n')
         print('Encoding using {} AAI and {} descriptor combination(s) with the parameters:\n\
             \n# Algorithm -> {}\n# Parameters -> {}\n# Test Split -> {}'.
-                format(len(all_indices), len(all_descriptors), repr(self.model), self.parameters, self.test_split))
+                format(len(all_indices), len(all_descriptors), repr(self.model), pretty_parameters, self.test_split))
         if ((len(all_indices)<10) and (len(all_indices)>0)):
             print('# AAI Indices -> {}'.format(len(all_indices)))
             if (self.use_dsp):
@@ -599,6 +598,12 @@ class Encoding(PySAR):
                 X_aai = pd.DataFrame(pyDSP.spectrum_encoding)
             else:
                 X_aai = pd.DataFrame(encoded_seqs)
+            
+            #renaming columns in format aai_X, where X is the encoded amino acid number in the sequence
+            col_counter = 1
+            for col in X_aai.columns:
+                X_aai.rename(columns={col: "aai_" + str(col_counter)}, inplace=True)
+                col_counter+=1
 
             #iterate through all descriptors
             for descr in tqdm(all_descriptors, leave=False, unit=" descriptor", desc="Descriptors"):

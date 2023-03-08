@@ -18,8 +18,8 @@ To Do List:
 - [X] Correct supplementary_materials
 - [ ] Add example comments to func definitions
 - [X] Installation from source in readme
-- [ ] Parse descriptors into embedded JSON format
-- [ ] Seperate pySAR and descriptors into different softwares??
+- [X] Parse descriptors into embedded JSON format
+- [X] Seperate pySAR and descriptors into different softwares??
 - [X] Change ProDSP to pyDSP
 - [X] Update comments in funcs to that of DCBLSTM_PSP
 - [X] Add config file to README
@@ -29,7 +29,7 @@ To Do List:
 - [X] Change workflow name from deploy_to_testpypi -> deploy_testpypi
 - [X] Move parse functions to bottom of file
 - [X] Change lambda (key word) to lamda
-- [ ] Remove parameter instances of class Object in comments?
+- [X] Remove parameter instances of class Object in comments?
 - [X] Add filter/window/convolution metaparameters to config
 - [X] Remove 'Description' from comments of functions
 - [X] Ensure outputs are Series not DF's
@@ -40,9 +40,9 @@ To Do List:
 - [X] Catch TypeError on each descriptor func (add typerror to descriptor tests)
 - [X] Create a 2nd branch with results in it
 - [X] Swap any 'pySAR' for self.pySAR_module_path = os.path.dirname(os.path.abspath(sys.modules[self.__module__].__file__))
-- [ ] I think AAI_descriptor encoding func is adding empty descriptor DF's onto AAI indices
-- [ ] Amp pseudo aacomp descriptor func.  
-- [ ] Add print parameter to encoding functions.
+- [X] I think AAI_descriptor encoding func is adding empty descriptor DF's onto AAI indices
+- [X] Amp pseudo aacomp descriptor func.  
+- [X] Add print parameter to encoding functions.
 - [ ] Add readthedocs badge - [![Documentation Status](https://readthedocs.org/projects/ansicolortags/badge/?version=latest)](http://ansicolortags.readthedocs.io/?badge=latest)
 - [X] Update AAIndex module to use similar setup as aaindex package - removeing aaindex.py and test_aaindex.py files
 - [X] - Add images to pypi - https://stackoverflow.com/questions/41983209/how-do-i-add-images-to-a-pypi-readme-that-works-on-github
@@ -62,18 +62,18 @@ To Do List:
 - [X] Remove travis ci from readme.
 - [X] Remove some python versions from setup.py.
 - [X] Fix "How to Cite" section to display citation on multiple lines.
-- [ ] Add info about different branch in repo, maybe even remove it and move ot Google Drive.
+- [X] Add info about different branch in repo, maybe even remove it and move ot Google Drive.
 - [X] Correct naming in setup.cfg.
 - [X] Add "python3 -m twine upload --repository testpypi dist/*" to test pypi workflow.
 - [X] Change "secrets.PY_PI..." to "secrets.PYPI...".
-- [ ] Remove .Ds_Store and any pycache from github upload.
+- [X] Remove .Ds_Store and any pycache from github upload.
 - [X] Update build/test/deploy workflow syntax, look at iso3166-updates workflow for reference.
 - [X] Add comments to .circle/workflow.
 - [ ] Add spacing in between individual references, see if it improves readability, revert if not.
-- [ ] Include range of values for each activity value in example_datasets/readme.
+- [X] Include range of values for each activity value in example_datasets/readme.
 - [ ] Finish Config.md. Mention in pySAR/readme that explanation of all params available in config.md.
-- [ ] Update readme examples of software to include updated import structure of.
-- [ ] Fix badges on main repo.
+- [X] Update readme examples of software to include updated import structure of.
+- [X] Fix badges on main repo.
 - [X] Can remove aaindex files from pySAR/pySAR/data as these are included in aaindex package now.
 - [X] Remove license.txt from pySAR/pySAR
 - [X] Could remove aaindex1 & aaindex1.json file from tests/test_data.
@@ -167,11 +167,20 @@ To Do List:
 - [ ] Ensure example_datasets isnt in software packaging.
 - [X] Pretty print json when printing parameters in Encoding functions.
 - [X] Sort by for RMSE and MSE incorrect, smallest values should be first, largest values last. Sort asc instead of sort desc.
- - [X] If None or empty params input to encoding functions then use all aai and or descriptors, if not then raise value error if invalid desc or aai input. 
- - [X] Passing in invalid_test_desc5 = "invalid_descriptor_name"  to descriptor_encoding func should return value error or similar.
- - [ ] Conjoint triad and CTD cols overlapping when importing.
- - [ ] CTD Transition getting replaced by Distribution - double check. CTD_T not in exported CSV.
- - [ ] Rerun get all descriptors for each dataset.
+- [X] If None or empty params input to encoding functions then use all aai and or descriptors, if not then raise value error if invalid desc or aai input. 
+- [X] Passing in invalid_test_desc5 = "invalid_descriptor_name"  to descriptor_encoding func should return value error or similar.
+- [ ] Conjoint triad and CTD cols overlapping when importing.
+- [ ] CTD Transition getting replaced by Distribution - double check. CTD_T not in exported CSV.
+- [ ] Rerun get all descriptors for each dataset.
+- [X] Use python venv to run unit tests.
+- [X] desc_config input parameter can be a filepath to the config file - descriptors.py
+- [X] CTD columns are repeating twice in output csv.
+- [ ] Remove property key from ctd_comp, ctd_distr, ctd_trans and from config.md
+- [ ] Double check concatenated AAI columns have prefix aai_
+ <!-- python3 -m venv pysar_venv
+ source pysar_venv/bin/activate
+ pip install .
+ deactivate -->
 <!-- # Algorithm: PLSRegression
 # Parameters: 
 # Test Split: 0.2  -->

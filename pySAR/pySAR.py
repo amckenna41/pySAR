@@ -546,6 +546,10 @@ class PySAR():
         #add metric values to dataframe
         desc_df.loc[0] = [descriptor, desc_group, eval.r2, eval.rmse, eval.mse, eval.mae, eval.rpd, eval.explained_var]
 
+        #convert Descriptor and Group from Object -> String datatypes
+        desc_df['Descriptor'] = desc_df['Descriptor'].astype(pd.StringDtype())
+        desc_df['Group'] = desc_df['Group'].astype(pd.StringDtype())
+
         #ensure aai indices attribute doesn't show up in output results
         if (self.aai_indices != None):
             self.aai_indices = None
@@ -680,6 +684,12 @@ class PySAR():
         aai_desc_df.loc[0] = [indices, str(index_cat).strip(), str(self.descriptors), str(desc_group), eval.r2, 
             eval.rmse, eval.mse, eval.mae, eval.rpd, eval.explained_var]
 
+        #convert Index, Category, Descriptor and Group from Object -> String datatypes
+        aai_desc_df['Index'] = aai_desc_df['Index'].astype(pd.StringDtype())
+        aai_desc_df['Category'] = aai_desc_df['Category'].astype(pd.StringDtype())
+        aai_desc_df['Descriptor'] = aai_desc_df['Descriptor'].astype(pd.StringDtype())
+        aai_desc_df['Group'] = aai_desc_df['Group'].astype(pd.StringDtype())
+
         #print out results from encoding
         if (print_results):
             self.output_results(aai_desc_df)
@@ -780,12 +790,12 @@ class PySAR():
         self._algorithm = val
 
     @property
-    def parameters(self):
-        return self._parameters
+    def model_parameters(self):
+        return self._model_parameters
 
-    @parameters.setter
-    def parameters(self, val):
-        self._parameters = val
+    @model_parameters.setter
+    def model_parameters(self, val):
+        self._model_parameters = val
 
     @property
     def test_split(self):

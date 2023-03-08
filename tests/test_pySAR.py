@@ -61,7 +61,7 @@ class PySARTests(unittest.TestCase):
 
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.1.4", 
+        self.assertEqual(pysar_.__version__, "2.2.0", 
             "pySAR version is not correct, got: {}.".format(pysar_.__version__))
         self.assertEqual(pysar_.__name__, "pySAR", 
             "pySAR software name is not correct, got: {}.".format(pysar_.__name__))
@@ -93,8 +93,8 @@ class PySARTests(unittest.TestCase):
             'Dataset attribute does not equal what was input, got {}.'.format(test_pySAR.dataset))
         self.assertEqual(test_pySAR.sequence_col, "sequence",
             'Sequence column attribute is not correct, got {}, expected {}.'.format(test_pySAR.sequence_col, "sequence"))
-        self.assertEqual(test_pySAR.activity, "T50",
-            "Activity attribute name not correct, expected {}, got {}.".format("T50", test_pySAR.activity))
+        self.assertEqual(test_pySAR.activity_col, "T50",
+            "Activity attribute name not correct, expected {}, got {}.".format("T50", test_pySAR.activity_col))
         self.assertEqual(test_pySAR.algorithm, "PLSRegression",
             'Algorithm attribute not correct, expected {}, got {}.'.format("PLSRegression", test_pySAR.algorithm))
         self.assertEqual(test_pySAR.test_split, 0.2,
@@ -103,14 +103,14 @@ class PySARTests(unittest.TestCase):
             "AAI Indices attribute should be none on class initialisation.")
         self.assertIsNone(test_pySAR.descriptors,
             "Descriptors attribute should be none on class initialisation.")
-        self.assertEqual(test_pySAR._parameters, {},
-            'Parameters attribute expected to be empty, got {}.'.format(test_pySAR.parameters))
+        self.assertEqual(test_pySAR.model_parameters, {},
+            'Parameters attribute expected to be empty, got {}.'.format(test_pySAR.model_parameters))
         self.assertIsInstance(test_pySAR.data, pd.DataFrame,
             'Data expected to be a DataFrame, got {}.'.format(type(test_pySAR.data)))
-        self.assertIsInstance(test_pySAR.sequences, list,
-            'Sequences expected to be a list, got {}.'.format(type(test_pySAR.sequences)))
-        self.assertIsInstance(test_pySAR.activity, list,
-            'Activity expected to be a list, got {}.'.format(type(test_pySAR.activity)))
+        self.assertIsInstance(test_pySAR.sequences, pd.Series,
+            'Sequences expected to be a pd.Series, got {}.'.format(type(test_pySAR.sequences)))
+        self.assertIsInstance(test_pySAR.activity, pd.Series,
+            'Activity expected to be a pd.Series, got {}.'.format(type(test_pySAR.activity)))
         self.assertEqual(test_pySAR.data.isnull().sum().sum(), 0,
             'Expected there to be no NAN/null values in data dataframe.')
         self.assertEqual(test_pySAR.num_seqs, 261,
@@ -322,7 +322,7 @@ class PySARTests(unittest.TestCase):
         self.assertIsInstance(test_aai_, pd.DataFrame, 'Output should be a DataFrame, got {}.'.format(type(test_aai_)))
         self.assertEqual(len(test_aai_.columns), 8, "Expected 8 columns in Series, got {}.".format(len(test_aai_.columns)))
         for col in test_aai_.columns:
-            self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns.".format(col))
+            self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns: {}".format(col, expected_output_cols))
             if (col == "Index" or col == "Category"):
                 self.assertTrue(type(test_aai_[col]), str)
             else:
@@ -332,7 +332,7 @@ class PySARTests(unittest.TestCase):
         self.assertIsInstance(test_aai_, pd.DataFrame, 'Output should be a DataFrame, got {}.'.format(type(test_aai_)))
         self.assertEqual(len(test_aai_.columns), 8, "Expected 8 columns in Series, got {}.".format(len(test_aai_.columns)))
         for col in test_aai_.columns:
-            self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns.".format(col))
+            self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns: {}".format(col, expected_output_cols))
             if (col == "Index" or col == "Category"):
                 self.assertTrue(type(test_aai_[col]), str)
             else:
@@ -343,7 +343,7 @@ class PySARTests(unittest.TestCase):
             self.assertIsInstance(test_aai_, pd.DataFrame, 'Output should be a DataFrame, got {}.'.format(type(test_aai_)))
             self.assertEqual(len(test_aai_.columns), 8, "Expected 8 columns in Series, got {}.".format(len(test_aai_.columns)))
             for col in test_aai_.columns:
-                self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns.".format(col))
+                self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns: {}".format(col, expected_output_cols))
                 if (col == "Index" or col == "Category"):
                     self.assertTrue(type(test_aai_[col]), str)
                 else:
@@ -454,14 +454,21 @@ class PySARTests(unittest.TestCase):
         all_desc = [desc_1, desc_2, desc_3, "moranauto, quasi_seq_order"]
         error_desc = "blahblahblah"
         error_desc_1 = 123
+        expected_output_cols = ['Descriptor', 'Group', 'R2', 'RMSE', 'MSE', 
+            'RPD', 'MAE', 'Explained Variance']
 
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[0])
 #1.)
         for de in range(0, len(all_desc)):
             test_desc = test_pySAR.encode_desc(descriptor=all_desc[de], print_results=0)
-            self.assertIsInstance(test_desc,pd.Series, 'Output should be a Series, got {}.'.format(type(test_desc)))
-            self.assertEqual(len(test_desc), 8)
-            self.assertEqual(test_desc.dtype, object)
+            self.assertIsInstance(test_desc, pd.DataFrame, 'Output should be a Series, got {}.'.format(type(test_desc)))
+            self.assertEqual(len(test_desc), 1, "")
+            for col in test_desc.columns:
+                self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns: {}".format(col, expected_output_cols))
+                if (col == "Descriptor" or col == "Group"):
+                    self.assertTrue(type(test_desc[col]), str)
+                else:
+                    self.assertTrue(type(test_desc[col]), np.float64)
 #2.)
         with self.assertRaises(ValueError, msg='ValueError: Descriptor parameter cannot be None.'):
             test_desc = test_pySAR.encode_desc(descriptor=None)
@@ -486,24 +493,50 @@ class PySARTests(unittest.TestCase):
         desc_2 = "ctd_distribution"
         desc_3 = "conjoint_triad"
         desc_4 = ["moran_auto", "quasi_seq_order"]
+        expected_output_cols = ['Descriptor', 'Group', 'Index', 'Category', 'R2', 'RMSE', 'MSE', 
+            'RPD', 'MAE', 'Explained Variance']
 
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[0])
 #1.)
         test_aai_desc = test_pySAR.encode_aai_desc(descriptors=desc_1, indices=aa_indices_1, print_results=0)
         self.assertIsInstance(test_aai_desc, pd.DataFrame, 'Output should be a DataFrame, got {}\n.'.format(type(test_aai_desc)))
         self.assertEqual(len(test_aai_desc.columns), 10, "Expected 10 columns in output dataframe, got {}.".format(len(test_aai_desc)))
+        for col in test_aai_desc.columns:
+            self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns: {}".format(col, expected_output_cols))
+            if (col == "Index" or col == "Category" or col == "Descriptor" or col == "Group"):
+                self.assertTrue(type(test_aai_desc[col]), str)
+            else:
+                self.assertTrue(type(test_aai_desc[col]), np.float64)    
 #2.)
         test_aai_desc = test_pySAR.encode_aai_desc(descriptors=desc_2, indices=aa_indices_2, print_results=0)
         self.assertIsInstance(test_aai_desc, pd.DataFrame, 'Output should be a DataFrame, got {}.'.format(type(test_aai_desc)))
         self.assertEqual(len(test_aai_desc.columns), 10, "Expected 10 columns in output dataframe, got {}.".format(len(test_aai_desc)))
+        for col in test_aai_desc.columns:
+            self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns: {}".format(col, expected_output_cols))
+            if (col == "Index" or col == "Category" or col == "Descriptor" or col == "Group"):
+                self.assertTrue(type(test_aai_desc[col]), str)
+            else:
+                self.assertTrue(type(test_aai_desc[col]), np.float64)    
 #3.)
         test_aai_desc = test_pySAR.encode_aai_desc(descriptors=desc_3, indices=aa_indices_3, print_results=0)
         self.assertIsInstance(test_aai_desc, pd.DataFrame, 'Output should be a DataFrame, got {}.'.format(type(test_aai_desc)))
         self.assertEqual(len(test_aai_desc.columns), 10, "Expected 10 columns in output dataframe, got {}.".format(len(test_aai_desc)))
+        for col in test_aai_desc.columns:
+            self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns: {}".format(col, expected_output_cols))
+            if (col == "Index" or col == "Category" or col == "Descriptor" or col == "Group"):
+                self.assertTrue(type(test_aai_desc[col]), str)
+            else:
+                self.assertTrue(type(test_aai_desc[col]), np.float64)    
 #4.)
         test_aai_desc = test_pySAR.encode_aai_desc(descriptors=desc_4, indices=aa_indices_4, print_results=0)
         self.assertIsInstance(test_aai_desc, pd.DataFrame, 'Output should be a DataFrame, got {}.'.format(type(test_aai_desc)))
         self.assertEqual(len(test_aai_desc.columns), 10, "Expected 10 columns in output dataframe, got {}.".format(len(test_aai_desc)))
+        for col in test_aai_desc.columns:
+            self.assertIn(col, expected_output_cols, "Col {} not found in list of expected columns: {}".format(col, expected_output_cols))
+            if (col == "Index" or col == "Category" or col == "Descriptor" or col == "Group"):
+                self.assertTrue(type(test_aai_desc[col]), str)
+            else:
+                self.assertTrue(type(test_aai_desc[col]), np.float64)    
 #5.)
         with self.assertRaises(ValueError, msg='ValueError: Descriptor and indices parameter cannot both be None.'):
             test_desc = test_pySAR.encode_aai_desc(descriptors=None)
