@@ -133,7 +133,7 @@ class Descriptors():
         
         #create data directory if doesnt exist
         if not (os.path.isdir(DATA_DIR)):
-            os.path.mkdir(DATA_DIR)
+            os.mkdir(DATA_DIR)
 
         #import protein sequences from dataset if not directly specified in protein_seqs input param
         if not (isinstance(self.protein_seqs, pd.Series)):
@@ -207,14 +207,14 @@ class Descriptors():
             self.import_descriptors(self.descr_config.descriptors_csv)
             #get the total number of inputted protein sequences
             self.num_seqs = self.all_descriptors.shape[0]
-        else:
+        # else:
             #if all_desc parameter true then calculate all descriptor values and store in their respective attributes
-            if (self.all_desc):
-                self.all_descriptors = self.get_all_descriptors()
-                #save all calculated descriptor values for next time
-                if (self.descr_config.descriptors_csv == "" or self.descr_config.descriptors_csv == None):
-                    self.descr_config.descriptors_csv = "descriptors_output.csv"
-                self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.descr_config.descriptors_csv), index=0)
+            # if (self.all_desc):
+            #     self.all_descriptors = self.get_all_descriptors()
+            #     #save all calculated descriptor values for next time
+            #     if (self.descr_config.descriptors_csv == "" or self.descr_config.descriptors_csv == None):
+            #         self.descr_config.descriptors_csv = "descriptors_output.csv"
+            #     self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.descr_config.descriptors_csv), index=0)
 
         #create dictionary of descriptors and their associated groups
         keys = self.all_descriptors_list()
@@ -1081,14 +1081,17 @@ class Descriptors():
 
         return self.amphiphilic_pseudo_amino_acid_composition
 
-    def get_all_descriptors(self):
+    def get_all_descriptors(self, export=False):
         """
         Calculate all individual descriptor values, concatenating each descriptor
         Dataframe into one storing all descriptors. The number of descriptor
         features calculated is dependant on several additional parameters of some 
         descriptors, including the number of properties and max lag for the 
         Autocorrelation, SOCN and QSO and the number of properties and lamda for 
-        PAAComp and the lambda for APAAComp.
+        PAAComp and the lambda for APAAComp. To export all descriptors to a csv 
+        set export=True when calling the function, this saves having to recalculate
+        all the descriptor values when using them in multiple encoding processes, 
+        and the descriptors can be imported using the import_descriptors function.
 
         Parameters
         ----------
@@ -1101,6 +1104,10 @@ class Descriptors():
             attributes and their associated values, the output will be of the shape
             N x 9920, where N is the number of protein sequences and 9920 is the number 
             of descriptor features. 
+        :export : bool
+            if true then all calculated descriptors from the protpy package will be 
+            exported to a CSV. This allows for pre-calculated descriptors for a 
+            dataset to be easily imported and not have to be recalculated again.
         """
         print('Calculating all descriptor values....\n')
 
@@ -1162,6 +1169,12 @@ class Descriptors():
         #concatenate individual descriptor dataframe attributes
         all_descriptor_df = pd.concat(all_desc, axis = 1)
         self.all_descriptors = all_descriptor_df     
+
+        if (export):
+            if (self.descr_config.descriptors_csv == "" or self.descr_config.descriptors_csv == None):
+                self.descr_config.descriptors_csv = "descriptors_output.csv"            
+            
+            self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.descr_config.descriptors_csv), index=0)
 
         return all_descriptor_df
 

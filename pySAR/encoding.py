@@ -200,8 +200,8 @@ class Encoding(PySAR):
         end = time.time()      
         elapsed = end - start
 
-        print('\n\n##############################################################')
-        print('Elapsed Time for AAI Encoding: {0:.3f} seconds.'.format(elapsed))
+        print('\nElapsed Time for AAI Encoding: {0:.3f} seconds.'.format(elapsed))
+        print('##################################################')
 
         #set columns in the output dataframe to each of the values/metrics lists
         aaindex_metrics_= aaindex_metrics_df.copy()

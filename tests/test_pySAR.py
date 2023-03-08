@@ -61,7 +61,7 @@ class PySARTests(unittest.TestCase):
 
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.2.0", 
+        self.assertEqual(pysar_.__version__, "2.2.1", 
             "pySAR version is not correct, got: {}.".format(pysar_.__version__))
         self.assertEqual(pysar_.__name__, "pySAR", 
             "pySAR software name is not correct, got: {}.".format(pysar_.__name__))

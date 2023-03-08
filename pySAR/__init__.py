@@ -1,6 +1,6 @@
 """ pySAR software metadata. """
 __name__ = 'pySAR'
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 __description__ = 'A Python package used to analysis Sequence Activity Relationships (SARs) of protein sequences and their mutants using Machine Learning.'
 __author__ = 'AJ McKenna, https://github.com/amckenna41'
 __authorEmail__ = 'amckenna41@qub.ac.uk'

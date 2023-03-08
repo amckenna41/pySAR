@@ -22,7 +22,7 @@
         {
           "descriptors_csv": "descriptors_thermostability.csv",
           "descriptors": {
-            "all_desc": 1,
+            "all_desc": 0,
             "amino_acid_composition": 1,
             "dipeptide_composition": 1,
             "tripeptide_composition": 1,
