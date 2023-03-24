@@ -1,5 +1,5 @@
 ################################################################################
-#################             Utilities Modules                #################
+#################             Utilities Module                ##################
 ################################################################################
 
 import pandas as pd
@@ -9,7 +9,8 @@ import os
 import shutil
 import csv
 
-from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER
+from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, CURRENT_DATETIME
+
 class Map(dict):
     """
     Instantiating this class will convert a dict such that it can be accessed using 
@@ -39,8 +40,8 @@ class Map(dict):
     # Or
     del m['new_key']
    
-    Reference
-    ---------
+    References
+    ----------
     [1] https://stackoverflow.com/questions/2352181/how-to-use-a-dot-to-access-members-of-dictionary
     """
     def __init__(self, *args, **kwargs):
@@ -77,7 +78,9 @@ def valid_sequence(sequences):
     each sequence is made up of valid canonical amino acid letters. If no
     invalid values are found then None will be returned. If invalid letters
     are found in the sequence, the sequence index and the index of the value
-    in the sequence will be appened to a dict and returned.
+    within the sequence will be appened to a dict and returned. In the output
+    dict, the sequence reference is not zero indexed so the index to the first 
+    sequence will be 1 not 0. 
 
     Parameters
     ----------
@@ -90,23 +93,29 @@ def valid_sequence(sequences):
         if no invalid values found in the protein sequences, None returned. if
         invalid values found, list of dicts returned in the form
         {sequence index: invalid value in sequence index}.
+    
+    Usage
+    -----
+    seq = ["ACDEF", "GHIKLM", "ABCDE"]
+    seq_check = valid_sequences[seq]
+    #{'Sequence #2: (B at index #1)'}
     """
     #if input is string, cast to a list so it is iterable
-    if (isinstance(sequences,str)):
+    if (isinstance(sequences, str)):
         sequences = [sequences]
 
     #valid canonical amino acid letters
     valid_amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',\
-        'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y','-']
+        'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', '-']
     invalid_indices = []
 
     #iterate through all sequences, validating that there are no invalid values
     #present in the sequences, if there are then append to list of invalid indices
-    for seq in range(0,len(sequences)):
-        for aa in range(0,len(sequences[seq])):
+    for seq in range(0, len(sequences)):
+        for aa in range(0, len(sequences[seq])):
             if (sequences[seq][aa] not in valid_amino_acids):
                 invalid_indices.append(
-                    {'Sequence #' + str(seq) : '(' + str(sequences[seq][aa]) + ' at index #' + str(aa) + ')'})
+                    {'Sequence #' + str(seq+1) : '(' + str(sequences[seq][aa]) + ' at index #' + str(aa) + ')'})
 
     #if no invalid values found in sequences return None, else return list of
     #dicts containing invalid index and invalid values
@@ -131,7 +140,7 @@ def remove_gaps(sequences):
     Returns
     -------
     :protein_seqs : np.ndarray
-        returns the same inputted protein sequences but with any gaps ('-') removed.
+        returns the same inputted protein sequence(s) but with any gaps ('-') removed.
     """
     #bool needed to ensure correct output format if input is str
     is_string=False   
@@ -143,8 +152,6 @@ def remove_gaps(sequences):
 
     #concatenate multiple sequences into 1 iterable list
     if (isinstance(sequences, list) and len(sequences) > 1):
-      # for i in range(0,len(protein_seqs)):
-      #   protein_seqs[i] = ''.join(protein_seqs[i])
       sequences = [''.join(sequences)]
 
     #iterate through sequences, removing any gaps ('-')
@@ -152,7 +159,7 @@ def remove_gaps(sequences):
         try:
             sequences[row] = sequences[row].replace("-", "")
         except:
-            raise ValueError('Error removing gaps from sequences at index {}.'.format(row))
+            raise TypeError('Error removing gaps from sequences at index {}.'.format(row))
 
     #if input was str then join list of sequences into one str
     if (is_string):
@@ -164,7 +171,7 @@ def flatten(array):
     """
     Lambda function for flattening list of lists or array of lists into one
     1-dimensional array/list. Input must contain an array of arrays of the same
-    length. Input will be flattened into a 1-dimensional array of size M * N
+    length. Input will be flattened into a 1-dimensional array of size (M * N, 1)
     where M = len(array) and N = len(array[0]). The flattened output can then be
     reshaped into the required shape and format.
 
@@ -189,7 +196,7 @@ def flatten(array):
     try:
         flattened_array = flatten(array)
     except:
-        raise ValueError('Error flattening array of type: {} and size {} .'.
+        raise TypeError('Error flattening array of type: {} and size {}.'.
             format(type(array), len(array)))
 
     #if input is a numpy array then reshape to 1D numpy array else return list
@@ -222,45 +229,13 @@ def zero_padding(sequences):
     max_len = len(max(sequences, key=len))
 
     #iterate through all sequences, padding with 0's to max_len
-    for s in range(0,len(sequences)):
+    for s in range(0, len(sequences)):
         if (len(sequences[s]) < max_len):
             sequences[s]+= str(0) * (max_len - len(sequences[s]))
 
     return sequences
 
-def create_output_dir():
-    """
-    Create output directory pointed to by global OUTPUT_DIR folder and create a
-    folder according to the OUTPUT_FOLDER global var within this directory,
-    used for storing the outputs/results from current job. Each output folder will
-    have a unique name as the current date & time (DateTime) will be used in its naming.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-    """
-    #if directory doesn't exist then create it
-    if not (os.path.isdir(OUTPUT_DIR)):
-        try:
-            os.makedirs(OUTPUT_DIR)
-        except:
-            raise OSError('Error creating directory {} .'.format(OUTPUT_DIR))
-
-    #if output folder already exists then delete it
-    if (os.path.isdir(OUTPUT_FOLDER)):
-        shutil.rmtree(OUTPUT_FOLDER, ignore_errors=False, onerror=None)
-
-    #create output folder in directory
-    try:
-        os.makedirs(OUTPUT_FOLDER)
-    except:
-        raise OSError('Error creating directory {} .'.format(OUTPUT_FOLDER))
-
-def save_results(results, name):
+def save_results(results, file_name, output_folder=""):
     """
     Save object DataFrame/Series containing metric names and their values captured from
     the encoding process. Save the results in this object to a CSV file named according
@@ -271,23 +246,37 @@ def save_results(results, name):
     :results : dict/pd.DataFrame/pd.Series
         object of the metrics and results from the encoding process. Ideally should
         be a dataframe/series but function also accepts a dict of results.
-    :name : str
-        name to call results file.
+    :file_name : str
+        file name to call results file.
     
     Returns
     -------
     None
     """
+    #append extension if not in file name
+    if (os.path.splitext(file_name)[1] == ""):
+        file_name = file_name + '.csv'
+
+    #set output folder to default if input param empty or None
+    if (output_folder == "" or output_folder == None):
+        output_folder = OUTPUT_FOLDER
+    else:
+        output_folder = output_folder + "_" + CURRENT_DATETIME
+    
+    #create output folder if it doesnt exist
+    if not (os.path.isdir(output_folder)):
+        os.makedirs(output_folder)
+
     #output results to csv if results variable is a dictionary
-    if (isinstance(results,dict)):
-        with open(os.path.join(OUTPUT_FOLDER, name + '.csv'), 'w') as f:
+    if (isinstance(results, dict)):
+        with open(os.path.join(output_folder, file_name), 'w') as f:
             w = csv.DictWriter(f, results.keys())
             w.writeheader()
             w.writerow(results)
     #output results to csv if results variable is a dataframe or Series
     elif (isinstance(results, pd.DataFrame) or isinstance(results, pd.Series)):
         results.reset_index(drop=True, inplace=True)
-        results.to_csv(os.path.join(OUTPUT_FOLDER, name + '.csv'))
+        results.to_csv(os.path.join(output_folder, file_name))
     else:
         raise TypeError('Results Object must be of type: dict, pd.Series or pd.DataFrame, got object of type {}.'
             .format(type(results)))

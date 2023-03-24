@@ -21,28 +21,25 @@ pySAR works through JSON configuration files. There are many different customisa
       }
     ],
     "descriptors":
+    [
+      {
+      "descriptors_csv": "descriptors.csv",
+      "all_desc": 0,
+      "normalized_moreaubroto_autocorrelation": 
       [
         {
-          "descriptors_csv": "descriptors.csv",
-          "descriptors": {
-            "all_desc": 0,
-            "amino_acid_composition": 1,
-            "dipeptide_composition": 1,
-            ...
-        }
-        }
-      ],
-    "descriptor_properties":[{
-      "normalized_moreaubroto_autocorrelation":[{
         "lag":30,
         "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
-      }],
+        }
+      ],
       ...
       ...
-        }],
-    "pyDSP":[
+      }
+    ],
+    "pyDSP":
+    [
       {
         "use_dsp": 1,
         "spectrum": "power",

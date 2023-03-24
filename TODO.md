@@ -69,9 +69,9 @@ To Do List:
 - [X] Remove .Ds_Store and any pycache from github upload.
 - [X] Update build/test/deploy workflow syntax, look at iso3166-updates workflow for reference.
 - [X] Add comments to .circle/workflow.
-- [ ] Add spacing in between individual references, see if it improves readability, revert if not.
+- [X] Add spacing in between individual references, see if it improves readability, revert if not.
 - [X] Include range of values for each activity value in example_datasets/readme.
-- [ ] Finish Config.md. Mention in pySAR/readme that explanation of all params available in config.md.
+- [X] Finish Config.md. Mention in pySAR/readme that explanation of all params available in config.md.
 - [X] Update readme examples of software to include updated import structure of.
 - [X] Fix badges on main repo.
 - [X] Can remove aaindex files from pySAR/pySAR/data as these are included in aaindex package now.
@@ -81,10 +81,10 @@ To Do List:
 - [X] Move pySAR demo to Google Colab.
 - [ ] In descriptors/readme go into more detail about what each descriptor does.
 - [ ] Add documentation section in readme.
-- [ ] Add Assertion message to some unit tests.
+- [X] Add Assertion message to some unit tests.
 - [X] Change mentions of "descriptor_paramters" to "descriptor_properties".
-- [ ] Results branch - remove everything but results dir.
-- [ ] Be able to pass in JSON object to Encoding object. Parse objects in JSON that are present, all don't have to be but most important ones need to be there.
+- [X] Results branch - remove everything but results dir.
+- [X] Be able to pass in JSON object to Encoding object. Parse objects in JSON that are present, all don't have to be but most important ones need to be there.
 - [X] Change Get record from AAIndex database section in readme to show new way aaindex is imported.
 - [X] Update refs on main readme to actually include authors/titles of works.
 - [X] Remove travis ci badge from readme.
@@ -92,12 +92,12 @@ To Do List:
 - [X] Add path-ignore keywords to GitHub Action.
 - [X] Reorder software metadata in setup.py to be in order of main func, create __description__ var.
 - [X] Add download_url to setup.py - url of zipped package.
-- [ ] In some unit tests, may need to use self.assertAlmostEqual instead of self.assertEqual.
+- [X] In some unit tests, may need to use self.assertAlmostEqual instead of self.assertEqual.
 - [ ] Remove 'get_' from functions.
-- [ ] Make self.params & other dicts in pySAR accessible via dot notation. 
+- [X] Make self.params & other dicts in pySAR accessible via dot notation. 
 - [ ] Remove all camel casing function names/vars, change to underscores and lowercase (https://peps.python.org/pep-0008/#function-and-variable-names).
-- [ ] Usage example using fasta import function/module.
-- [ ] Use Map class to allow for config file and parameters accessible via dot notation. 
+- [X] Usage example using fasta import function/module.
+- [X] Use Map class to allow for config file and parameters accessible via dot notation. 
 - [X] In config files, change 'comp' to 'composition'
 - [X] Change protpy.aa_composition -> protpy.amino_acid_composition
 - [ ] Add normalize parameter to each autocorrelation func & config.
@@ -106,7 +106,7 @@ To Do List:
 - [X] Change seq_order_... -> sequence_order... , quasi_seq_order -> quasi_sequence_order in config.md.
 - [ ] Mention custom built aaindex & protpy softwares.
 - [X] Change sec_struct to secondary_struct.
-- [ ] Add list of test cases to comments in each test suite.
+- [X] Add list of test cases to comments in each test suite.
 - [X] Change explainedVar -> explained_var.
 - [X] Test dtype of columns in output dataframes.
 - [X] Test correct naming convention for descriptor dataframe names using regex.
@@ -155,35 +155,65 @@ To Do List:
 - [X] def quasi_sequence_order() - dimesnion (1,lag). def quasi_sequence_order_all() - dimension (1,lag*2)
 - [X] Test descriptor import function.
 - [X] If no extension on config param, dataset and or descriptors csv param then apend csv to it.
-- [ ] Input dataset can be in txt or csv form.
+- [X] Input dataset can be in txt or csv form.
 - [X] On encoding.descriptor_encoding(), parameters in comments is empty:
 - [X] Add all pre-calculated descriptors csv to example_datasets.
-- [ ] Double check difflib/closeness_matches on acitivty and sequence cols.
+- [X] Double check difflib/closeness_matches on acitivty and sequence cols.
 - [X] Remove get_seqs from pySAR.
 - [X] Change self.activity -> self.activity_col, set self.activity to the actual column data.
 - [X] Change all references to config_path to config_file, including dsp_config.
 - [X] in aai_encoding func in Encoding, reorder columns such that MAE is before RPD.
 - [ ] when testing desc and aai + desc endoing, use test config with and without pre-calcualted descriptors csv.
-- [ ] Ensure example_datasets isnt in software packaging.
+- [X] Ensure example_datasets isnt in software packaging.
 - [X] Pretty print json when printing parameters in Encoding functions.
 - [X] Sort by for RMSE and MSE incorrect, smallest values should be first, largest values last. Sort asc instead of sort desc.
 - [X] If None or empty params input to encoding functions then use all aai and or descriptors, if not then raise value error if invalid desc or aai input. 
 - [X] Passing in invalid_test_desc5 = "invalid_descriptor_name"  to descriptor_encoding func should return value error or similar.
-- [ ] Conjoint triad and CTD cols overlapping when importing.
-- [ ] CTD Transition getting replaced by Distribution - double check. CTD_T not in exported CSV.
-- [ ] Rerun get all descriptors for each dataset.
+- [X] Conjoint triad and CTD cols overlapping when importing.
+- [X] CTD Transition getting replaced by Distribution - double check. CTD_T not in exported CSV.
+- [X] Rerun get all descriptors for each dataset.
 - [X] Use python venv to run unit tests.
 - [X] desc_config input parameter can be a filepath to the config file - descriptors.py
 - [X] CTD columns are repeating twice in output csv.
-- [ ] Remove property key from ctd_comp, ctd_distr, ctd_trans and from config.md
-- [ ] Double check concatenated AAI columns have prefix aai_
- <!-- python3 -m venv pysar_venv
- source pysar_venv/bin/activate
- pip install .
- deactivate -->
-<!-- # Algorithm: PLSRegression
-# Parameters: 
-# Test Split: 0.2  -->
-<!-- - [ ] Add Contributing section to readme (https://github.com/arc298/instagram-scraper). -->
-
-
+- [X] Remove property key from ctd_comp, ctd_distr, ctd_trans and from config.md
+- [X] Double check concatenated AAI columns have prefix aai_. Test this in test_encoding unit tests.
+- [ ] Only generate and or upload coverage report for one Python version in workflows.
+- [X] Input X and Y into Model class, initialise in constructor.
+- [X] Change test_size param to test_split.
+- [ ] Best params is empty when outputting hyperparameter results. Use default params if params in config is {}.
+- [X] In Encoding output Change AAI Indices -> 1 to Using AAI Indices -> 1, Descriptors -> 1 to Using Descriptors -> 1
+- [X] When reading in descriptor name, lowercase, if there's spaces, seperate with underscores.
+- [ ] Add results from research folder to Google Drive, mention in Research Article section. Mention pre-calculated descriptors from same section.
+- [X] Remove 2 distance matrices from pySAR/data, now a part of protpy package.
+- [X] Remove manifest file after removal of pySAR/data.
+- [ ] Upload pySAR demo as ppt rather than .key.
+- [X] Double check what happens when dict not passed into Map class, should error be rasied? Reflect change in aaindex.
+- [X] Remove get_protein module and references to it.
+- [ ] Add circleci badge back into repo now that it's sorta working.
+- [X] In hyperparameter tuning results change CV to Number of cross-validation folds etc.
+- [X] Less verbose output for hyperparameter tuning.
+- [ ] __str__ of Desscriptor class displays all descriptor names and shapes.
+- [X] Remove "descriptors" from config, move csv param to "desc_properties", rename desc_properties -> descriptors.
+- [X] Organise config, newline for [ and {
+- [X] Change all references of lamda to lambda.
+- [X] Remove cutoff index.
+- [ ] Unit test desc_combo in test_descriptor
+- [X] Remove desc_counter and aai_counter.
+- [X] If less than 10 AAI Indices or Descriptors being encoded then print out else dont. Slight error when erroneauous index input this still outputs. Also model_parameters is empty.
+- [X] Finish encoding terminal outputs from desc and aai + desc. 
+- [X] Check columns generated from aai_encoding follow format aai_X.
+- [ ] Unit test columns follow format aai_X...
+- [X] In utils.save_results, double check that input parameter doesnt already have an extension on it.
+- [ ] Complete test_model feature_selection unit tests.
+- [X] Remove rfft from pyDSP.
+- [ ] Finish window and filter unit tests pyDSP.
+- [X] pyDSP encode_seqs(),  window <> window_type
+- [X] for aai_desc_encoding in pySAR.py, check list of indices is split up into str.
+- [X] Test export of results: test output folder is created, import csv, double check columns, length etc, delete folder.
+- [X] Add output folder arg to encoding functions.
+- [X] Remove create output dir function in utils.
+- [X] Incorporate output_folder into unit tests for encoding and pysar.
+- [X] Unit test that plot png exists in output folder.
+- [X] In unit tests for hyperparameter_tuning, pass in parameter grid rather than just parameters themselves.
+- [X] If calculating only 1 descriptor then could remove the progress bar, not really needed. 
+ <!-- python3 -m venv pysar_venv source pysar_venv/bin/activate pip install . deactivate -->

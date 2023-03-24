@@ -10,8 +10,6 @@ requests>=2.25.0
 matplotlib
 seaborn
 tqdm
-pytest
-varname
 biopython
 urllib3==1.26.5
 protpy

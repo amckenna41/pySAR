@@ -46,9 +46,9 @@ class Evaluate():
         self.Y_pred = np.array(Y_pred).reshape((-1,1))
 
         #validate that predicted and observed input arrays are of the same length,
-        #   if input predicted and observed arrays are not same shape then raise error
+        #if input predicted and observed arrays are not same shape then raise error
         if (self.Y_true.shape != self.Y_pred.shape):
-            raise ValueError('Observed and predicted values must be of the same length, \
+            raise ValueError('Observed and predicted values must be of the same shape,\
                 Y_true = {} & Y_pred = {}.'.format(Y_true.shape, Y_pred.shape))
 
         #calculate all metric values for inputs
@@ -207,15 +207,12 @@ class Evaluate():
         """
         return mean_poisson_deviance(self.Y_true, self.Y_true)
 
-################################################################################
-
     def __repr__(self):
         return "<Evaluate(Y_true: {} Y_pred: {})>.".format(
             self.Y_true.shape, self.Y_pred.shape)
 
     def __str__(self):
         return "Instance of Evaluate Class with attribute values: \
-                R2: {}, RMSE: {}, MSE: {}, MAE: {}, RPD: {}, Explained Variance: {}, \
-                    Max Error: {}, Mean Poisson Deviance: {}" \
-                .format(self.r2, self.rmse, self.mse, self.mae, self.rpd, self.explained_var,
-                    self.max_error, self.mean_poisson_deviance)
+                R2: {}, RMSE: {}, MSE: {}, MAE: {}, RPD: {}, Explained Variance: {},\
+                    Max Error: {}".format(self.r2, self.rmse, self.mse, self.mae, 
+                    self.rpd, self.explained_var, self.max_error)

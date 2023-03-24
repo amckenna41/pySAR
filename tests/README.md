@@ -9,7 +9,7 @@ All of the modules and functionalities of pySAR are thoroughly tested using the 
 * `test_pyDSP` - tests for pyDSP module and class.
 * `test_pySAR` - tests for pySAR module and class.
 * `test_utils` - tests for utils module and functionality
-* `test_get_protein` - tests for all moule and functionality in get_protein module.
+* `test_evaluate` - tests for evaluate module and functionality
 
 ## Running Tests
 

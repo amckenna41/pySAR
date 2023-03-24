@@ -59,8 +59,6 @@ setup(name=pySAR.__name__,
           'matplotlib',
           'seaborn',
           'tqdm',
-          'pytest',
-          'varname',
           'biopython',
           'aaindex',
           'protpy'

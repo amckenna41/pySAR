@@ -1,90 +1,73 @@
 {
-    "dataset": [
+    "dataset": 
       {
         "dataset": "enantioselectivity.txt",
         "sequence_col": "sequence",
         "activity": "e-value"
-      }
+      },
   
-    ],
-  
-    "model": [
+    "model": 
       {
         "algorithm": "plsregression",
         "parameters": "",
         "test_split": 0.2
-      }
-  
-    ],
+      },
     
     "descriptors":
-      [
+    {
+      "descriptors_csv": "descriptors_enantioselectivity.csv",
+      "all_desc": 0,
+      "moreaubroto_autocorrelation":
         {
-          "descriptors_csv": "descriptors_enantioselectivity.csv",
-          "descriptors": {
-            "all_desc": 0,
-            "amino_acid_composition": 1,
-            "dipeptide_composition": 1,
-            "tripeptide_composition": 1,
-            "moreaubroto_autocorrelation": 1,
-            "moran_autocorrelation": 1,
-            "geary_autocorrelation": 1,
-            "ctd": 1,
-            "conjoint_triad": 1,
-            "sequence_order_coupling_number": 1,
-            "quasi_sequence_order": 1,
-            "pseudo_amino_acid_composition": 1,
-            "amphiphilic_pseudo_amino_acid_composition": 1
-        }
-  
-        }
-      ],
-    
-    "descriptor_properties":[{
-  
-      "moreaubroto_autocorrelation":[{
         "lag": 30,
         "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
-      }],
-      "moran_autocorrelation":[{
+        },
+      "moran_autocorrelation":
+        {
         "lag": 30,
         "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
-      }],
-      "geary_autocorrelation":[{
+        },
+      "geary_autocorrelation":
+        {
         "lag": 30,
         "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
-      }],
-      "ctd":[{
+        },
+      "ctd":
+        {
         "property": "hydrophobicity",
         "all": 0
-      }],
-      "sequence_order_coupling_number":[{
+        },
+      "sequence_order_coupling_number":
+        {
         "lag": 30,
         "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
-      }],
-      "quasi_sequence_order":[{
+        },
+      "quasi_sequence_order": 
+        {
         "lag": 30,
         "weight": 0.1,
         "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
-      }],
-      "pseudo_amino_acid_composition":[{
+        },
+      "pseudo_amino_acid_composition":
+        {
         "lambda": 30,
         "weight": 0.05,
         "properties": []
-      }],
-      "amphiphilic_pseudo_amino_acid_composition":[{
+        },
+      "amphiphilic_pseudo_amino_acid_composition":
+        {
         "lambda": 30,
         "weight": 0.5
-      }]
-        }],
+        }
+      },
 
-    "pyDSP":[
+    "pyDSP":
       {
         "use_dsp": 1,
         "spectrum": "power",
@@ -106,7 +89,5 @@
           "mode": "interp"
         }
       }
-    ]
-
   }
   

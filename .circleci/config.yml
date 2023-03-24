@@ -3,7 +3,7 @@ version: 2.1
 #create Python env
 orbs:
   python: circleci/python@2.1.1
-  codecov: codecov/codecov@1.0.2
+  # codecov: codecov/codecov@1.0.2
 
 jobs:
   #run unittests
@@ -13,7 +13,9 @@ jobs:
       - checkout
       - run:
           name: Run tests
-          command: python -m unittest discover tests/
+          command: |
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            python -m unittest discover tests/
       - persist_to_workspace:
           root: ~/project
           paths:
@@ -70,8 +72,7 @@ jobs:
             name: Bandit
             command: |
               pip install bandit
-              bandit -r pySAR > /tmp/bandit_output.txt || true
-              bandit -r tests > /tmp/bandit_output_tests.txt || true
+              bandit -r . > /tmp/bandit_output.txt || true
         #store safety and bandit artifacts in tmp folder
         - store_artifacts:
             path: /tmp/package_safety_output.txt
@@ -79,15 +80,13 @@ jobs:
         - store_artifacts:
             path: /tmp/bandit_output.txt
             destination: bandit-output.txt
-        - store_artifacts:
-            path: /tmp/bandit_output_tests.txt
-            destination: bandit-output-tests.txt
 
+  #verify installation of pySAR
   pysar-pipeline:
       executor: python/default
       description: |
         Running pySAR pipeline to check installation and version of package.
-      #install python dependancies and libraries, checkout repo
+      #checkout repo
       steps:
         - checkout
         - python/install-packages:
@@ -95,8 +94,9 @@ jobs:
         - run:
             name: pySAR pipeline test
             command: |
-              pip3 install pySAR
+              pip3 install pysar
               echo -e "import pySAR as pysar\nprint(pysar.__version__)" | python3
+
 #initialise all above jobs into a workflow
 workflows:
   main:
@@ -131,5 +131,3 @@ workflows:
             branches:
               only:
                 - master
-
-                

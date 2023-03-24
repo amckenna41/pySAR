@@ -7,6 +7,7 @@
 # pySAR #
 [![PyPI](https://img.shields.io/pypi/v/pySAR)](https://pypi.org/project/pySAR/)
 [![pytest](https://github.com/amckenna41/pySAR/workflows/Building%20and%20Testing%20%F0%9F%90%8D/badge.svg)](https://github.com/amckenna41/pySAR/actions?query=workflowBuilding%20and%20Testing%20%F0%9F%90%8D)
+[![CircleCI](https://circleci.com/gh/amckenna41/pySAR.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/pySAR)
 [![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
 [![PythonV](https://img.shields.io/pypi/pyversions/pySAR?logo=2)](https://pypi.org/project/pySAR/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
@@ -87,22 +88,19 @@ Usage
 
 ```json
 {
-    "dataset": [
+    "dataset": 
       {
         "dataset": "thermostability.txt",
         "sequence_col": "sequence",
         "activity": "T50"
-      }
-    ],
-    "model": [
+      },
+    "model": 
       {
         "algorithm": "plsregression",
         "parameters": "",
         "test_split": 0.2
-      }
-    ],
+      },
     "descriptors":
-      [
         {
           "descriptors_csv": "descriptors.csv",
           "descriptors": {
@@ -111,18 +109,19 @@ Usage
             "dipeptide_composition": 1,
             ...
         }
-        }
-      ],
-    "descriptor_properties":[{
-      "normalized_moreaubroto_autocorrelation":[{
+      },
+    "descriptor_properties":
+    {
+      "normalized_moreaubroto_autocorrelation":
+        {
         "lag":30,
         "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
-      }],
+        },
       ...
       ...
-        }],
-    "pyDSP":[
+      },
+    "pyDSP":
       {
         "use_dsp": 1,
         "spectrum": "power",
@@ -135,7 +134,6 @@ Usage
           ...
         }
       }
-    ]
   }
 ```
 ### Encoding using all 566 AAIndex indices
@@ -146,19 +144,23 @@ from pySAR.encoding import *
 
 '''test_config.json
 {
-"dataset": [{
-  "dataset": "test_dataset1.txt",
-  "activity": "sought_activity"
-  ...
-}
-"model": [{
-  "algorithm": "randomforest",
-  ....
-}
-"pyDSP": [{
-  "use_dsp": 1,
-  "spectrum": "imaginary",
-  "window": "blackman"
+  "dataset": 
+    {
+    "dataset": "test_dataset1.txt",
+    "activity": "sought_activity"
+    ...
+    }
+  "model": 
+    {
+    "algorithm": "randomforest",
+    ...
+    }
+  "pyDSP": 
+    {
+    "use_dsp": 1,
+    "spectrum": "imaginary",
+    "window": "blackman"
+    }
 }
 '''
 #create instance of Encoding class, using RF algorithm with its default params
@@ -185,18 +187,22 @@ from pySAR.encoding import *
 
 '''test_config2.json
 {
-"dataset": [{
-  "dataset": "test_dataset2.txt",
-  "activity": "sought_activity"
-  .....
-}
-"model": [{
-  "algorithm": "plsreg",
-  "parameters": null
-}
-"pyDSP": [{
-  "use_dsp": 0,
-  ...
+  "dataset": 
+    {
+    "dataset": "test_dataset2.txt",
+    "activity": "sought_activity"
+    ...
+    }
+  "model": 
+    {
+    "algorithm": "plsreg",
+    "parameters": null
+    }
+  "pyDSP": 
+    {
+    "use_dsp": 0,
+    ...
+    }
 }
 '''
 #create instance of Encoding class, using PLS algorithm with its default params
@@ -222,27 +228,33 @@ from pySAR.encoding import *
 
 '''test_config3.json
 {
-"dataset": [{
-  "dataset": "test_dataset3.txt",
-  "activity": "sought_activity"
-  .....
-}
-"model": [{
-  "algorithm": "adaboost",
-  "parameters": [{
-    "estimators": 100,
-    "learning_rate": 1.5
+  "dataset": 
+    {
+    "dataset": "test_dataset3.txt",
+    "activity": "sought_activity"
     ...
-    ]}
-}
-"descriptors": [{
-  "descriptors_csv": "precalculated_descriptors.csv",
-  "descriptors": {
+    }
+  "model": 
+    {
+    "algorithm": "adaboost",
+    "parameters": [{
+      "estimators": 100,
+      "learning_rate": 1.5
+      ...
+    },
+  "descriptors": 
+  {
+    "descriptors_csv": "precalculated_descriptors.csv",
     "all_desc": 0,
-    "aa_composition": 1,
-    "dipeptide_composition": 1,
-    ....
+    "moreaubroto_autocorrelation": {
+      "lag": 30,
+      "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+        "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
+      "normalize": 1
+    },
+    ...
   }
+}
 '''
 #create instance of Encoding class using AdaBoost algorithm, using 100 estimators & a learning rate of 1.5
 encoding = Encoding(config_file='test_config3.json')
@@ -270,32 +282,41 @@ from pySAR.encoding import *
 
 '''test_config4.json
 {
-"dataset": [{
-  "dataset": "test_dataset4.txt",
-  "activity": "sought_activity"
-  .....
-}
-"model": [{
-  "algorithm": "randomforest",
-  "parameters": [{
-    "estimators": 100,
-    "learning_rate": 1.5,
+  "dataset": 
+  {
+    "dataset": "test_dataset4.txt",
+    "activity": "sought_activity"
     ...
-  }]
-}
-"descriptors": [{
-  "descriptors_csv": "precalculated_descriptors.csv",
-  "descriptors": {
-    "all_desc": 0,
-    "aa_composition": 1,
-    "dipeptide_composition": 1,
-    ....
   }
-"pyDSP": [{
-  "use_dsp": 1,
-  "spectrum": "power",
-  "window": ""
-  ...
+  "model": 
+  {
+    "algorithm": "randomforest",
+    "parameters": 
+      {
+      "estimators": 100,
+      "learning_rate": 1.5,
+      ...
+      }
+  },
+  "descriptors": 
+  {
+    "descriptors_csv": "precalculated_descriptors.csv",
+    "all_desc": 0,
+    "moreaubroto_autocorrelation": {
+      "lag": 30,
+      "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+        "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
+      "normalize": 1
+    },
+    ...
+  },
+  "pyDSP": 
+  {
+    "use_dsp": 1,
+    "spectrum": "power",
+    "window": ""
+    ...
+  }
 }
 '''
 #create instance of Encoding class using RF algorithm, using 100 estimators with a learning rate of 1.5
@@ -325,29 +346,37 @@ import pySAR as pysar   #import pySAR package
 
 '''test_config5.json
 {
-"dataset": [{
-  "dataset": "test_dataset5.txt",
-  "activity": "sought_activity"
-  .....
-}
-"model": [{
-  "algorithm": "plsregression",
-  "parameters": "",
-  ...
-}
-"descriptors": [{
-  "descriptors_csv": "precalculated_descriptors.csv",
-  "descriptors": {
+  "dataset": 
+  {
+    "dataset": "test_dataset5.txt",
+    "activity": "sought_activity"
+    ...
+  },
+  "model": 
+  {
+    "algorithm": "plsregression",
+    "parameters": "",
+    ...
+  },
+  "descriptors": 
+  {
+    "descriptors_csv": "precalculated_descriptors.csv",
     "all_desc": 0,
-    "amino_acid_composition": 1,
-    "dipeptide_composition": 0,
-    ....
+    "moreaubroto_autocorrelation": {
+      "lag": 30,
+      "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+        "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
+      "normalize": 1
+    },
+    ...
+  },
+  "pyDSP": 
+  {
+    "use_dsp": 1,
+    "spectrum": "power",
+    "window": "hamming",
+    ...
   }
-"pyDSP": [{
-  "use_dsp": 1,
-  "spectrum": "power",
-  "window": "hamming",
-  ...
 }
 '''
 #create instance of PySAR class
@@ -370,24 +399,33 @@ from pySAR.descriptors_ import *
 
 '''test_config6.json
 {
-"dataset": [{
-  "dataset": "test_dataset5.txt",
-  "activity": "sought_activity"
-  .....
-}
-"model": [{
-  ...
-}
-"descriptors": [{
-  "descriptors_csv": "precalculated_descriptors",
-  "descriptors": {
-    "all_desc": 1,
-    "amino_acid_composition": 0,
-    "dipeptide_composition": 0,
-    ....
+  "dataset": 
+  {
+    "dataset": "test_dataset5.txt",
+    "activity": "sought_activity"
+    ...
+  },
+  "model": 
+  {
+    ...
   }
-"pyDSP": [{
-  ...
+  "descriptors": 
+  {
+    "descriptors_csv": "precalculated_descriptors",
+    "all_desc": 1,
+    "moreaubroto_autocorrelation": {
+      "lag": 30,
+      "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+        "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
+      "normalize": 1
+    },
+    ...
+  },
+  "pyDSP": 
+  {
+    ...
+  }
+}
 '''
 #calculating all descriptor values and storing in file named by parameter descriptors_csv
 desc = Descriptors("test_config6")
@@ -430,7 +468,7 @@ Tests
 -----
 To run all tests, from the main `pySAR` repo folder run:
 ```
-python3 -m unittest discover
+python3 -m unittest discover tests
 ```
 
 To run tests for specific module, from the main `pySAR` repo folder run:

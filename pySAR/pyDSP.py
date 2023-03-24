@@ -12,9 +12,9 @@ from scipy.signal.windows import blackman, hann, hamming, bartlett, blackmanharr
      kaiser, gaussian, barthann, bohman, chebwin, cosine, exponential, boxcar, \
         flattop, nuttall, parzen, tukey, triang
 try:
-    from scipy.fftpack import fft, ifft, fftfreq, rfft, rfftfreq
+    from scipy.fftpack import fft, ifft, fftfreq
 except:
-    from numpy.fft import fft, ifft, fftfreq, rfft, rfftfreq
+    from numpy.fft import fft, ifft, fftfreq
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import json
@@ -23,30 +23,28 @@ from .utils import *
 
 class PyDSP():
     """
-    Transform protein sequences into their spectral form via a Fast Fourier Transform (FFT).
-    Fourier analysis is fundamentally a method for expressing a function as a sum of periodic components,
-    and for recovering the function from those components. When both the function and its Fourier
-    transform are replaced with discretized counterparts, it is called the Discrete Fourier transform (DFT).
-    An implementation algorithm for the DFT is known as the FFT, which is used here. From the FFT
-    transformations on the encoded protein sequences, various informational protein spectra
-    can be generated, including the power, real, imaginary and absolute spectra.
-    Prior to the FFT, a window function can be applied to the sequences which is a mathmatical
-    function that applies a weighting to each discrete time series sample in a finite set.
-    By default, the hamming window function is applied; although the function can also accept
-    the blackman, blackmanharris, bartlett, gaussia, bartlett, barthann, bohman, chebwin,
-    cosine, exponential, flattop, hann, boxcar, nuttall, parzen, triang and tukey windows.
+    Transform protein sequences into their spectral form via a Discrete Fourier Transform (DFT) using
+    the Fast Fourier Transform (FFT) algorithm. Fourier analysis is fundamentally a method for 
+    expressing a function as a sum of periodic components, and for recovering the function from those 
+    components. When both the function and its Fourier transform are replaced with discretized 
+    counterparts, it is called the Discrete Fourier transform (DFT). An implementation algorithm 
+    for the DFT is known as the FFT, which is used here. From the FFT transformations on the 
+    encoded protein sequences (encoded via amino acid property values of the AAI), various 
+    informational protein spectra can be generated, including the power, real, imaginary and 
+    absolute spectra. Prior to the FFT, a window function can be applied to the sequences 
+    which is a mathmatical function that applies a weighting to each discrete time series sample 
+    in a finite set. By default, the hamming window function is applied; although the function 
+    can also accept the blackman, blackmanharris, bartlett, gaussia, bartlett, barthann, bohman, 
+    chebwin, cosine, exponential, flattop, hann, boxcar, nuttall, parzen, triang and tukey windows.
     A filter function can also be applied, the class accepts the savgol, medfilt, lfilter and
     hilbert filters.
-
-    Additonal to the FFT, the RFFT (real-FFT) is calculated which removes some redundancy that 
-    is generated from the original FFT function which itself is Hermitian-symmetric meaning 
-    the negative frequency terms are just the complex conjugates of the corresponding 
-    positive frequency terms, thus the negative frequency terms are redundant.
 
     In the pipeline of pySAR this class and its functions are onyl used when the 'use_dsp'
     parameter is set to true in the config files, meaning that the encoded protein sequences
     are passed through a Digital Signal Processing (DSP) pipeline before being used as 
-    training data for the regression models. 
+    training data for the regression models. The protein sequences being numerically encoded
+    is a pre-reqisite to use the functions in this class, meaning sequences cannot be directly
+    input.
 
     Parameters
     ----------
@@ -62,7 +60,7 @@ class PyDSP():
     pre_processing():
         complete pre-processing steps before completeing DSP functionality.
     encode_seqs():
-        calculate FFT/RFFT of protein seqeuences.
+        calculate FFT and various informational spectra of protein seqeuences.
     inverse_fft():
         calculate inverse FFT of protein sequences.
     consensus_freq():
@@ -118,12 +116,12 @@ class PyDSP():
 
         #set all DSP parameters
         self.dsp_parameters = self.parameters.pyDSP
-        self.use_dsp = self.dsp_parameters[0]["use_dsp"]
-        self.spectrum = self.dsp_parameters[0]["spectrum"]
-        self.window_type = self.dsp_parameters[0]["window"]["type"]
-        self.window = self.dsp_parameters[0]["window"]
-        self.filter_type = self.dsp_parameters[0]["filter"]["type"]
-        self.filter = self.dsp_parameters[0]["filter"]
+        self.use_dsp = self.dsp_parameters["use_dsp"]
+        self.spectrum = self.dsp_parameters["spectrum"]
+        self.window_type = self.dsp_parameters["window"]["type"]
+        self.window = self.dsp_parameters["window"]
+        self.filter_type = self.dsp_parameters["filter"]["type"]
+        self.filter = self.dsp_parameters["filter"]
         
         #pre-processing of encoded protein sequences
         self.pre_processing()
@@ -134,8 +132,8 @@ class PyDSP():
     def pre_processing(self):
         """
         Complete various pre-processing steps for encoded protein sequences before
-        doing any of the DSP-related functions or transformations. Zero-pad
-        the sequences, remove any +/- infinity or NAN values, get the approximate
+        doing any of the DSP-related functions or transformations. Zero-pad the 
+        sequences, remove any +/- infinity or NAN values, get the approximate
         protein spectra and window function parameter names.
 
         Parameters
@@ -152,7 +150,6 @@ class PyDSP():
         #get shape parameters of proteins seqs
         self.num_seqs = self.protein_seqs.shape[0]
         self.signal_len = self.protein_seqs.shape[1]
-        # self.signal_len = self.protein_seqs.shape[1]
 
         #replace any positive or negative infinity or NAN values with 0
         self.protein_seqs[self.protein_seqs == -np.inf] = 0
@@ -191,7 +188,6 @@ class PyDSP():
         if (self.window_type == None):
             self.window = 1       #window = 1 is the same as applying no window
         else:
-
             #get closest correct window function from user input
             window_matches = (get_close_matches(self.window_type, all_windows, cutoff=0.4))
 
@@ -203,7 +199,7 @@ class PyDSP():
                     self.window_type = "hamming"
                 elif (window_matches[0] == "blackman"):
                     self.window = blackman(self.signal_len)
-                    self.window = "blackman"
+                    self.window_type = "blackman"
                 elif (window_matches[0] == "blackmanharris"):
                     self.window = blackmanharris(self.signal_len)
                     self.window_type = "blackmanharris"
@@ -255,7 +251,7 @@ class PyDSP():
             else:
                 self.window = 1     #window = 1 is the same as applying no window
 
-        if (self.filter_type != None):
+        if ((self.filter_type != None) and (self.filter_type != "")):
             #get closest correct filter from user input
             filter_matches = get_close_matches(self.filter_type, all_filters, cutoff=0.4)
             #set filter attribute according to approximate user input
@@ -275,11 +271,12 @@ class PyDSP():
 
     def encode_seqs(self): 
         """
-        Calculate the FFT and RFFT of the protein sequences already encoded using
-        AAI indices, then use the output of the FFT to calculate the various
+        Calculate the FFT of the protein sequences already encoded using
+        the AAI indices, then use the output of the FFT to calculate the various
         informational protein spectra including the power, absolute, real and 
-        imaginary. The spectrum_encoding attribute will be set to the spectra 
-        inputted by user from the 'spectrum' config parameter.
+        imaginary. The spectrum_encoding attribute will be set to the spectrum 
+        inputted by user from the 'spectrum' config parameter, if no valid 
+        spectrum input as parameter then value error raised.
 
         Parameters 
         ----------
@@ -292,73 +289,42 @@ class PyDSP():
         #create copy of protein sequences so the original instance var remains unchanged
         encoded_seq_copy = np.copy(self.protein_seqs)
 
-        '''From numpy.rfft documentation:
-        If n is even, the length of the transformed axis is (n/2)+1.
-        If n is odd, the length is (n+1)/2.
-
-        Simply, set the 2nd dimension of the output array size used to store
-        rfft output to (N/2)+1 if n is even and (N+1)/2 if odd, where N is the
-        signal length (length of sequences).'''
-        if (self.signal_len % 2 == 0):
-            rfft_output_size = int((self.signal_len/2) + 1)
-        else:
-            rfft_output_size = int((self.signal_len+1) / 2)
-
-        #initialise zero arrays used to store output of both fft and rfft, set
-        #  datatype to complex number as that is the output type of the transformation.
-        encoded_dataset_rfft = np.zeros((self.protein_seqs.shape), dtype=complex)
+        #initialise zero arrays used to store output of both fft, set
+        #datatype to complex number as that is the output type of the transformation
         encoded_dataset_fft = np.zeros((self.protein_seqs.shape), dtype=complex)
 
-        #initialise zero arrays used to store output frequencies from fft & rfft transformations
-        rttf_freq_size = int((rfft_output_size) / 2 + 1)
-        encoded_freqs_rfft = np.zeros((self.protein_seqs.shape))
+        #initialise zero arrays used to store output frequencies from fft transformations
         encoded_freqs_fft = np.zeros(self.protein_seqs.shape)
 
-        #iterate through each sequence, applying the FFT and RFFT to each
+        #iterate through each sequence, applying the FFT to each
         for seq in range(0, self.num_seqs):
           
-          #create temp zeros arrays to store current sequence's fft & rfft
-          encoded_rfft = np.zeros((self.signal_len), dtype=complex)
+          #create temp zeros arrays to store current sequence's fft
           encoded_fft = np.zeros((self.signal_len), dtype=complex)
 
-          #apply filter function
-        #   if (self.filter ! =""):
-        #      if (self.filter == 'savgol'):
-        #         encoded_seq_copy[seq] = savgol_filter(encoded_seq_copy[seq], 17, polyorder=2, deriv=2)
-
           #apply window function to Fourier array
-          encoded_rfft = rfft(encoded_seq_copy[seq] * self.window)
           encoded_fft = fft(encoded_seq_copy[seq] * self.window)
 
           #append transformation from current sequence seq to array of all transformed seqeunces
-          encoded_dataset_rfft[seq] = encoded_rfft
           encoded_dataset_fft[seq] = encoded_fft
 
-          #calcualte FFT/RFFT frequencies   
-          freqs_rfft = rfftfreq(encoded_rfft.size)
+          #calcualte FFT frequencies   
           freqs_fft = np.fft.fftfreq(encoded_fft.size)
 
           #append frequency from current sequence seq to array of all frequencies
-          encoded_freqs_rfft[seq] = freqs_rfft
           encoded_freqs_fft[seq] = freqs_fft
 
-        #set FFT and RFFT sequences and frequencies
+        #set FFT sequences and frequencies class attributes
         self.fft = encoded_dataset_fft
-        self.rfft = encoded_dataset_rfft
         self.fft_freqs = encoded_freqs_fft
-        self.rfft_freqs = encoded_freqs_rfft
 
-        #get individual spectral values, calculated from the FFT and RFFT transformations
+        #get individual spectral values, calculated from the FFT transformations
         self.fft_abs = abs(self.fft/self.signal_len)
-        self.rfft_abs = abs(self.rfft/self.signal_len)
         self.fft_power = np.abs(self.fft[0:len(self.fft)])
-        self.rfft_power = np.abs(self.rfft[0:len(self.rfft)])
         self.fft_real = self.fft.real
-        self.rfft_real = self.rfft.real
         self.fft_imag = self.fft.imag
-        self.rfft_imag = self.rfft.imag
 
-        #set the spectrum_encoding attribute to the spectra specified by 'spectrum' class input parameter.
+        #set the spectrum_encoding attribute to the spectra specified by 'spectrum' class input parameter
         if (self.spectrum == 'power'):
             self.spectrum_encoding = self.fft_power
         elif (self.spectrum == 'real'):
@@ -403,9 +369,11 @@ class PyDSP():
         :CFi : int
             index of consensus frequency.
         """
+        #raise error if more than one sequence passed into function
         if (freqs.ndim == 2 and freqs.shape[1] != 2):
             raise ValueError("Only one protein sequence should be passed into the function:"
                             " {}.".format(freqs))
+
         # CF = PP/N ( peak position/length of largest protein in dataset)
         CF, CFi = (self.max_freq(freqs))/self.num_seqs
         return CF, CFi
@@ -417,7 +385,7 @@ class PyDSP():
         Parameters
         ----------
         :freqs : np.ndarray
-            frequencies of Fourier Transform.
+            frequencies from Fourier Transform.
 
         Returns
         -------
@@ -426,9 +394,10 @@ class PyDSP():
         :max_FI : int
             index of maximum frequency.
         """
+        #raise error if more than one sequence passed into function
         if (freqs.ndim == 2 and freqs.shape[1] != 2):
             raise ValueError("Only one protein sequence should be passed into the function:"
-                            " {}.".format(freqs))
+                            "{}.".format(freqs))
         max_F = max(freqs)
         max_FI = np.argmax(freqs)
         return max_F, max_FI
@@ -498,8 +467,6 @@ class PyDSP():
     @filter_type.setter
     def filter_type(self, val):
         self._filter_type = val
-
-################################################################################
 
     def __str__(self):
         return "Instance of PyDSP class, using parameters: {}.".format(self.__dict__.keys())
