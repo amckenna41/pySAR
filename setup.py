@@ -55,7 +55,7 @@ setup(name=pySAR.__name__,
           #'scikit-learn==0.24.1',
           'scikit-learn',
           'requests>=2.25',
-          'urllib3>=1.26'
+          'urllib3>=1.26',
           'matplotlib',
           'seaborn',
           'tqdm',
