@@ -42,7 +42,7 @@ jobs:
             pip install coverage
             pip install codecov
             pip install pytest-cov
-            pytest --cov-report term --cov=test_pySAR tests/ > /tmp/coverage_report.txt || true
+        # pytest --cov-report term --cov=test_pySAR tests/ > /tmp/coverage_report.txt || true
         # coverage run 
         # coverage report > /tmp/coverage_report.txt || true
       #store linter and coverage artifacts in tmp folder

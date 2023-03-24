@@ -89,8 +89,8 @@ jobs:
         python3 -m pytest tests/
         
     #generate coverage report, output to file 
-    - name: Generate Report
-      run: pytest --cov=pySAR tests/ > artifacts/coverage.txt
+    # - name: Generate Report
+      # run: pytest --cov=pySAR tests/ > artifacts/coverage.txt
 
     #upload to Code Coverage
     - name: Upload Coverage Report to Codecov
