@@ -216,4 +216,7 @@ To Do List:
 - [X] Unit test that plot png exists in output folder.
 - [X] In unit tests for hyperparameter_tuning, pass in parameter grid rather than just parameters themselves.
 - [X] If calculating only 1 descriptor then could remove the progress bar, not really needed. 
+- [ ] Add bibtex citation into its own txt file.
  <!-- python3 -m venv pysar_venv source pysar_venv/bin/activate pip install . deactivate -->
+
+ [Back to top](#TOP)

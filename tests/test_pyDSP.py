@@ -21,10 +21,6 @@ class pyDSPTests(unittest.TestCase):
         testing correct pydsp pre processing functionality.
     test_protein_spectra:
         testing correct pydsp protein_spectra functionality.
-    test_window:
-        testing correct pydsp window functionality.
-    test_filter:
-        testing correct pydsp filter functionality.
     test_max_freq:
         testing correct max_freq pydsp functionality.
     """

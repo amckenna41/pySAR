@@ -99,7 +99,7 @@ Example configuration file for thermostability.json used in research:
       }  
   }
 ```
-# Below is an explanation of each of the parameters within the JSON config files:
+## Below is an explanation of each of the parameters within the JSON config files:
 
 **Dataset Parameters:**
 * `dataset[dataset]` - name of dataset.
@@ -141,3 +141,5 @@ Example configuration file for thermostability.json used in research:
 * `pyDSP[spectrum]` - which frequency output to use from the generated types of signals from DSP to use e.g power, absolute, imaginery, real. 
 * `pyDSP[window]` - convolutional window to apply to the signal output, pySAR supports: hamming, blackman, blackmanharris, gaussian, bartlett, kaiser, barthann, bohman, chebwin, cosine, exponential, flattop, hann, boxcar, hanning, nuttall, parzen, triang, tukey.
 * `pyDSP[filter]` - window filter to apply to the signal output, pySAR supports: savgol, medfilt, symiirorder1, lfilter, hilbert.
+
+[Back to top](#TOP)

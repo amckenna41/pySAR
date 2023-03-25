@@ -16,6 +16,9 @@ irreversibly denatured after 10 mins of incubation, ranging from 39.2 to 64.4 de
 References
 ----------
 \[1\]: Li, Y., Drummond, D. A., Sawayama, A. M., Snow, C. D., Bloom, J. D., & Arnold, F. H. (2007). A diverse family of thermostable cytochrome P450s created by recombination of stabilizing fragments. Nature Biotechnology, 25(9), 1051–1056. https://doi.org/10.1038/nbt1333 <br>
+
 \[2\]: Engqvist, M. K. M., McIsaac, R. S., Dollinger, P., Flytzanis, N. C., Abrams, M., Schor, S., & Arnold, F. H. (2015). Directed evolution of Gloeobacter violaceus rhodopsin spectral properties. Journal of Molecular Biology, 427(1), 205–220. https://doi.org/10.1016/j.jmb.2014.06.015  <br>
+
 \[3\]: Zaugg, J., Gumulya, Y., Malde, A. K., & Bodén, M. (2017). Learning epistatic interactions from sequence-activity data to predict enantioselectivity. Journal of Computer-Aided Molecular Design, 31(12), 1085–1096. https://doi.org/10.1007/s10822-017-0090-x <br>
+
 \[4\]: Bedbrook, C. N., Rice, A. J., Yang, K. K., Ding, X., Chen, S., LeProust, E. M., Gradinaru, V., & Arnold, F. H. (2017). Structure-guided SCHEMA recombination generates diverse chimeric channelrhodopsins. Proceedings of the National Academy of Sciences of the United States of America, 114(13), E2624–E2633. https://doi.org/10.1073/pnas.1700269114

@@ -11,15 +11,14 @@
 [![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
 [![PythonV](https://img.shields.io/pypi/pyversions/pySAR?logo=2)](https://pypi.org/project/pySAR/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
+[![Issues](https://img.shields.io/github/issues/amckenna41/pySAR)](https://github.com/amckenna41/pySAR/issues)
+[![codecov](https://codecov.io/gh/amckenna41/pySAR/branch/master/graph/badge.svg?token=4PQDVGKGYN)](https://codecov.io/gh/amckenna41/pySAR)
+<!-- [![Commits](https://img.shields.io/github/commit-activity/w/amckenna41/pySAR)](https://github.com/amckenna41/pySAR) -->
+<!-- [![Size](https://img.shields.io/github/repo-size/amckenna41/pySAR)](https://github.com/amckenna41/pySAR) -->
 <!-- [![Build](https://img.shields.io/github/workflow/status/amckenna41/pySAR/Deploy%20to%20PyPI%20%F0%9F%93%A6)](https://github.com/amckenna41/pySAR/actions) -->
 <!-- [![Build Status](https://travis-ci.com/amckenna41/pySAR.svg?branch=main)](https://travis-ci.com/amckenna41/pySAR) -->
-<!-- [![CircleCI](https://circleci.com/gh/amckenna41/pySAR.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/pySAR) -->
 <!-- [![DOI](https://zenodo.org/badge/344290370.svg)](https://zenodo.org/badge/latestdoi/344290370) -->
-<!-- [![codecov](https://codecov.io/gh/amckenna41/DCBLSTM_PSP/branch/master/graph/badge.svg?token=4PQDVGKGYN)](https://codecov.io/gh/amckenna41/DCBLSTM_PSP) -->
-[![Issues](https://img.shields.io/github/issues/amckenna41/pySAR)](https://github.com/amckenna41/pySAR/issues)
-[![Size](https://img.shields.io/github/repo-size/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
-[![Commits](https://img.shields.io/github/commit-activity/w/amckenna41/pySAR)](https://github.com/amckenna41/pySAR)
-
+<!-- [![Documentation Status](https://readthedocs.org/projects/ansicolortags/badge/?version=latest)](http://ansicolortags.readthedocs.io/?badge=latest) -->
 
 Table of Contents
 -----------------
@@ -56,15 +55,13 @@ Requirements
 * [Python][python] >= 3.7
 * [aaindex][aaindex] >= 1.0.4
 * [protpy][protpy] >= 1.0.7
-* [requests][requests] >= 2.25.0
 * [numpy][numpy] >= 1.24.2
 * [pandas][pandas] >= 1.5.3
 * [scikit-learn][sklearn] >= 1.2.1
 * [scipy][scipy] >= 1.10.1
 * [tqdm][tqdm] >= 4.65.0
+* [matplotlib][matplotlib] >= 3.6.2
 * [seaborn][seaborn] >= 0.12.2
-* [biopython][biopython] >= 1.81
-* [varname][varname] >= 0.11.0
 
 Installation
 -----------------
@@ -506,15 +503,13 @@ DOI: 10.1021/acs.jcim.0c00073 <br><br>
 [python]: https://www.python.org/downloads/release/python-360/
 [aaindex]: https://github.com/amckenna41/aaindex
 [protpy]: https://github.com/amckenna41/protpy
-[requests]: https://requests.readthedocs.io/en/latest/
 [numpy]: https://numpy.org/
 [pandas]: https://pandas.pydata.org/
 [sklearn]: https://scikit-learn.org/stable/
 [scipy]: https://www.scipy.org/
 [tqdm]: https://tqdm.github.io/
 [seaborn]: https://seaborn.pydata.org/
-[varname]: https://pypi.org/project/varname/
-[biopython]: https://biopython.org/
+[matplotlib]: https://matplotlib.org/
 [PyPi]: https://pypi.org/project/pysar/
 [article]: https://www.sciencedirect.com/science/article/abs/pii/S1532046422000326
 [pdf]: https://github.com/amckenna41/pySAR/blob/master/pySAR_research.pdf

@@ -1217,7 +1217,7 @@ class Descriptors():
             desc = desc_matches[0]  #set desc to closest descriptor match found
         else:
             raise ValueError("Could not find a match for the input descriptor ({}) in"
-                "available valid models:\n {}.".format(descriptor, self.valid_descriptors))
+                " available valid models:\n {}.".format(descriptor, self.valid_descriptors))
 
         #if sought descriptor attribute dataframe is empty, call the descriptor's
         #  get_descriptor() function, set desc_encoding to descriptor attribute

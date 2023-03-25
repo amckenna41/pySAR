@@ -296,13 +296,15 @@ class DescriptorTests(unittest.TestCase):
             aa_comp = desc.get_amino_acid_composition()
 
             self.assertFalse(aa_comp.empty, 'Descriptor dataframe should not be empty')
-            self.assertTrue(desc.amino_acid_composition.equals(aa_comp), 'Output dataframe and class attribute dataframes must be the same.')
+            self.assertTrue(desc.amino_acid_composition.equals(aa_comp), 
+                'Output dataframe and class attribute dataframes must be the same.')
             self.assertEqual(aa_comp.shape, (self.num_seqs[dataset], 20), 'Descriptor not of correct shape.') 
             self.assertIsInstance(aa_comp, pd.DataFrame, 'Descriptor should be of type DataFrame.')
-            self.assertEqual(self.amino_acids, list(aa_comp.columns), 'Incorrect column values found in output dataframe: {}.'.format(aa_comp.columns))
             self.assertTrue(aa_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
             self.assertTrue(all(col == np.float64 for col in list(aa_comp.dtypes)), 
                 "Column datatypes should be np.float64, got:\n{}".format(list(aa_comp.dtypes)))
+            self.assertEqual(self.amino_acids, list(aa_comp.columns), 
+                'Incorrect column values found in output dataframe: {}.'.format(aa_comp.columns))
 
     def test_dipeptide_composition(self):
         """ Testing Dipeptide Composition protein descriptor attributes and methods. """
@@ -407,7 +409,7 @@ class DescriptorTests(unittest.TestCase):
             self.assertTrue(geary.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
             self.assertTrue(all(col == np.float64 for col in list(geary.dtypes)), 
                 "Column datatypes should be np.float64, got:\n{}".format(list(geary.dtypes)))
-            #check all columns follow pattern of GearyAuto_X_Y where x is the asscession number of
+            #check all columns follow pattern of GAuto_X_Y where x is the asscession number of
             #the AAindex record and y is the count of the descriptor
             for col in list(geary.columns):
                 self.assertTrue(bool(re.match(r"GAuto_[A-Z0-9]{10}_[0-9]", col)), 
@@ -603,7 +605,7 @@ class DescriptorTests(unittest.TestCase):
     def test_amphiphilic_pseudo_amino_acid_composition(self):
         """ Testing Amphiphilic Pseudo Amino Acid Composition descriptor attributes and methods. """
         #running unit test on one of the datasets due to length of computation
-        desc = descr.Descriptors(self.all_config_files[1])
+        desc = descr.Descriptors(self.all_config_files[0])
 #1.)
         #get descriptor values
         amphiphilic_pseudo_aac = desc.get_amphiphilic_pseudo_amino_acid_composition()
@@ -611,7 +613,7 @@ class DescriptorTests(unittest.TestCase):
         self.assertFalse(amphiphilic_pseudo_aac.empty, 'Descriptor dataframe should not be empty.')
         self.assertEqual(amphiphilic_pseudo_aac.shape, (self.num_seqs[1], 80), 'Descriptor not of correct shape (1, 80).')
         self.assertIsInstance(amphiphilic_pseudo_aac, pd.DataFrame, 'Descriptor should be of type DataFrame.')
-        self.assertTrue(amphiphilic_pseudo_aac.any().isnull().sum()==0,'Descriptor should not contain any null values.')
+        self.assertTrue(amphiphilic_pseudo_aac.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
         self.assertTrue(all(col == np.float64 for col in list(amphiphilic_pseudo_aac.dtypes)), 
                 "Column datatypes should be np.float64, got:\n{}".format(list(amphiphilic_pseudo_aac.dtypes)))
         #check all columns follow pattern of APAAC_X, where x is an integer between 0 and 9
@@ -629,53 +631,92 @@ class DescriptorTests(unittest.TestCase):
             'sequence_order_coupling_number', 'tripeptide_composition', 'sequence_order_coupling_number', \
             'quasi_sequence_order', 'pseudo_amino_acid_composition', 'amphiphilic_pseudo_amino_acid_composition'
         ]
-#1.)
-        #run tests on all test datasets
-        for dataset in range(0, len(self.all_config_files)):
-            desc = descr.Descriptors(self.all_config_files[dataset])
-            #test each descriptor is calculated when string of its name passed to func
-            for val_desc in range(0, len(valid_desc)):
-                encoded_desc = desc.get_descriptor_encoding(valid_desc[val_desc])
-                self.assertIsNotNone(encoded_desc, 'Descriptor attribute should not be none.')
-                self.assertFalse(encoded_desc.empty, 'Descriptor attribute should not be empty.')
-                self.assertTrue(encoded_desc.shape[0], len(desc.protein_seqs), 
-                    '1st dimension of descriptor attribute should equal num of protein seqs.')
+#1.)    
+        desc = descr.Descriptors(self.all_config_files[0]) #using thermostability config to access pre-calculated descriptors
+        #test each descriptor is calculated when string of its name passed to func
+        for val_desc in range(0, len(valid_desc)):
+            encoded_desc = desc.get_descriptor_encoding(valid_desc[val_desc])
+            self.assertIsNotNone(encoded_desc, 
+                'Descriptor attribute should not be none.')
+            self.assertFalse(encoded_desc.empty, 
+                'Descriptor attribute should not be empty.')
+            self.assertEqual(encoded_desc.shape[0], len(desc.protein_seqs), 
+                '1st dimension of descriptor attribute should equal number of protein seqs.')
+            self.assertTrue(encoded_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
 #2.)
-        desc = descr.Descriptors(self.all_config_files[dataset])
-        aa_comp_desc = desc.get_descriptor_encoding("aa_comp")
-        self.assertIsInstance(aa_comp_desc, pd.DataFrame, 'Descriptor attribute should be a dataframe.')
-        self.assertTrue(aa_comp_desc.shape, (self.num_seqs[0], 20), 
-            "Attribute shape should be [{}, {}], got {}.".format(self.num_seqs[0], 20, aa_comp_desc.shape))
+        aa_comp_desc = desc.get_descriptor_encoding("amino_comp")
+        self.assertIsInstance(aa_comp_desc, pd.DataFrame, 
+            'Descriptor attribute should be a dataframe, got {}.'.format(type(aa_comp_desc)))
+        self.assertEqual(aa_comp_desc.shape, (self.num_seqs[0], 20), 
+            "Attribute shape should be ({}, {}), got {}.".format(self.num_seqs[0], 20, aa_comp_desc.shape))
+        self.assertTrue(aa_comp_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
+        self.assertTrue(all(col == np.float64 for col in list(aa_comp_desc.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(aa_comp_desc.dtypes)))
+        self.assertEqual(self.amino_acids, list(aa_comp_desc.columns), 
+            'Incorrect column values found in output dataframe: {}.'.format(aa_comp_desc.columns))
 #3.)
-        geary_auto_desc = desc.get_descriptor_encoding("geary")
-        self.assertIsInstance(geary_auto_desc, pd.DataFrame, 'Descriptor attribute should be a dataframe.')
-        self.assertTrue(geary_auto_desc.shape, (self.num_seqs[0], 240), 
-            "Attribute shape should be [{}, {}], got {}.".format(self.num_seqs[0], 240, geary_auto_desc.shape))
+        geary_auto_desc = desc.get_descriptor_encoding("geary_auto")
+        self.assertIsInstance(geary_auto_desc, pd.DataFrame, 
+            'Descriptor attribute should be a dataframe, got {}.'.format(type(geary_auto_desc)))
+        self.assertEqual(geary_auto_desc.shape, (self.num_seqs[0], 240), 
+            "Attribute shape should be ({}, {}), got {}.".format(self.num_seqs[0], 240, geary_auto_desc.shape))
+        self.assertTrue(geary_auto_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
+        self.assertTrue(all(col == np.float64 for col in list(geary_auto_desc.dtypes)), 
+            "Column datatypes should be np.float64, got:\n{}".format(list(geary_auto_desc.dtypes)))
+        #check all columns follow pattern of GAuto_X_Y where x is the asscession number of
+        #the AAindex record and y is the count of the descriptor
+        for col in list(geary_auto_desc.columns):
+            self.assertTrue(bool(re.match(r"GAuto_[A-Z0-9]{10}_[0-9]", col)), 
+                "Column name doesn't match expected regex pattern: {}.".format(col))
 #4.)
-        socn_desc = desc.get_descriptor_encoding("sequence_order_")
-        self.assertIsInstance(socn_desc, pd.DataFrame, 'Descriptor attribute should be a dataframe.')
-        self.assertTrue(socn_desc.shape, (self.num_seqs[0], 30), 
-            "Attribute shape should be [{}, {}], got {}.".format(self.num_seqs[0], 30, socn_desc.shape))
+        socn_desc = desc.get_descriptor_encoding("sequence_order_coupling")
+        self.assertIsInstance(socn_desc, pd.DataFrame, 
+            'Descriptor attribute should be a dataframe, got {}.'.format(socn_desc))
+        self.assertEqual(socn_desc.shape, (self.num_seqs[0], 30), 
+            "Attribute shape should be ({}, {}), got {}.".format(self.num_seqs[0], 30, socn_desc.shape))
+        self.assertTrue(socn_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
+        self.assertTrue(all(col == np.float64 for col in list(socn_desc.dtypes)), 
+            "Column datatypes should be np.float64, got:\n{}".format(list(socn_desc.dtypes)))
+        #check all columns follow pattern of SOCNX or SOCNXY where x & y integers between 0 and 9
+        for col in list(socn_desc.columns):
+            self.assertTrue((bool(re.match(r'SOCN_SW[0-9]', col)) or bool(re.match(r'SOCN_SW[0-9][0-9]', col))), 
+                "Column name doesn't match expected regex pattern: {}.".format(col))   
 #5.)
         dipeptide_comp_desc = desc.get_descriptor_encoding("dipeptide")
-        self.assertIsInstance(dipeptide_comp_desc, pd.DataFrame, 'Descriptor attribute should be a dataframe.')
-        self.assertTrue(dipeptide_comp_desc.shape, (self.num_seqs[0], 400), 
-            "Attribute shape should be [{}, {}], got {}.".format(self.num_seqs[0], 400, dipeptide_comp_desc.shape))
+        self.assertIsInstance(dipeptide_comp_desc, pd.DataFrame, 
+            'Descriptor attribute should be a dataframe, got {}.'.format(dipeptide_comp_desc))
+        self.assertEqual(dipeptide_comp_desc.shape, (self.num_seqs[0], 400), 
+            "Attribute shape should be ({}, {}), got {}.".format(self.num_seqs[0], 400, dipeptide_comp_desc.shape))
+        self.assertTrue(dipeptide_comp_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
+        self.assertTrue(all(col == np.float64 for col in list(dipeptide_comp_desc.dtypes)),
+            "Column datatypes should be np.float64, got:\n{}".format(list(dipeptide_comp_desc.dtypes)))
+        for col in list(dipeptide_comp_desc.columns):
+            #check all columns follow pattern of XY where x & y are amino acids 
+            self.assertTrue(bool(re.match(r'^[A-Z]{2}$', col)), "")      
+            self.assertIn(col[0], self.amino_acids, "")
+            self.assertIn(col[1], self.amino_acids, "")
 #6.)
-        amphiphilic_desc = desc.get_descriptor_encoding("amphiphilic_")
-        self.assertIsInstance(amphiphilic_desc, pd.DataFrame, 'Descriptor attribute should be a dataframe.')
-        self.assertTrue(amphiphilic_desc.shape, (self.num_seqs[0], 80), 
-            "Attribute shape should be [{}, {}], got {}.".format(self.num_seqs[0], 80, amphiphilic_desc.shape))
-#7.)
-        invalid_desc = desc.get_descriptor_encoding("invalid")
-        self.assertIsNone(invalid_desc)
+        amphiphilic_desc = desc.get_descriptor_encoding("amphiphilic_pseudo_")
+        self.assertIsInstance(amphiphilic_desc, pd.DataFrame, 
+            'Descriptor attribute should be a dataframe, got {}.'.format(amphiphilic_desc))
+        self.assertEqual(amphiphilic_desc.shape, (self.num_seqs[0], 80), 
+            "Attribute shape should be ({}, {}), got {}.".format(self.num_seqs[0], 80, amphiphilic_desc.shape))
+        self.assertTrue(amphiphilic_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
+        self.assertTrue(all(col == np.float64 for col in list(amphiphilic_desc.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(amphiphilic_desc.dtypes)))
+        #check all columns follow pattern of APAAC_X, where x is an integer between 0 and 9
+        for col in list(amphiphilic_desc.columns):
+            self.assertTrue(bool(re.match(r"APAAC_[0-9]", col)), 
+                "Column doesn't follow correct naming convention: {}.".format(col))
+#7.)    
+        with self.assertRaises(ValueError):
+            invalid_desc = desc.get_descriptor_encoding("invalid")
+            invalid_desc = desc.get_descriptor_encoding("blahblahblah")
+            invalid_desc = desc.get_descriptor_encoding("12345")
 #8.)
         with self.assertRaises(TypeError):
-            desc = descr.Descriptors(self.all_config_files[0])
             invalid_desc = desc.get_descriptor_encoding(1234)
-#9.)
-        with self.assertRaises(TypeError):
-            desc = descr.Descriptors(self.all_config_files[0])
+            invalid_desc = desc.get_descriptor_encoding(5.5)
             invalid_desc = desc.get_descriptor_encoding(False)
 
     def tearDown(self):
