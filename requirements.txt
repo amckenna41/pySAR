@@ -7,7 +7,7 @@ delayed
 # scikit-learn==0.24.1
 scikit-learn
 requests>=2.25.0
-matplotlib>=3.6.2
+matplotlib
 seaborn
 tqdm
 protpy
