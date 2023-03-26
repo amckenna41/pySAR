@@ -9,7 +9,7 @@
     "model": 
       {
         "algorithm": "plsregression",
-        "parameters": "",
+        "parameters": {},
         "test_split": 0.2
       },
     

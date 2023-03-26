@@ -402,7 +402,7 @@ class EncodingTests(unittest.TestCase):
                 "Descriptor {} not found in list of available descriptors:\n{}".format(desc, self.valid_descriptors))
         self.assertTrue(os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME), 
             "Output dir storing encoding results not found.")
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "aaindex_results.csv")),
+        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "desc_results.csv")),
             "Output csv storing encoding results not found.")
 #5.)
         invalid_test_desc5 = "invalid_descriptor_name" 
@@ -614,13 +614,11 @@ class EncodingTests(unittest.TestCase):
 
     def tearDown(self):
         """ Delete any temp files or folders created during testing process. """
-        # if (os.path.isdir(_globals.OUTPUT_DIR)):
-        #     shutil.rmtree(_globals.OUTPUT_DIR, ignore_errors=False, onerror=None)
-        # if (os.path.isdir(_globals.OUTPUT_FOLDER)):
-        #     shutil.rmtree(_globals.OUTPUT_FOLDER, ignore_errors=False, onerror=None)
-        # del _globals.OUTPUT_DIR
-        # del _globals.OUTPUT_FOLDER
-        pass
+        #removing any of the temp files created such as the results files, if
+        #you want to verify the results files are actually being created then
+        #comment out the below code block
+        if (os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME)):
+            shutil.rmtree(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, ignore_errors=False, onerror=None)
                 
 if __name__ == '__main__':
     #run all unit tests

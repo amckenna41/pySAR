@@ -217,6 +217,8 @@ To Do List:
 - [X] In unit tests for hyperparameter_tuning, pass in parameter grid rather than just parameters themselves.
 - [X] If calculating only 1 descriptor then could remove the progress bar, not really needed. 
 - [ ] Add bibtex citation into its own txt file.
+- [ ] Is .coveralls.yml needed.
+- [X] In encoding text output, split list of aai indices and descriptors into new line if they exceed the number of characters in "#" line.
  <!-- python3 -m venv pysar_venv source pysar_venv/bin/activate pip install . deactivate -->
 
  [Back to top](#TOP)

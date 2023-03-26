@@ -10,6 +10,7 @@ import sys
 from tqdm.auto import tqdm
 from difflib import get_close_matches
 import json
+from textwrap import TextWrapper
 
 from aaindex import aaindex1
 from .model import Model
@@ -134,11 +135,16 @@ class Encoding(PySAR):
         #pretty print json config parameters
         pretty_parameters = json.dumps(self.parameters, sort_keys=True, indent=1)
 
+        #create text wrapper for amino acid indices text, split to newline if surpasses line length
+        line_length = 87
+        tw = TextWrapper()
+        tw.width = line_length
+
         print('\n#######################################################################################\n')
         print('# Encoding using {} AAI combination(s) with the parameters:\n'.format(len(all_indices)))
         #only output indices if there are 10 or less
         if (len(all_indices) <= 10):
-            print('# AAI Indices -> {}'.format(', '.join(all_indices)))
+            print('# AAI Indices -> {}'.format("\n\t".join(tw.wrap(', '.join(all_indices)))))
         else:
             print('# AAI Indices -> {}'.format(len(all_indices)))
         print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Model Parameters -> {}\n# Test Split -> {}\
@@ -332,9 +338,14 @@ class Encoding(PySAR):
         #pretty print json config parameters
         pretty_parameters = json.dumps(self.parameters, sort_keys=True, indent=1)
 
+        #create text wrapper for descriptors text, split to newline if surpasses line length
+        line_length = 87
+        tw = TextWrapper()
+        tw.width = line_length
+
         print('\n#######################################################################################\n')
-        print('# Encoding using {} descriptor combination(s) with the parameters:\n\n# Descriptors -> {}'.format(
-            len(all_descriptors), ', '.join(all_descriptors)))
+        print('# Encoding using {} descriptor combination(s) with the parameters:\n'.format(len(all_descriptors)))
+        print('# Descriptors -> {}'.format("\n\t".join(tw.wrap(', '.join(all_descriptors)))))
         print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Model Parameters -> {}\n# Test Split -> {}\
             '.format(os.path.basename(self.dataset), self.activity_col, self.algorithm, self.model_parameters, self.test_split))
         print('\n#######################################################################################\n')
@@ -573,19 +584,25 @@ class Encoding(PySAR):
         #pretty print json config parameters
         pretty_parameters = json.dumps(self.parameters, sort_keys=True, indent=1)
         
+        #create text wrapper for amino acid indices and descriptors text, split to newline if surpasses line length
+        line_length = 87
+        tw = TextWrapper()
+        tw.width = line_length
+
         print('\n########################################################################\n')
-        print('# Encoding using {} AAI and {} descriptor combinations with the parameters:\n'.format(
+        print('# Encoding using {} AAI and {} descriptor combination(s) with the parameters:\n'.format(
             len(all_indices), len(all_descriptors)))
         #only output indices if there are 10 or less
         if (len(all_indices) <= 10):
-            print('# AAI Indices -> {}'.format(', '.join(all_indices)))
+            print('# AAI Indices -> {}'.format("\n\t".join(tw.wrap(', '.join(all_indices)))))
         else:
             print('# AAI Indices -> {}'.format(len(all_indices)))
         if (self.use_dsp):
             print('# Using DSP -> {}\n#   Spectrum -> {}\n#   Window Function -> {}\n#   Filter Function -> {}'.format(
                     self.use_dsp, self.spectrum, self.window_type, self.filter_type)) 
-        print('# Descriptors -> {}\n# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Model Parameters -> {}\
-            \n# Test Split -> {}'.format(', '.join(all_descriptors), os.path.basename(self.dataset), self.activity_col, 
+        print('# Descriptors -> {}'.format("\n\t".join(tw.wrap(', '.join(all_descriptors)))))
+        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Model Parameters -> {}\
+            \n# Test Split -> {}'.format(os.path.basename(self.dataset), self.activity_col, 
                 self.algorithm, self.model_parameters, self.test_split)) 
         print('\n########################################################################\n')
 
