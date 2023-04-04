@@ -68,7 +68,7 @@
         "window": {
           "type": "blackmanharris",
           "sym": 1,
-          "beta": null,
+          "beta": 14,
           "alpha": null,
           "nbar": null,
           "sll": null,

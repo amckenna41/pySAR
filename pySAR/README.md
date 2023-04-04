@@ -21,23 +21,15 @@ Usage
     "descriptors":
         {
           "descriptors_csv": "descriptors.csv",
-          "descriptors": {
-            "all_desc": 0,
-            "amino_acid_composition": 1,
-            "dipeptide_composition": 1,
+          "all_desc": 0,
+          "moreaubroto_autocorrelation":
+            {
+            "lag":30,
+            "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+              "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
+            "normalize": 1
+            },
             ...
-        }
-      },
-    "descriptor_properties":
-    {
-      "normalized_moreaubroto_autocorrelation":
-        {
-        "lag":30,
-        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
-          "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
-        },
-      ...
-      ...
       },
     "pyDSP":
       {
@@ -53,7 +45,7 @@ Usage
         }
       }
   }
-```
+  
 <details><summary><b>Encoding using all 566 AAIndex indices:</b></summary><br>
 Encoding protein sequences in dataset using all 566 indices in the AAI database. Each sequence encoded via an index in the AAI can be passed through an additional step where its protein spectra can be generated following an FFT. `pySAR` supports generation of the power, imaginary, real or absolute spectra as well as other DSP functionalities including windowing, convolution and filter functions. In the example below, the encoded sequences will be used to generate a imaginary protein spectra with a blackman window function applied. This will then be used as feature data to build a predictive model that can be used for accurate prediction of the sought activity value of unseen protein sequences. The encoding class also takes only the JSON config file as input which will have all the required parameter values. The output results will show the calculated metric values for each index in the AAI when measuring predicted vs observed activity values for the unseen test sequences.<br>
 

@@ -16,7 +16,6 @@
     "descriptors":
     {
       "descriptors_csv": "descriptors_thermostability.csv",
-      "all_desc": 0,
       "moreaubroto_autocorrelation":
         {
         "lag": 30,
@@ -78,7 +77,8 @@
           "alpha": null,
           "nbar": null,
           "sll": null,
-          "norm": null
+          "norm": null,
+          "std": null
         },
         "filter": {
           "type": null,

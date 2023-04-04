@@ -4,6 +4,7 @@
 
 import os
 import numpy as np
+import json
 import pySAR.pyDSP as pyDSP_
 import pySAR.pySAR as pySAR
 import unittest
@@ -27,12 +28,12 @@ class pyDSPTests(unittest.TestCase):
     def setUp(self):
         """  Import the 4 config files for each of the 4 datasets used for testing the pyDSP methods. """        
         #array of config files for each test dataset
-        config_path = os.path.join('tests', 'test_config')
+        self.config_path = os.path.join('tests', 'test_config')
         self.all_config_files = [
-            os.path.join(config_path, "test_thermostability.json"), 
-            os.path.join(config_path, "test_enantioselectivity.json"),
-            os.path.join(config_path, "test_absorption.json"), 
-            os.path.join(config_path, "test_localization.json")
+            os.path.join(self.config_path, "test_thermostability.json"), 
+            os.path.join(self.config_path, "test_enantioselectivity.json"),
+            os.path.join(self.config_path, "test_absorption.json"), 
+            os.path.join(self.config_path, "test_localization.json")
         ]
         #create instance of pysar class using thermostability dataset & config
         self.pysar = pySAR.PySAR(config_file=self.all_config_files[0])
@@ -311,6 +312,74 @@ class pyDSPTests(unittest.TestCase):
         self.assertFalse(np.isnan(pyDSP.spectrum_encoding).any(), 
             'Sequences after pre-processing step should not contain null values.')
 
+    def test_window(self):
+        """ Testing window functions that are available in pyDSP module. """
+        aa_indices1 = "EISD860101"
+        aa_indices2 = "GEIM800107"
+        aa_indices3 = "NAKH900106"
+        aa_indices4 = "QIAN880105"
+        all_aaindices = [aa_indices1, aa_indices2, aa_indices3, aa_indices4]
+        all_windows = ['hamming', 'blackman','blackmanharris','gaussian','bartlett',
+                'kaiser', 'barthann', 'bohman', 'chebwin', 'cosine', 'exponential',
+                'flattop', 'hann', 'boxcar', 'nuttall', 'parzen', 'triang', 'tukey']
+
+#1.)    iterate over all config files, all indices and all windows
+        for config in self.all_config_files:
+            for index in all_aaindices:
+                for window in all_windows:
+                    encoded_seq = self.pysar.get_aai_encoding(index)
+                    #open config file and parse parameters 
+                    with open(config) as f:
+                        parameters = json.load(f)
+
+                    #manually set window type in parameters object
+                    parameters["pyDSP"]["window"]["type"] = window
+
+                    #create instance of pyDSP class
+                    pyDSP = pyDSP_.PyDSP(config_file=parameters, protein_seqs=encoded_seq)
+                    
+                    self.assertEqual(pyDSP.window_type, window, 
+                        "Expected window type to be {}, got {}.".format(pyDSP.window_type, window))
+                    self.assertIsInstance(pyDSP.window, np.ndarray, 
+                        "Expected window to be a numpy array, got {}.".format(pyDSP.window))
+                    self.assertEqual(pyDSP.window.shape, (466,), 
+                        "Expected shape of window to be (466,), got {}.".format(pyDSP.window.shape))
+                    self.assertFalse(np.isnan(pyDSP.window).any(), 
+                        "Expected window output to contain no null/nan values.")
+
+    def test_filter(self):
+        """ Testing filter functions that are available in pyDSP module. """
+        aa_indices1 = "EISD860101"
+        aa_indices2 = "GEIM800107"
+        aa_indices3 = "NAKH900106"
+        aa_indices4 = "QIAN880105"        
+        all_aaindices = [aa_indices1, aa_indices2, aa_indices3, aa_indices4]
+        all_filters = ['savgol']
+
+#1.)    iterate over all config files, all indices and all filters
+        for config in self.all_config_files:
+            for index in all_aaindices:
+                for filt in all_filters:
+                    encoded_seq = self.pysar.get_aai_encoding(index)
+                    #open config file and parse parameters 
+                    with open(config) as f:
+                        parameters = json.load(f)
+
+                    #manually set filter type in parameters object
+                    parameters["pyDSP"]["filter"]["type"] = filt
+
+                    #create instance of pyDSP class
+                    pyDSP = pyDSP_.PyDSP(config_file=parameters, protein_seqs=encoded_seq)
+                    
+                    self.assertEqual(pyDSP.filter_type, filt, 
+                        "Expected filter type to be {}, got {}.".format(pyDSP.filter_type, filt))
+                    self.assertIsInstance(pyDSP.filter, np.ndarray, 
+                        "Expected filter to be a numpy array, got {}.".format(pyDSP.filter))
+                    self.assertEqual(pyDSP.filter.shape, (466,), 
+                        "Expected shape of filter to be (466,), got {}.".format(pyDSP.filter.shape))
+                    self.assertFalse(np.isnan(pyDSP.filter).any(), 
+                        "Expected filter output to contain no null/nan values.")
+                        
     def test_max_freq(self):
         """ Testing max frequency functionality. """
 #1.)
@@ -319,8 +388,10 @@ class pyDSPTests(unittest.TestCase):
         for config in self.all_config_files:
             pyDSP = pyDSP_.PyDSP(config_file=config, protein_seqs=encoded_seq1)
             max_freq_, max_freq_index = pyDSP.max_freq(pyDSP.spectrum_encoding[0])
-            self.assertIsInstance(max_freq_, float, "")
-            self.assertIsInstance(max_freq_index, np.int64, "")
+            self.assertIsInstance(max_freq_, float, 
+                "Expected max frequency attribute to be a float, got {}.".format(type(max_freq_)))
+            self.assertIsInstance(max_freq_index, np.int64, 
+                "Expected max frequency index attribute to be a np.int64, got {}.".format(type(max_freq_index)))
 #2.)
         with self.assertRaises(ValueError):
             max_freq_, max_freq_index = pyDSP.max_freq(pyDSP.spectrum_encoding)

@@ -50,7 +50,8 @@ def plot_reg(Y_true, Y_pred, r2, output_folder="", show_plot=False):
     if not (os.path.isdir(output_folder)):
         os.makedirs(output_folder)    
 
-    plt.savefig(os.path.join(output_folder, 'model_regPlot.png'))  #save plot to output folder
+    #save plot to output folder
+    plt.savefig(os.path.join(output_folder, 'model_regPlot.png'))  
     if (show_plot): #display plot   
         plt.show(block=False)
         plt.pause(3)

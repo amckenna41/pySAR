@@ -14,6 +14,7 @@ from sklearn.metrics import SCORERS
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.feature_selection import SelectKBest, chi2, VarianceThreshold, RFE, SelectFromModel, SequentialFeatureSelector
 from difflib import get_close_matches
+import inspect
 from copy import deepcopy
 import numpy as np
 import os
@@ -127,13 +128,14 @@ class Model():
         :model : sklearn.model
             instantiated regression model with default or user-specified parameters.
         """
+        parameters = {}
         #use if/elif statements to get matching model specified by user in algorithm attribute
         if (self.algorithm.lower().strip() == 'plsregression'):
 
             #get parameters of sklearn model and check that user inputted
             #parameters are available in the model, only use those that are valid.
-            model_params = set(dir(PLSRegression()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in PLSRegression().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
             
             #use default model parameters if user input parameters is empty {}, else
             #use user-specified parameters
@@ -144,8 +146,8 @@ class Model():
 
         elif (self.algorithm.lower().strip() == 'randomforestregressor'):
 
-            model_params = set(dir(RandomForestRegressor()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in RandomForestRegressor().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = RandomForestRegressor(**self.parameters)
@@ -154,9 +156,8 @@ class Model():
 
         elif (self.algorithm.lower().strip() == 'adaboostregressor'):
 
-            model_params = set(dir(AdaBoostRegressor()))
-            parameters = [i for i in model_params if i in self.parameters]
-
+            for k,v in AdaBoostRegressor().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
             if (parameters != {} or parameters != []):
                 model = AdaBoostRegressor(**self.parameters)
             else:
@@ -164,8 +165,8 @@ class Model():
 
         elif (self.algorithm.lower().strip() == 'baggingregressor'):
 
-            model_params = set(dir(BaggingRegressor()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in BaggingRegressor().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = BaggingRegressor(**self.parameters)
@@ -174,8 +175,8 @@ class Model():
 
         elif (self.algorithm.lower().strip() == 'decisiontreeregressor'):
 
-            model_params = set(dir(DecisionTreeRegressor()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in DecisionTreeRegressor().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = DecisionTreeRegressor(**self.parameters)
@@ -184,8 +185,8 @@ class Model():
 
         elif (self.algorithm.lower().strip() == 'linearregression'):
 
-            model_params = set(dir(LinearRegression()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in LinearRegression().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = LinearRegression(**self.parameters)
@@ -194,8 +195,8 @@ class Model():
 
         elif (self.algorithm.lower().strip() == 'lasso'):
 
-            model_params = set(dir(Lasso()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in Lasso().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = Lasso(**self.parameters)
@@ -204,8 +205,8 @@ class Model():
 
         elif (self.algorithm.lower().strip() == 'ridge'):
 
-            model_params = set(dir(Ridge()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in Ridge().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = Ridge(**self.parameters)
@@ -215,8 +216,8 @@ class Model():
         elif (self.algorithm.lower().strip() == 'sgd' or \
             self.algorithm.lower().strip() == 'stochasticgradientdescent'):
 
-            model_params = set(dir(SGDRegressor()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in SGDRegressor().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = SGDRegressor(**self.parameters)
@@ -227,8 +228,8 @@ class Model():
             self.algorithm.lower().strip() == 'gradientboost' or \
             self.algorithm.lower().strip() == 'gradientboostingregressor'):
 
-            model_params = set(dir(GradientBoostingRegressor()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in GradientBoostingRegressor().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = GradientBoostingRegressor(**self.parameters)
@@ -238,8 +239,8 @@ class Model():
         elif (self.algorithm.lower().strip() == 'svr' or \
             self.algorithm.lower().strip() == 'supportvectorregression'):
 
-            model_params = set(dir(SVR()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in SVR().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = SVR(**self.parameters)
@@ -250,8 +251,8 @@ class Model():
            self.algorithm.lower().strip() == 'kneighborsregressor' or \
            self.algorithm.lower().strip() == 'knearestneighbors'):
 
-            model_params = set(dir(KNeighborsRegressor()))
-            parameters = [i for i in model_params if i in self.parameters]
+            for k,v in KNeighborsRegressor().__dict__.items(): 
+                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
 
             if (parameters != {} or parameters != []):
                 model = KNeighborsRegressor(**self.parameters)
@@ -454,7 +455,7 @@ class Model():
         eval = Evaluate(self.Y_test,best_model_pred)
         
         #print out results of grid search
-        print('\n############################################################')
+        print('\n#############################################################')
         print('################### Hyperparamter Results ###################')
         print('#############################################################\n')
 

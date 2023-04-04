@@ -100,23 +100,15 @@ Usage
     "descriptors":
         {
           "descriptors_csv": "descriptors.csv",
-          "descriptors": {
-            "all_desc": 0,
-            "amino_acid_composition": 1,
-            "dipeptide_composition": 1,
+          "all_desc": 0,
+          "moreaubroto_autocorrelation":
+            {
+            "lag":30,
+            "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
+              "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
+            "normalize": 1
+            },
             ...
-        }
-      },
-    "descriptor_properties":
-    {
-      "normalized_moreaubroto_autocorrelation":
-        {
-        "lag":30,
-        "properties":["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
-          "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
-        },
-      ...
-      ...
       },
     "pyDSP":
       {
@@ -393,12 +385,10 @@ results_df = pySAR.encode_aai_desc(indices="CIDH920105", descriptors="amino_acid
 ```
 </details>
 
-<details><summary><b>Generate all protein descriptors:</summary></b><br>
-Prior to evaluating the various available properties and features at which to encode a set of protein sequences, it is reccomened that you pre-calculate all the available descriptors in one go, saving them to a csv for later that `pySAR` will then import from. Output values are stored in csv set by <em>descriptors_csv</em> config parameter. Output will be of the shape N x 9920, using the default parameters, where N is the number of protein sequences in the dataset, but the size of the 2nd dimension (total number of features calculated from all 15 descriptors) may vary depending on some descriptor-specific metaparameters. Setting <em>all_desc</em> parameter to True means all descriptors will be calculated, by default this is False.<br>
+<details><summary><b>Calculate and export all protein descriptors:</summary></b><br>
+Prior to evaluating the various available properties and features at which to encode a set of protein sequences, it is reccomened that you pre-calculate all the available descriptors in one go, saving them to a csv for later that `pySAR` will then import from. Output values are stored in csv set by <em>descriptors_csv</em> config parameter. Output will be of the shape N x M, using the default parameters, where N is the number of protein sequences in the dataset and M is the total number of features calculated from all 15 descriptors which varies depending on some descriptor-specific metaparameters.<br>
 
 ```python
-from pySAR.descriptors_ import *
-
 '''test_config6.json
 {
   "dataset": 
@@ -414,7 +404,6 @@ from pySAR.descriptors_ import *
   "descriptors": 
   {
     "descriptors_csv": "precalculated_descriptors",
-    "all_desc": 1,
     "moreaubroto_autocorrelation": {
       "lag": 30,
       "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
@@ -429,8 +418,13 @@ from pySAR.descriptors_ import *
   }
 }
 '''
-#calculating all descriptor values and storing in file named by parameter descriptors_csv
+from pySAR.descriptors import *  #import descriptors class
+
+#create instance of descriptors class
 desc = Descriptors("test_config6")
+
+#calculating all descriptor values and exporting to file named by parameter descriptors_csv
+desc.get_all_descriptors(export=True)
 
 ```
 </details>

@@ -4,10 +4,10 @@ To Do List:
 - [X] Add Manifest file?
 - [X] Add License & Releases
 - [X] Add distance matrices to SOCNum
-- [ ] Add coveralls
+- [X] Add coveralls
 - [X] Change descriptor functions to accept sequences themselves.
 - [X] Add references for all descriptors
-- [ ] Look over and add some encoding unit tests.
+- [X] Look over and add some encoding unit tests.
 - [X] Update version in init
 - [ ] Look into pssm: https://nanx.me/protr/reference/extractPSSM.html
 - [X] Change AAP parameter in descriptors.
@@ -16,7 +16,7 @@ To Do List:
 - [X] Descriptors accewpt AAI code for property names.
 - [X] Add DPC and TPC lists to files.
 - [X] Correct supplementary_materials
-- [ ] Add example comments to func definitions
+- [X] Add example comments to func definitions
 - [X] Installation from source in readme
 - [X] Parse descriptors into embedded JSON format
 - [X] Seperate pySAR and descriptors into different softwares??
@@ -189,7 +189,7 @@ To Do List:
 - [ ] Upload pySAR demo as ppt rather than .key.
 - [X] Double check what happens when dict not passed into Map class, should error be rasied? Reflect change in aaindex.
 - [X] Remove get_protein module and references to it.
-- [ ] Add circleci badge back into repo now that it's sorta working.
+- [X] Add circleci badge back into repo now that it's sorta working.
 - [X] In hyperparameter tuning results change CV to Number of cross-validation folds etc.
 - [X] Less verbose output for hyperparameter tuning.
 - [ ] __str__ of Desscriptor class displays all descriptor names and shapes.
@@ -219,6 +219,14 @@ To Do List:
 - [ ] Add bibtex citation into its own txt file.
 - [ ] Is .coveralls.yml needed.
 - [X] In encoding text output, split list of aai indices and descriptors into new line if they exceed the number of characters in "#" line.
+- [X] Use text wrapper for model_parameters
+- [X] test_window in pyDSP, testing all window inputs from config, same with test_filter.
+- [ ] Can pass in dict of parameters directly into class input parameters instead of just filename.
+- [ ] Add results from research - https://drive.google.com/drive/folders/1AO71jZ7-uZDJXlHT_F3baAs09Tww5cum?usp=share_link
+- [X] Is all_desc parameter in config needed?
+- [X] Dont think model_params in model.py is working.
+- [X] chebwin.__code__.co_varnames is bringing up extra parameters that aren't in source code, maybe use another dict. co_varnames brings back all the varnames not actual input parameters. Use inspect.getargspec(chebwin).args
+- [X] Need to update the above for model_parameters in model.py
  <!-- python3 -m venv pysar_venv source pysar_venv/bin/activate pip install . deactivate -->
 
  [Back to top](#TOP)

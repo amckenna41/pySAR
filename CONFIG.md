@@ -1,6 +1,6 @@
 # Config file parameters <a name="TOP"></a>
 
-pySAR works via configuration files that contain the plethora of parameters and variables available. The config files are in JSON format and broken into 5 different subsections: "dataset", "model", "descriptors", "descriptor_properties" and "pyDSP". "dataset" outlines parameters to do with the dataset, "model" consists of all ML model related parameters, "descriptors" specifies what protein physiochemical/structural descriptors to use, "descriptor_properties" is the more granular parameters of some of the aforementioned protein descriptors, with a selection of themn being further tuneable, and "pyDSP" is all parameters related to any of the DSP functionalities in pySAR. <br>
+pySAR works via configuration files that contain the plethora of parameters and variables available for the full pySAR pipeline. The config files are in JSON format and broken into 4 different subsections: "dataset", "model", "descriptors", and "pyDSP". "dataset" outlines parameters to do with the dataset, "model" consists of all ML model related parameters, "descriptors" specifies what protein physiochemical/structural descriptors to use and the metaparameters for some protein descriptors and "pyDSP" is all parameters related to any of the DSP functionalities in pySAR. <br>
 
 Example configuration file for thermostability.json used in research:
 
@@ -23,7 +23,6 @@ Example configuration file for thermostability.json used in research:
     "descriptors":
     {
       "descriptors_csv": "descriptors_thermostability.csv",
-      "all_desc": 0,
       "moreaubroto_autocorrelation":
         {
         "lag": 30,
@@ -113,7 +112,6 @@ Example configuration file for thermostability.json used in research:
 
 **Descriptor Parameters:**
 * `descriptors[descriptors_csv]` - path to csv file of pre-calculated descriptor values of a dataset, saves time having to recalculate the features each time.
-* `descriptors[descriptors][all_desc]` - set to 0 or 1 indicating if all descriptors are to be calculated and or imported upon instantiation of the Descriptor class. 
 
 * `descriptors[moreaubroto_autocorrelation][lag] / descriptors[moran_autocorrelation][lag] / descriptors[geary_autocorrelation][lag]` - The maximum lag value for each of the autocorrelation descriptors. If invalid value input then a default of 30 is used.
 * `descriptors[moreaubroto_autocorrelation][properties] / descriptors[moran_autocorrelation][properties] / descriptors[geary_autocorrelation][properties]` - List of protein physiochemical and structural descriptors used in the calculation of each of the autocorrelation descriptors, properties must be a lit of their AAIndex number/accession number. There must be a least 1 property value input.
@@ -139,7 +137,7 @@ Example configuration file for thermostability.json used in research:
 **DSP Parameters:**
 * `pyDSP[use_dsp]` - whether or not to apply Digital Signal Processing (DSP) techniques to the features passed into the model. If true, the values of the next DSP parameters will be applied to the features. 
 * `pyDSP[spectrum]` - which frequency output to use from the generated types of signals from DSP to use e.g power, absolute, imaginery, real. 
-* `pyDSP[window]` - convolutional window to apply to the signal output, pySAR supports: hamming, blackman, blackmanharris, gaussian, bartlett, kaiser, barthann, bohman, chebwin, cosine, exponential, flattop, hann, boxcar, hanning, nuttall, parzen, triang, tukey.
-* `pyDSP[filter]` - window filter to apply to the signal output, pySAR supports: savgol, medfilt, symiirorder1, lfilter, hilbert.
+* `pyDSP[window][type]` - convolutional window to apply to the signal output, pySAR supports: hamming, blackman, blackmanharris, gaussian, bartlett, kaiser, barthann, bohman, chebwin, cosine, exponential, flattop, hann, boxcar, hanning, nuttall, parzen, triang, tukey.
+* `pyDSP[filter][type]` - window filter to apply to the signal output, pySAR supports: savgol, medfilt, symiirorder1, lfilter, hilbert.
 
 [Back to top](#TOP)

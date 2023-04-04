@@ -122,9 +122,6 @@ class Descriptors():
         #create instance of Map class so parameters in config can be accessed via dot notation
         self.dataset_parameters = Map(self.parameters["dataset"])
         self.desc_parameters = Map(self.parameters["descriptors"])
-
-        #parameter of whether to read in / use all available descriptors 
-        self.all_desc = self.desc_parameters.all_desc 
         
         #create data directory if doesnt exist
         if not (os.path.isdir(DATA_DIR)):
@@ -201,14 +198,6 @@ class Descriptors():
             self.import_descriptors(self.desc_parameters.descriptors_csv)
             #get the total number of inputted protein sequences
             self.num_seqs = self.all_descriptors.shape[0]
-        # else:
-            #if all_desc parameter true then calculate all descriptor values and store in their respective attributes
-            # if (self.all_desc):
-            #     self.all_descriptors = self.get_all_descriptors()
-            #     #save all calculated descriptor values for next time
-            #     if (self.desc_config.descriptors_csv == "" or self.desc_config.descriptors_csv == None):
-            #         self.desc_config.descriptors_csv = "descriptors_output.csv"
-            #     self.all_descriptors.to_csv(os.path.join(DATA_DIR, self.desc_config.descriptors_csv), index=0)
 
         #create dictionary of descriptors and their associated groups
         keys = self.all_descriptors_list()

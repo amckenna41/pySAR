@@ -147,8 +147,12 @@ class Encoding(PySAR):
             print('# AAI Indices -> {}'.format("\n\t".join(tw.wrap(', '.join(all_indices)))))
         else:
             print('# AAI Indices -> {}'.format(len(all_indices)))
-        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Model Parameters -> {}\n# Test Split -> {}\
-            '.format(os.path.basename(self.dataset), self.activity_col, self.algorithm, self.model_parameters, self.test_split))
+        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Test Split -> {}'.format(
+            os.path.basename(self.dataset), self.activity_col, self.algorithm, self.test_split))
+        if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
+            print('# Model Parameters -> Default Parameters')        
+        else:
+            print('# Model Parameters -> {}'.format("\n\t".join(tw.wrap(', '.join(self.model_parameters)))))   
         if (self.use_dsp):
             print('# Using DSP -> {}\n#   Spectrum -> {}\n#   Window Function -> {}\n#   Filter Function -> {}'.format(
                     self.use_dsp, self.spectrum, self.window_type, self.filter_type)) 
@@ -346,10 +350,13 @@ class Encoding(PySAR):
         print('\n#######################################################################################\n')
         print('# Encoding using {} descriptor combination(s) with the parameters:\n'.format(len(all_descriptors)))
         print('# Descriptors -> {}'.format("\n\t".join(tw.wrap(', '.join(all_descriptors)))))
-        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Model Parameters -> {}\n# Test Split -> {}\
-            '.format(os.path.basename(self.dataset), self.activity_col, self.algorithm, self.model_parameters, self.test_split))
+        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Test Split -> {}'.format(
+            os.path.basename(self.dataset), self.activity_col, self.algorithm, self.test_split))
+        if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
+            print('# Model Parameters -> Default Parameters')        
+        else:
+            print('# Model Parameters -> {}'.format("\n\t".join(tw.wrap(', '.join(self.model_parameters)))))       
         print('\n#######################################################################################\n')
-
         #start counter
         start = time.time()     
 
@@ -601,9 +608,12 @@ class Encoding(PySAR):
             print('# Using DSP -> {}\n#   Spectrum -> {}\n#   Window Function -> {}\n#   Filter Function -> {}'.format(
                     self.use_dsp, self.spectrum, self.window_type, self.filter_type)) 
         print('# Descriptors -> {}'.format("\n\t".join(tw.wrap(', '.join(all_descriptors)))))
-        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Model Parameters -> {}\
-            \n# Test Split -> {}'.format(os.path.basename(self.dataset), self.activity_col, 
-                self.algorithm, self.model_parameters, self.test_split)) 
+        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Test Split -> {}'.format(
+            os.path.basename(self.dataset), self.activity_col, self.algorithm, self.test_split))
+        if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
+            print('# Model Parameters -> Default Parameters')        
+        else:
+            print('# Model Parameters -> {}'.format("\n\t".join(tw.wrap(', '.join(self.model_parameters)))))                   
         print('\n########################################################################\n')
 
         #start counter
