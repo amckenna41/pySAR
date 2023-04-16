@@ -227,6 +227,8 @@ To Do List:
 - [X] Dont think model_params in model.py is working.
 - [X] chebwin.__code__.co_varnames is bringing up extra parameters that aren't in source code, maybe use another dict. co_varnames brings back all the varnames not actual input parameters. Use inspect.getargspec(chebwin).args
 - [X] Need to update the above for model_parameters in model.py
+- [X] Remove file=sys.stdout from tqdm Encoding function, test if it works. Add mininterval=30 to tqdms.
+- [X] Combine with.selfassertRaises value/type error into one test unit rather than seperating.
  <!-- python3 -m venv pysar_venv source pysar_venv/bin/activate pip install . deactivate -->
 
  [Back to top](#TOP)

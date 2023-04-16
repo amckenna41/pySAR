@@ -100,7 +100,6 @@ Usage
     "descriptors":
         {
           "descriptors_csv": "descriptors.csv",
-          "all_desc": 0,
           "moreaubroto_autocorrelation":
             {
             "lag":30,
@@ -213,7 +212,7 @@ Output DataFrame showing the 4 predictive models built using the PLS algorithm, 
 </details>
 
 <details><summary><b>Encoding protein sequences using their calculated protein descriptors:</summary></b><br>
-Calculate the protein descriptor values for a dataset of protein sequences from the 15 available descriptors in the <em>descriptors</em> module. Use each descriptor as a feature set in the building of the predictive models used to predict the activity value of unseen sequences. By default, the function will look for a csv file pointed to by the <em>"descriptors_csv"</em> parameter in the config file that contains the pre-calculated descriptor values for a dataset. If file is not found then all descriptor values will be calculated for the dataset using the <em>descriptors_</em> module. If a descriptor in the config file is to be used in the feature data, its parameter is set to true/1. If <em>all_desc</em> is set to true/1 then all available descriptors are calculated using their respective functions.<br>
+Calculate the protein descriptor values for a dataset of protein sequences from the 15 available descriptors in the <em>descriptors</em> module. Use each descriptor as a feature set in the building of the predictive models used to predict the activity value of unseen sequences. By default, the function will look for a csv file pointed to by the <em>"descriptors_csv"</em> parameter in the config file that contains the pre-calculated descriptor values for a dataset. If file is not found then all descriptor values will be calculated for the dataset using the <em>descriptors_</em> module. If a descriptor in the config file is to be used in the feature data, its parameter is set to true/1.<br>
 
 ```python
 from pySAR.encoding import *
@@ -237,7 +236,6 @@ from pySAR.encoding import *
   "descriptors": 
   {
     "descriptors_csv": "precalculated_descriptors.csv",
-    "all_desc": 0,
     "moreaubroto_autocorrelation": {
       "lag": 30,
       "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
@@ -293,7 +291,6 @@ from pySAR.encoding import *
   "descriptors": 
   {
     "descriptors_csv": "precalculated_descriptors.csv",
-    "all_desc": 0,
     "moreaubroto_autocorrelation": {
       "lag": 30,
       "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
@@ -353,7 +350,6 @@ import pySAR as pysar   #import pySAR package
   "descriptors": 
   {
     "descriptors_csv": "precalculated_descriptors.csv",
-    "all_desc": 0,
     "moreaubroto_autocorrelation": {
       "lag": 30,
       "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
@@ -516,5 +512,5 @@ DOI: 10.1021/acs.jcim.0c00073 <br><br>
 [article]: https://www.sciencedirect.com/science/article/abs/pii/S1532046422000326
 [pdf]: https://github.com/amckenna41/pySAR/blob/master/pySAR_research.pdf
 [ppt]: https://github.com/amckenna41/pySAR/blob/master/pySAR_demo.key
-[demo]: https://github.com/amckenna41/pySAR/
+[demo]: https://colab.research.google.com/drive/1hxtnf8i4q13fB1_2TpJFimS5qfZi9RAo?usp=sharing
 [Issues]: https://github.com/amckenna41/pySAR/issues

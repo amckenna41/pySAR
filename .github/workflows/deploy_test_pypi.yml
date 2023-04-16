@@ -47,7 +47,6 @@ jobs:
 
     #sleep for 30 seconds to ensure that distribution package has finised uploading to Test PyPI
     - name: Wait / Sleep
-      # uses: jakejarvis/wait-action@v0.1.0
       uses: jakejarvis/wait-action@master
       with:
         time: '30s'

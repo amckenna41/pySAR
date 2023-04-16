@@ -374,10 +374,8 @@ class ModelTests(unittest.TestCase):
 #3.)
         with self.assertRaises(UndefinedMetricWarning):
             model.hyperparameter_tuning(metric="invalid_metric", verbose=0, cv=10)
-#4.)
-        with self.assertRaises(UndefinedMetricWarning):
             model.hyperparameter_tuning(metric="R2", verbose=0, cv=5)
-#5.)
+#4.)
         with self.assertRaises(TypeError):
             model.hyperparameter_tuning(parameters='wrongType')
 

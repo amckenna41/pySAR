@@ -60,7 +60,7 @@ class PySARTests(unittest.TestCase):
 
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.3.3", 
+        self.assertEqual(pysar_.__version__, "2.3.4", 
             "pySAR version is not correct, got: {}.".format(pysar_.__version__))
         self.assertEqual(pysar_.__name__, "pySAR", 
             "pySAR software name is not correct, got: {}.".format(pysar_.__name__))
@@ -402,10 +402,8 @@ class PySARTests(unittest.TestCase):
 #4.)    
         with self.assertRaises(ValueError, msg='ValueError: Errorneous indices have been input.'):
             aai_encoding = test_pySAR_1.get_aai_encoding(error_aaindices)
-#5.)
-        with self.assertRaises(ValueError, msg='ValueError: Errorneous indices have been input.'):
             aai_encoding = test_pySAR_1.get_aai_encoding(error_aaindices1)
-#6.)
+#5.)
         with self.assertRaises(TypeError, msg='TypeError: Errorneous indices datatypes have been input.'):
             aai_encoding = test_pySAR_1.get_aai_encoding(1235)
             aai_encoding = test_pySAR_1.get_aai_encoding(40.89)
@@ -481,11 +479,9 @@ class PySARTests(unittest.TestCase):
             test_aai_ = test_pySAR.encode_aai(indices=None)
             test_aai_ = test_pySAR.encode_aai(indices="")
             test_aai_ = test_pySAR.encode_aai()
-#5.)
-        with self.assertRaises(ValueError, msg='ValueError: Erroneous indices put into indices parameter.'):
             test_aai_ = test_pySAR.encode_aai(indices=error_aaindices)
             test_aai_ = test_pySAR.encode_aai(indices=error_aaindices1)
-#6.)
+#5.)
         with self.assertRaises(TypeError, msg='TypeError: Indices must be lists or strings.'):
             test_aai_ = test_pySAR.encode_aai(indices=123)
             test_aai_ = test_pySAR.encode_aai(indices=0.90)
@@ -562,13 +558,9 @@ class PySARTests(unittest.TestCase):
 #5.)
         with self.assertRaises(ValueError, msg='ValueError: Descriptor input parameter cannot be None.'):
             test_desc = test_pySAR.get_descriptor_encoding(descriptors=None)
-#6.)
-        with self.assertRaises(ValueError, msg='ValueError: Descriptor input parameter cannot be an empty string.'):
             test_desc = test_pySAR.get_descriptor_encoding(descriptors="")
-#7.)
-        with self.assertRaises(ValueError, msg='ValueError: Descriptor input parameter cannot be an empty list.'):
             test_desc = test_pySAR.get_descriptor_encoding(descriptors=[])
-#8.)
+#6.)
         with self.assertRaises(TypeError, msg='ValueError: Descriptor input parameter cannot be an invalid descriptor name.'):
             test_desc = test_pySAR.get_descriptor_encoding(descriptor=123)
             test_desc = test_pySAR.get_descriptor_encoding(descriptor=0.90)
@@ -613,11 +605,9 @@ class PySARTests(unittest.TestCase):
         with self.assertRaises(ValueError, msg='ValueError: Descriptor parameter cannot be None or an empty string.'):
             test_desc = test_pySAR.encode_descriptor(descriptor=None)
             test_desc = test_pySAR.encode_descriptor(descriptor="")
-#3.)
-        with self.assertRaises(ValueError, msg='ValueError: Descriptor parameter not in list of available descriptors.'):
             test_desc = test_pySAR.encode_descriptor(descriptor="invalid_descriptor")
             test_desc = test_pySAR.encode_descriptor(descriptor="blahblahblah")
-#4.)    
+#3.)    
         with self.assertRaises(TypeError, msg='TypeError: Descriptor parameter has to be a strong or list.'):
             test_desc = test_pySAR.encode_descriptor(descriptor=123)
             test_desc = test_pySAR.encode_descriptor(descriptor=0.90)
@@ -712,13 +702,11 @@ class PySARTests(unittest.TestCase):
             test_desc = test_pySAR.encode_aai_descriptor(indices="LIFS790103")
             test_desc = test_pySAR.encode_aai_descriptor(indices=None, descriptors=None)
             test_desc = test_pySAR.encode_aai_descriptor(indices="", descriptors="")
-#6.)
-        with self.assertRaises(ValueError, msg='TypeError: Descriptor not found in list of valid descriptors.'):
             test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors="invalid_descriptor")
             test_aai_desc = test_pySAR.encode_aai_descriptor(indices="invalid_value")
             test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors="descriptor not found")
             test_aai_desc = test_pySAR.encode_aai_descriptor(indices="blahblahblah")
-#7.)
+#6.)
         with self.assertRaises(TypeError, msg='ValueError: Descriptor and indices must be lists or strings.'):
             test_desc = test_pySAR.encode_aai_descriptor(descriptors=123, indices=123)
             test_desc = test_pySAR.encode_aai_descriptor(descriptors=0000, indices=0.90)

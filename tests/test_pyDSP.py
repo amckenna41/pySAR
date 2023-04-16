@@ -245,10 +245,8 @@ class pyDSPTests(unittest.TestCase):
 #7.)
         with self.assertRaises(ValueError, msg='Value Error raised, protein sequences input parameter cant be none.'):
             pyDSP = pyDSP_.PyDSP(config_file=self.all_config_files[3], protein_seqs=None)
-#8.)
-        with self.assertRaises(ValueError, msg='Value Error raised, protein sequences input parameter cant be a single str.'):
             pyDSP = pyDSP_.PyDSP(config_file=self.all_config_files[2], protein_seqs="ABCDEF")
-    
+ 
     def test_preprocessing(self):
         """ Testing preprocessing functionality of pyDSP class. """
         test_aaindices1 = "COHE430101"

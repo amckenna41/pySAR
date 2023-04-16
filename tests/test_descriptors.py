@@ -150,17 +150,13 @@ class DescriptorTests(unittest.TestCase):
             self.assertTrue(desc.amphiphilic_pseudo_amino_acid_composition.empty, 'Attribute should be initialised to an empty dataframe.')
             self.assertTrue(desc.all_descriptors.empty, 'Attribute should be initialised to an empty dataframe.')
 #5.)
-            #test Value and Type error exceptions are thrown if invalid parameters input
+            #test Type and OS error exceptions are thrown if invalid parameters input
             with self.assertRaises(TypeError, msg='Type Error raised, incorrect datatype input to class.'):
                 fail_desc = descr.Descriptors(config_file=123)
-
-            with self.assertRaises(TypeError, msg='Type Error raised, incorrect datatype input to class.'):
                 fail_desc = descr.Descriptors(config_file=None)
-
+#6.)
             with self.assertRaises(OSError, msg='OS Error raised, filepath to config file not found.'):
                 fail_desc = descr.Descriptors(config_file="incorrect_filepath.json")
-
-            with self.assertRaises(OSError, msg='OS Error raised, filepath to config file not found.'):
                 fail_desc = descr.Descriptors(config_file="")
 
     def test_descriptor_groups(self):

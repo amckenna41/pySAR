@@ -7,7 +7,7 @@ import numpy as np
 import time
 import itertools
 import sys
-from tqdm.auto import tqdm
+from tqdm import tqdm
 from difflib import get_close_matches
 import json
 from textwrap import TextWrapper
@@ -178,7 +178,7 @@ class Encoding(PySAR):
         #using tqdm package to create a progress bar showing encoding progress,
         #file=sys.stdout to stop error where iterations were printing out of order
         for index in tqdm(all_indices[:int(len(all_indices))], unit=" indices", position=0, 
-            desc="AAI Indices", file=sys.stdout, disable=tqdm_disable):
+            desc="AAI Indices", mininterval=30, disable=tqdm_disable):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_encoding(index)
@@ -375,7 +375,7 @@ class Encoding(PySAR):
             tqdm_disable = True
 
         for descr in tqdm(all_descriptors[:int(len(all_descriptors))], unit=" descriptor", position=0, 
-            desc="Descriptors", file=sys.stdout, disable=tqdm_disable):
+            desc="Descriptors", mininterval=30, disable=tqdm_disable):
 
             #reset descriptor DF and list
             desc_ = pd.DataFrame()           
@@ -636,7 +636,8 @@ class Encoding(PySAR):
         if (len(all_indices)) <= 1:
             tqdm_disable = True
         
-        for index in tqdm(all_indices[:int(len(all_indices))], unit=" indices", desc="AAI Indices", disable=tqdm_disable):
+        for index in tqdm(all_indices[:int(len(all_indices))], unit=" indices", desc="AAI Indices", 
+            mininterval=30, disable=tqdm_disable):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_encoding(index)
@@ -661,7 +662,8 @@ class Encoding(PySAR):
                 tqdm_disable = True
     
             #iterate through all descriptors
-            for descr in tqdm(all_descriptors, leave=False, unit=" descriptor", desc="Descriptors", disable=tqdm_disable):
+            for descr in tqdm(all_descriptors, leave=False, unit=" descriptor", desc="Descriptors", 
+                mininterval=30, disable=tqdm_disable):
 
                 #reset descriptor DF and list
                 desc_ = pd.DataFrame()

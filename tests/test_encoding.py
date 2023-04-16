@@ -556,19 +556,17 @@ class EncodingTests(unittest.TestCase):
 #4.)    
         test_aai4 = ["invalid_aai_index"]
         test_desc4 = ["invalid_descriptor_name"]
-        
         with self.assertRaises(ValueError):
             test_encoding4 = self.test_config1.aai_descriptor_encoding(aai_list=test_aai4, desc_list=test_desc4, 
                 desc_combo=1, sort_by="MSE")
 #6.)
         test_aai5 = 12345
         test_desc5 = 1000
-        
         with self.assertRaises(TypeError):
             test_encoding4 = self.test_config1.aai_descriptor_encoding(aai_list=test_aai5, desc_list=test_desc5, 
                 desc_combo=1, sort_by="MAE")
 
-#7.)    Below inputs result in all AAI Indices being encoded with all descriptors, commenting out due to time constraints
+#7.)    ** Below inputs result in all AAI Indices being encoded with all descriptors, commenting out due to time constraints **
         # test_aai7 = []
         # test_desc7 = []
         # test_encoding7 = self.test_config1.aai_descriptor_encoding(aai_list=test_aai7, desc_list=test_desc7, 
