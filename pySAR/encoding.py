@@ -3,14 +3,11 @@
 ################################################################################
 
 import pandas as pd
-import numpy as np
 import time
 import itertools
-import sys
 from tqdm import tqdm
 from difflib import get_close_matches
-import json
-from textwrap import TextWrapper
+import textwrap
 
 from aaindex import aaindex1
 from .model import Model
@@ -49,34 +46,33 @@ class Encoding(PySAR):
     Sequence-Activity-Relationship (SAR) or Sequence-Function-Relationship (SFR).
 
     Parameters
-    ----------
+    ==========
     :config_file : (str)
         path to configuration file with all required parameters for the pySAR encoding
         pipeline.
+    **kwargs: dict
+        keyword arguments and values passed into constructor. The keywords should be 
+        the same name and form of those in the configuration file. The keyword values
+        input take precedence over those in the config files.
 
     Methods
-    -------
-    aai_encoding(aai_list=None, sort_by='R2', output_folder=""):
+    =======
+    aai_encoding(aai_indices=None, sort_by='R2', output_folder=""):
         encoding protein sequences using indices from the AAI.
-    descriptor_encoding(desc_list=None, desc_combo=1, sort_by='R2', output_folder=""):
+    descriptor_encoding(descriptors=None, desc_combo=1, sort_by='R2', output_folder=""):
         encoding protein sequences using protein descriptors from descriptors module and protpy package.
-    aai_descriptor_encoding(aai_list=None, desc_list=None, desc_combo=1, sort_by='R2', output_folder=""):
+    aai_descriptor_encoding(aai_indices=None, descriptors=None, desc_combo=1, sort_by='R2', output_folder=""):
         encoding protein sequences using indices from the AAI in concatenation with 
         the protein descriptors from the descriptors module and protpy package.
     """
-    def __init__(self, config_file=""):
+    def __init__(self, config_file="", **kwargs):
 
         self.config_file = config_file
-        #pass config file into parent pySAR class
-        super().__init__(self.config_file)
-        
-        #setting DSP params to None if not using them
-        if not (self.use_dsp):
-            self.spectrum = None
-            self.window_type = None
-            self.filter_type = None
 
-    def aai_encoding(self, aai_list=None, sort_by='R2', output_folder=""):
+        #pass config file into parent pySAR class
+        super().__init__(self.config_file, **kwargs)
+
+    def aai_encoding(self, aai_indices=None, sort_by='R2', output_folder=""):
         """
         Encoding all protein sequences using each of the available indices in the
         AAI. The protein spectra of the AAI indices will be generated if use_dsp is true,
@@ -89,8 +85,8 @@ class Encoding(PySAR):
         results sorted by R2 by default, this can be changed using the sort_by parameter. 
 
         Parameters
-        ----------
-        :aai_list : str/list (default=None)
+        ==========
+        :aai_indices : str/list (default=None)
             str/list of aai indices to use for encoding the predictive models, by default
             ALL AAI indices will be used.
         :sort_by : str (default=R2)
@@ -101,7 +97,7 @@ class Encoding(PySAR):
             the OUTPUT_FOLDER global var.
 
         Returns
-        -------
+        =======
         :aaindex_metrics_df : pd.DataFrame
             dataframe of calculated metric values from generated predictive models
             encoded using indices in the AAI for the AAI encoding strategy. Output will 
@@ -122,41 +118,52 @@ class Encoding(PySAR):
         mae_ = []
         explained_var_ = []
 
-        #if no indices passed into aai_list then use all indices by default
-        if (aai_list == None or aai_list == [] or aai_list == ""):
+        #if no indices passed into aai_indices then use all indices by default
+        if (aai_indices == None or aai_indices == [] or aai_indices == ""):
             all_indices = aaindex1.record_codes()
-        elif (isinstance(aai_list, str)):   #if single descriptor input, cast to list
-            all_indices = [aai_list]
-        elif ((not isinstance(aai_list, list)) and (not isinstance(aai_list, str))):
-            raise TypeError("Input AAI list is not of type list or str, got {}.".format(type(aai_list)))
+        elif (isinstance(aai_indices, str)):   #if single aai index input, cast to list
+            if (',' in aai_indices):
+                all_indices = aai_indices.replace(' ', '').split(',')
+            else:
+                all_indices = [aai_indices]
+        elif ((not isinstance(aai_indices, list)) and (not isinstance(aai_indices, str))):
+            raise TypeError("Input AAI list is not of type list or str, got {}.".format(type(aai_indices)))
         else:
-            all_indices = aai_list
+            all_indices = aai_indices
 
-        #pretty print json config parameters
-        pretty_parameters = json.dumps(self.parameters, sort_keys=True, indent=1)
+        #remove any duplicates from aai indices list, sort alphabetically
+        all_indices = sorted(list(set(all_indices)))
 
-        #create text wrapper for amino acid indices text, split to newline if surpasses line length
-        line_length = 87
-        tw = TextWrapper()
-        tw.width = line_length
+        #validate each input AAI ascession number is valid, if not raise error
+        for index in all_indices:
+            if not (index in aaindex1.record_codes()):
+                raise ValueError("AAI record ({}) not found in list of available record codes\nInput record codes: {}..".format(index, aai_indices))
+                      
+        #create text wrapper for amino acid indices and model parameters text
+        line_length = 90
 
-        print('\n#######################################################################################\n')
+        #create temp Model object to access the models' parameter values for use in display text below
+        temp_model_parameters = Model([], self.activity, self.algorithm, parameters=self.model_parameters)
+        
+        print('\n##########################################################################################\n')
         print('# Encoding using {} AAI combination(s) with the parameters:\n'.format(len(all_indices)))
         #only output indices if there are 10 or less
         if (len(all_indices) <= 10):
-            print('# AAI Indices -> {}'.format("\n\t".join(tw.wrap(', '.join(all_indices)))))
+            print(textwrap.fill('# AAI Indices: {}'.format(', '.join(all_indices)), line_length))
         else:
-            print('# AAI Indices -> {}'.format(len(all_indices)))
-        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Test Split -> {}'.format(
-            os.path.basename(self.dataset), self.activity_col, self.algorithm, self.test_split))
-        if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
-            print('# Model Parameters -> Default Parameters')        
-        else:
-            print('# Model Parameters -> {}'.format("\n\t".join(tw.wrap(', '.join(self.model_parameters)))))   
+            print('# AAI Indices: {}'.format(len(all_indices)))
         if (self.use_dsp):
-            print('# Using DSP -> {}\n#   Spectrum -> {}\n#   Window Function -> {}\n#   Filter Function -> {}'.format(
-                    self.use_dsp, self.spectrum, self.window_type, self.filter_type)) 
-        print('\n#######################################################################################\n')
+            print('# DSP Parameters:\n#   Spectrum: {}\n#   Window Function: {}\n#   Filter Function: {}'.format(
+                    self.spectrum, self.window_type, self.filter_type))   
+        print('# Configuration File: {}\n# Dataset: {}\n# Number of Sequences/Sequence Length: {} x {}\n# Target Activity: {}\n# Algorithm: {}'.
+              format(os.path.basename(self.config_file), os.path.basename(self.dataset), self.num_seqs, self.sequence_length, self.activity_col, repr(temp_model_parameters)))
+        if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
+            # print('# Model Parameters: {}'.format("\n\t".join(tw.wrap(', '.join(temp_model_parameters.model.get_params())))))        
+            print(textwrap.fill('# Model Parameters: {}'.format(temp_model_parameters.model.get_params()), line_length))
+        else:
+            print(textwrap.fill('# Model Parameters: {}'.format(self.model_parameters), line_length))
+        print('# Test Split: {}'.format(self.test_split)) 
+        print('\n##########################################################################################\n')
 
         '''
         1.) Get AAI index encoding of protein sequences, if using DSP (use_dsp = True),
@@ -170,22 +177,22 @@ class Encoding(PySAR):
         '''
         start = time.time() #start time counter
 
-        #disable tqdm progress bar if only 1 aa index being used
+        #disable tqdm progress bar if 5 or less aai indices input
         tqdm_disable = False
-        if (len(all_indices)) <= 1:
+        if (len(all_indices)) <= 5:
             tqdm_disable = True
 
         #using tqdm package to create a progress bar showing encoding progress,
         #file=sys.stdout to stop error where iterations were printing out of order
         for index in tqdm(all_indices[:int(len(all_indices))], unit=" indices", position=0, 
-            desc="AAI Indices", mininterval=30, disable=tqdm_disable):
+            desc="AAI Indices", disable=tqdm_disable, ncols=90):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_encoding(index)
 
-            #generate protein spectra from pyDSP class if use_dsp is true, set as training data
+            #generate protein spectra from pyDSP class if use_dsp is true, pass in all DSP related parameters, use object as training data
             if (self.use_dsp):
-                pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
+                pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs, spectrum=self.spectrum, window_type=self.window_type, filter_type=self.filter_type)
                 pyDSP.encode_seqs()
                 X = pd.DataFrame(pyDSP.spectrum_encoding)
             else:
@@ -230,8 +237,8 @@ class Encoding(PySAR):
         end = time.time()      
         elapsed = end - start
 
-        print('\nElapsed Time for AAI Encoding: {0:.3f} seconds.'.format(elapsed))
-        print('#############################################')
+        print('\nElapsed Time for AAI Encoding: {0:.2f} seconds.'.format(elapsed))
+        print('\n##########################################################################################')
 
         #set columns in the output dataframe to each of the values/metrics lists
         aaindex_metrics_= aaindex_metrics_df.copy()
@@ -265,7 +272,7 @@ class Encoding(PySAR):
 
         return aaindex_metrics_
 
-    def descriptor_encoding(self, desc_list=None, desc_combo=1, sort_by='R2', output_folder=""):
+    def descriptor_encoding(self, descriptors=None, desc_combo=1, sort_by='R2', output_folder=""):
         """
         Encoding all protein sequences using the available physiochemical, biochemical
         and structural descriptors from the custom-built protpy package. The sequences 
@@ -283,8 +290,8 @@ class Encoding(PySAR):
         the sort_by parameter.
 
         Parameters
-        ----------
-        :decs_list : str/list (default=None)
+        ==========
+        :descriptors : str/list (default=None)
             str/list of descriptors to use for encoding, by default all available descriptors
             in the protpy package will be used for the encoding.
         :desc_combo : int (default=1)
@@ -297,7 +304,7 @@ class Encoding(PySAR):
             the OUTPUT_FOLDER global var.
 
         Returns
-        -------
+        =======
         :desc_metrics_df_ : pd.DataFrame
             dataframe of calculated metric values from generated predictive models
             encoded using all or selected input descriptors for the descriptors 
@@ -323,40 +330,46 @@ class Encoding(PySAR):
         #create instance of descriptors class
         desc = Descriptors(self.config_file)
 
-        #if no descriptors passed into desc_list then use all descriptors by default,
+        #if no descriptors passed into descriptors then use all descriptors by default,
         #get list of all descriptors according to desc_combo value
-        if (desc_list == None or desc_list == [] or desc_list == ""):
+        if (descriptors == None or descriptors == [] or descriptors == ""):
             all_descriptors = desc.all_descriptors_list(desc_combo)
-        elif (isinstance(desc_list, str)):     #if single descriptor input, cast to list
-            all_descriptors = [desc_list]
-        elif ((not isinstance(desc_list, list)) and (not isinstance(desc_list, str))):
-            raise TypeError("Input Descriptor parameter is not of type list or str, got {}.".format(type(desc_list)))
+        elif (isinstance(descriptors, str)):     #if single descriptor input, cast to list
+            if (',' in descriptors):
+                all_descriptors = descriptors.replace(' ', '').split(',')
+            else:
+                all_descriptors = [descriptors]     
+        elif ((not isinstance(descriptors, list)) and (not isinstance(descriptors, str))):
+            raise TypeError("Input Descriptor parameter is not of type list or str, got {}.".format(type(descriptors)))
         else:
             if (desc_combo == 2):
-                all_descriptors = list(itertools.combinations(desc_list, 2))
+                all_descriptors = list(itertools.combinations(descriptors, 2))
             elif (desc_combo == 3):
-                all_descriptors = list(itertools.combinations(desc_list, 3))
+                all_descriptors = list(itertools.combinations(descriptors, 3))
             else:
-                all_descriptors = desc_list     #using default combination of descriptors
+                all_descriptors = descriptors     #using default combination of descriptors
 
-        #pretty print json config parameters
-        pretty_parameters = json.dumps(self.parameters, sort_keys=True, indent=1)
+        #remove any duplicates from descriptors list, sort alphabetically
+        all_descriptors = sorted(list(set(all_descriptors)))
 
-        #create text wrapper for descriptors text, split to newline if surpasses line length
-        line_length = 87
-        tw = TextWrapper()
-        tw.width = line_length
+        #create text wrapper for descriptors and model parameters text
+        line_length = 90
 
-        print('\n#######################################################################################\n')
+        #create temp Model object to access the models' parameter values for use in display text below
+        temp_model_parameters = Model([], self.activity, self.algorithm, parameters=self.model_parameters)
+
+        print('\n##########################################################################################\n')
         print('# Encoding using {} descriptor combination(s) with the parameters:\n'.format(len(all_descriptors)))
-        print('# Descriptors -> {}'.format("\n\t".join(tw.wrap(', '.join(all_descriptors)))))
-        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Test Split -> {}'.format(
-            os.path.basename(self.dataset), self.activity_col, self.algorithm, self.test_split))
+        print(textwrap.fill('# Descriptors: {}'.format(', '.join(all_descriptors)), line_length))
+        print('# Configuration File: {}\n# Dataset: {}\n# Number of Sequences/Sequence Length: {} x {}\n# Target Activity: {}\n# Algorithm: {}'.format(
+            os.path.basename(self.config_file), os.path.basename(self.dataset), len(self.data), self.data[self.sequence_col].str.len().max(), self.activity_col, repr(temp_model_parameters)))
         if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
-            print('# Model Parameters -> Default Parameters')        
+            print('# Model Parameters: {}'.format(temp_model_parameters.model.get_params()))        
         else:
-            print('# Model Parameters -> {}'.format("\n\t".join(tw.wrap(', '.join(self.model_parameters)))))       
-        print('\n#######################################################################################\n')
+            print('# Model Parameters: {}'.format(self.model_parameters))       
+        print('# Test Split: {}'.format(self.test_split))
+        print('\n##########################################################################################')
+
         #start counter
         start = time.time()     
 
@@ -369,34 +382,34 @@ class Encoding(PySAR):
         6.) Output results into a final dataframe, save it and return, sorting by sort_by parameter.
         '''
 
-        #disable tqdm progress bar if only 1 descriptor being used
+        #disable tqdm progress bar if only 3 descriptors or less input
         tqdm_disable = False
-        if (len(all_descriptors)) <= 1:
+        if (len(all_descriptors)) <= 3:
             tqdm_disable = True
 
         for descr in tqdm(all_descriptors[:int(len(all_descriptors))], unit=" descriptor", position=0, 
-            desc="Descriptors", mininterval=30, disable=tqdm_disable):
+            desc="Descriptors", mininterval=30, disable=tqdm_disable, ncols=90):
 
             #reset descriptor DF and list
             desc_ = pd.DataFrame()           
-            descriptor_list = []
+            descriptors = []
        
             #if using 2 or 3 descriptors, append each descriptor & its category to list
             if (desc_combo == 2 or desc_combo == 3):
                 for de in descr:
                     #get closest descriptor name match, required for appending its group name
-                    desc_matches = get_close_matches(de, desc.valid_descriptors, cutoff=0.4)
+                    desc_matches = get_close_matches(de, desc.valid_descriptors, cutoff=0.6)
                     if (desc_matches != []):
                         desc_name = desc_matches[0]  #set desc to closest descriptor match found
                     else:
                         desc_name = None
-                    descriptor_list.append(getattr(desc, de))
+                    descriptors.append(getattr(desc, de))
                     if not (desc_name is None): #only append group name if valid group found
                         descriptor_group_.append(desc.descriptor_groups[desc_name])
-                desc_ = pd.concat(descriptor_list, axis=1) #concatenate descriptors
+                desc_ = pd.concat(descriptors, axis=1) #concatenate descriptors
             else:
                 #get closest descriptor name match, required for appending its group name
-                desc_matches = get_close_matches(descr, desc.valid_descriptors, cutoff=0.4)
+                desc_matches = get_close_matches(descr, desc.valid_descriptors, cutoff=0.6)
                 if (desc_matches != []):
                     desc_name = desc_matches[0]  #set desc to closest descriptor match found
                 else:
@@ -404,7 +417,7 @@ class Encoding(PySAR):
                 desc_ = desc.get_descriptor_encoding(descr)
                 if not (desc_name is None): #only append group name if valid group found
                     descriptor_group_.append(desc.descriptor_groups[desc_name])
-
+            
             #set model training data to desc_ dataframe
             X = desc_   
 
@@ -446,8 +459,8 @@ class Encoding(PySAR):
         end = time.time()           
         elapsed = end - start
 
-        print('\n\n####################################################')
-        print('Elapsed Time for Descriptor Encoding: {0:.3f} seconds.\n'.format(elapsed))
+        print('\nElapsed Time for Descriptor Encoding: {0:.2f} seconds.\n'.format(elapsed))
+        print('\n##########################################################################################')
 
         #if using combinations of 2 or 3 descriptors, group every 2 or 3 descriptor
         #groups into one element in the descriptor group list
@@ -498,7 +511,7 @@ class Encoding(PySAR):
 
         return desc_metrics_df_
 
-    def aai_descriptor_encoding(self, aai_list=None, desc_list=None, desc_combo=1, sort_by='R2', output_folder=""):
+    def aai_descriptor_encoding(self, aai_indices=None, descriptors=None, desc_combo=1, sort_by='R2', output_folder=""):
         """
         Encoding all protein sequences using each of the available indices in the AAI in 
         concatenation with the protein descriptors available via the protpy pacakge. The 
@@ -517,8 +530,8 @@ class Encoding(PySAR):
         saved and returned, sorted by the R2 score by default.
 
         Parameters
-        ----------        
-        :aai_list : str/list (default=None)
+        ==========        
+        :aai_indices : str/list (default=None)
             str/list of aai indices to use for encoding the predictive models, by default
             ALL AAI indices will be used.
         :decs_list : list (default=None)
@@ -534,7 +547,7 @@ class Encoding(PySAR):
             the OUTPUT_FOLDER global var.
 
         Returns
-        -------
+        =======
         :aai_desc_metrics_df_ : pd.DataFrame
             dataframe of calculated metric values from generated predictive models
             encoded using AAI indices + descriptors encoding strategy. The output will
@@ -559,62 +572,78 @@ class Encoding(PySAR):
         mae_ = []
         explained_var_ = []
 
-        #if no indices passed into aai_list then use all indices by default
-        if (aai_list == None or aai_list == [] or aai_list == ""):
+        #if no indices passed into aai_indices then use all indices by default
+        if (aai_indices == None or aai_indices == [] or aai_indices == ""):
             all_indices = aaindex1.record_codes()
-        elif (isinstance(aai_list, str)):   #if single descriptor input, cast to list
-            all_indices = [aai_list]
-        elif ((not isinstance(aai_list, list)) and (not isinstance(aai_list, str))):
-            raise TypeError("Input AAI parameter is not of type list or str, got {}.".format(type(aai_list)))
+        elif (isinstance(aai_indices, str)):   #if single descriptor input, cast to list
+            if (',' in aai_indices):
+                all_indices = aai_indices.replace(' ', '').split(',')
+            else:
+                all_indices = [aai_indices]
+        elif ((not isinstance(aai_indices, list)) and (not isinstance(aai_indices, str))):
+            raise TypeError("Input AAI parameter is not of type list or str, got {}.".format(type(aai_indices)))
         else:
-            all_indices = aai_list
+            all_indices = aai_indices
 
+        #remove any duplicates from aai indices list, sort alphabetically
+        all_indices = sorted(list(set(all_indices)))
+
+        #validate each input AAI ascession number is valid, if not raise error
+        for index in all_indices:
+            if not (index in aaindex1.record_codes()):
+                raise ValueError("AAI record ({}) not found in list of available record codes\nInput record codes: {}..".format(index, aai_indices))
+           
         #create instance of Descriptors class
         desc = Descriptors(config_file=self.config_file)
 
-        #if no descriptors passed into desc_list then use all descriptors by default,
+        #if no descriptors passed into descriptors then use all descriptors by default,
         #get list of all descriptors according to desc_combo value
-        if (desc_list == None or desc_list == [] or desc_list == ""):
+        if (descriptors == None or descriptors == [] or descriptors == ""):
             all_descriptors = desc.all_descriptors_list(desc_combo)
-        elif (isinstance(desc_list, str)):     #if single descriptor input, cast to list
-            all_descriptors = [desc_list]
-        elif ((not isinstance(desc_list, list)) and (not isinstance(desc_list, str))):
-            raise TypeError("Input Descriptor parameter is not of type list or str, got {}.".format(type(desc_list)))
+        elif (isinstance(descriptors, str)):     #if single descriptor input, cast to list
+            if (',' in descriptors):
+                all_descriptors = descriptors.replace(' ', '').split(',')
+            else:
+                all_descriptors = [descriptors]         
+        elif ((not isinstance(descriptors, list)) and (not isinstance(descriptors, str))):
+            raise TypeError("Input Descriptor parameter is not of type list or str, got {}.".format(type(descriptors)))
         else:
             if (desc_combo == 2):
-                all_descriptors = list(itertools.combinations(desc_list, 2))
+                all_descriptors = list(itertools.combinations(descriptors, 2))
             elif (desc_combo == 3):
-                all_descriptors = list(itertools.combinations(desc_list, 3))
+                all_descriptors = list(itertools.combinations(descriptors, 3))
             else:
-                all_descriptors = desc_list
+                all_descriptors = descriptors
 
-        #pretty print json config parameters
-        pretty_parameters = json.dumps(self.parameters, sort_keys=True, indent=1)
-        
+        #remove any duplicates from descriptors list, sort alphabetically
+        # all_descriptors = sorted(list(set(all_descriptors)))
+
         #create text wrapper for amino acid indices and descriptors text, split to newline if surpasses line length
-        line_length = 87
-        tw = TextWrapper()
-        tw.width = line_length
+        line_length = 90
 
-        print('\n########################################################################\n')
+        #create temp Model object to access the models' parameter values for use in display text below
+        temp_model_parameters = Model([], self.activity, self.algorithm, parameters=self.model_parameters)
+
+        print('\n###########################################################################\n')
         print('# Encoding using {} AAI and {} descriptor combination(s) with the parameters:\n'.format(
             len(all_indices), len(all_descriptors)))
         #only output indices if there are 10 or less
         if (len(all_indices) <= 10):
-            print('# AAI Indices -> {}'.format("\n\t".join(tw.wrap(', '.join(all_indices)))))
+            print(textwrap.fill('# AAI Indices: {}'.format(', '.join(all_indices)), line_length))
         else:
-            print('# AAI Indices -> {}'.format(len(all_indices)))
+            print('# AAI Indices: {}'.format(len(all_indices)))
         if (self.use_dsp):
-            print('# Using DSP -> {}\n#   Spectrum -> {}\n#   Window Function -> {}\n#   Filter Function -> {}'.format(
-                    self.use_dsp, self.spectrum, self.window_type, self.filter_type)) 
-        print('# Descriptors -> {}'.format("\n\t".join(tw.wrap(', '.join(all_descriptors)))))
-        print('# Dataset -> {}\n# Target Activity -> {}\n# Algorithm -> {}\n# Test Split -> {}'.format(
-            os.path.basename(self.dataset), self.activity_col, self.algorithm, self.test_split))
+            print('# DSP Parameters:\n#   Spectrum: {}\n#   Window Function: {}\n#   Filter Function: {}'.format(
+                    self.spectrum, self.window_type, self.filter_type)) 
+        print(textwrap.fill('# Descriptors: {}'.format(', '.join(all_descriptors)), line_length))
+        print('# Configuration File: {}\n# Dataset: {}\n# Number of Sequences/Sequence Length: {} x {}\n# Target Activity: {}\n# Algorithm: {}'.format(
+            os.path.basename(self.config_file), os.path.basename(self.dataset), len(self.data), self.data[self.sequence_col].str.len().max(), self.activity_col, repr(temp_model_parameters)))
         if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
-            print('# Model Parameters -> Default Parameters')        
+            print('# Model Parameters: {}'.format(temp_model_parameters.model.get_params()))        
         else:
-            print('# Model Parameters -> {}'.format("\n\t".join(tw.wrap(', '.join(self.model_parameters)))))                   
-        print('\n########################################################################\n')
+            print('# Model Parameters: {}'.format(self.model_parameters))                   
+        print('# Test Split : {}'.format(self.test_split))
+        print('\n###########################################################################')
 
         #start counter
         start = time.time() 
@@ -631,20 +660,19 @@ class Encoding(PySAR):
         7.) Output results into a final dataframe, save it and return, sort by sort_by parameter.
         '''
 
-        #disable tqdm progress bar if only 1 aa index being used
+        #disable tqdm progress bar if 2 or less aai indices input
         tqdm_disable = False
-        if (len(all_indices)) <= 1:
+        if (len(all_indices)) <= 2:
             tqdm_disable = True
         
-        for index in tqdm(all_indices[:int(len(all_indices))], unit=" indices", desc="AAI Indices", 
-            mininterval=30, disable=tqdm_disable):
+        for index in tqdm(all_indices[:int(len(all_indices))], unit=" indices", desc="AAI Indices", disable=tqdm_disable, ncols=90):
 
             #get AAI indices encoding for sequences according to index var
             encoded_seqs = self.get_aai_encoding(index)
 
-            #generate protein spectra from pyDSP class if use_dsp is true
+            #generate protein spectra from pyDSP class if use_dsp is true, pass in all DSP related parameters, use object as training data
             if (self.use_dsp):
-                pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
+                pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs, spectrum=self.spectrum, window_type=self.window_type, filter_type=self.filter_type)
                 pyDSP.encode_seqs()
                 X_aai = pd.DataFrame(pyDSP.spectrum_encoding)
             else:
@@ -662,19 +690,18 @@ class Encoding(PySAR):
                 tqdm_disable = True
     
             #iterate through all descriptors
-            for descr in tqdm(all_descriptors, leave=False, unit=" descriptor", desc="Descriptors", 
-                mininterval=30, disable=tqdm_disable):
+            for descr in tqdm(all_descriptors, leave=False, unit=" descriptor", desc="Descriptors", disable=tqdm_disable, ncols=90):
 
                 #reset descriptor DF and list
                 desc_ = pd.DataFrame()
-                descriptor_list = []
+                descriptors = []
 
                 #if using 2 or 3 descriptors, append each descriptor & its category to list
                 if (desc_combo == 2 or desc_combo == 3):
                     for de in descr:
-                        descriptor_list.append(getattr(desc, de)) #get descriptor attribute
+                        descriptors.append(getattr(desc, de)) #get descriptor attribute
                         descriptor_group_.append(desc.descriptor_groups[de])
-                    desc_ = pd.concat(descriptor_list, axis=1) #concat to desc_ dataframe
+                    desc_ = pd.concat(descriptors, axis=1) #concat to desc_ dataframe
                 #if only using 1 descriptor
                 else:
                     desc_ = getattr(desc, descr)    #get descriptor attribute
@@ -723,8 +750,8 @@ class Encoding(PySAR):
         end = time.time()           
         elapsed = end - start
 
-        print('\n##########################################################')
-        print('Elapsed Time for AAI + Descriptor Encoding: {0:.3f} seconds.'.format(elapsed))
+        print('Elapsed Time for AAI + Descriptor Encoding: {0:.2f} seconds.'.format(elapsed))
+        print('\n###########################################################################')
 
         #if using combinations of 2 or 3 descriptors, group every 2 or 3 descriptor
         #groups into one element in the descriptor group list
@@ -780,9 +807,9 @@ class Encoding(PySAR):
         return aai_desc_metrics_df_
 
     def __str__(self):
-        return "Instance of Encoding Class with attribute values: Dataset: {},\
-            Activity: {}, Algorithm: {}, Model Parameters: {}, Test Split: {}.".format(
-                self.dataset, self.activity,self.algorithm, self.model_parameters, self.test_split)
+        return "Instance of Encoding Class with attribute values: Configuration File: {}, Dataset: {},\
+            Target Activity: {}, Algorithm: {}, Model Parameters: {}, Test Split: {}.".format(
+                os.path.basename(self.config_file), os.path.basename(self.dataset), self.activity,self.algorithm, self.model_parameters, self.test_split)
 
     def __repr__(self):
         return "<{}>".format(self)

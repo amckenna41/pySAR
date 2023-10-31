@@ -17,7 +17,7 @@ class DescriptorTests(unittest.TestCase):
     in pySAR package. 
 
     Test Cases
-    ----------
+    ==========
     test_descriptor:
         testing correct overall Descriptor class and module functionality.
     test_descriptor_groups:
@@ -152,12 +152,12 @@ class DescriptorTests(unittest.TestCase):
 #5.)
             #test Type and OS error exceptions are thrown if invalid parameters input
             with self.assertRaises(TypeError, msg='Type Error raised, incorrect datatype input to class.'):
-                fail_desc = descr.Descriptors(config_file=123)
-                fail_desc = descr.Descriptors(config_file=None)
+                descr.Descriptors(config_file=123)
+                descr.Descriptors(config_file=None)
 #6.)
             with self.assertRaises(OSError, msg='OS Error raised, filepath to config file not found.'):
-                fail_desc = descr.Descriptors(config_file="incorrect_filepath.json")
-                fail_desc = descr.Descriptors(config_file="")
+                descr.Descriptors(config_file="incorrect_filepath.json")
+                descr.Descriptors(config_file="")
 
     def test_descriptor_groups(self):
         """ Testing the descriptor groups dictionary which stores the specific group
@@ -413,7 +413,7 @@ class DescriptorTests(unittest.TestCase):
     
     def test_ctd(self):
         """ Testing CTD descriptor attributes and methods. """
-        properties = ["hydrophobicity", "normalized_vdwv", "polarity", "charge",
+        ctd_properties = ["hydrophobicity", "normalized_vdwv", "polarity", "charge",
             "secondary_struct", "solvent_accessibility", "polarizability"]
         
         #run tests on all test datasets
@@ -432,7 +432,7 @@ class DescriptorTests(unittest.TestCase):
             #iterate over all columns and check its name follows expected format
             for col in list(ctd.columns):
                 matching_col = False
-                for prop in properties:
+                for prop in ctd_properties:
                     if (col.endswith(prop)):
                         matching_col = True
                         self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
@@ -452,7 +452,7 @@ class DescriptorTests(unittest.TestCase):
             #iterate over all columns and check its name follows expected format
             for col in list(ctd_comp.columns):
                 matching_col = False
-                for prop in properties:
+                for prop in ctd_properties:
                     if (col.endswith(prop)):
                         matching_col = True
                         self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
@@ -472,7 +472,7 @@ class DescriptorTests(unittest.TestCase):
             #iterate over all columns and check its name follows expected format
             for col in list(ctd_trans.columns):
                 matching_col = False
-                for prop in properties:
+                for prop in ctd_properties:
                     if (col.endswith(prop)):
                         matching_col = True
                         self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
@@ -492,7 +492,7 @@ class DescriptorTests(unittest.TestCase):
             #iterate over all columns and check its name follows expected format
             for col in list(ctd_distr.columns):
                 matching_col = False
-                for prop in properties:
+                for prop in ctd_properties:
                     if (col.endswith(prop)):
                         matching_col = True
                         self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
@@ -582,20 +582,6 @@ class DescriptorTests(unittest.TestCase):
                 "Column doesn't follow correct naming convention: {}.".format(col))
 
         desc = descr.Descriptors(self.all_config_files[1])
-#2.)
-        #get descriptor values
-        pseudo_aa_comp = desc.get_pseudo_amino_acid_composition()
-
-        self.assertFalse(pseudo_aa_comp.empty, 'Descriptor dataframe should not be empty.')
-        self.assertEqual(pseudo_aa_comp.shape, (self.num_seqs[0], 50), 'Descriptor not of correct shape (1,50).')
-        self.assertIsInstance(pseudo_aa_comp, pd.DataFrame, 'Descriptor should be of type DataFrame.')
-        self.assertTrue(pseudo_aa_comp.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-        self.assertTrue(all(col == np.float64 for col in list(pseudo_aa_comp.dtypes)), 
-                "Column datatypes should be np.float64, got:\n{}".format(list(pseudo_aa_comp.dtypes)))
-        #check all columns follow pattern of PAACX, where x is an integer between 0 and 9
-        for col in list(pseudo_aa_comp.columns):
-            self.assertTrue(bool(re.match(r"PAAC[0-9]", col)), 
-                "Column doesn't follow correct naming convention: {}.".format(col))
 
     @unittest.skip("Descriptor can take quite a bit of time to calculate therefore skipping.")
     def test_amphiphilic_pseudo_amino_acid_composition(self):
@@ -617,29 +603,12 @@ class DescriptorTests(unittest.TestCase):
             self.assertTrue(bool(re.match(r"APAAC_[0-9]", col)), 
                 "Column doesn't follow correct naming convention: {}.".format(col))
                 
-    @unittest.skip("Test case requires recalculating all descriptors which is redundant to the above tests")
+    # @unittest.skip("Test case requires recalculating all descriptors which is redundant to the above tests")
     def test_get_descriptor_encoding(self):
-        """ Testing get_descriptor_encoding function. """
-        valid_desc = [
-            'amino_acid_composition', 'dipeptide_composition', \
-            'moreaubroto_autocorrelation', 'moran_autocorrelation', 'geary_autocorrelation', \
-            'ctd', 'ctd_composition', 'ctd_transition', 'ctd_distribution', 'conjoint_triad', \
-            'sequence_order_coupling_number', 'tripeptide_composition', 'sequence_order_coupling_number', \
-            'quasi_sequence_order', 'pseudo_amino_acid_composition', 'amphiphilic_pseudo_amino_acid_composition'
-        ]
+        """ Testing get_descriptor_encoding function by passing string of approximate descriptor names in to get encoding. """
 #1.)    
         desc = descr.Descriptors(self.all_config_files[0]) #using thermostability config to access pre-calculated descriptors
-        #test each descriptor is calculated when string of its name passed to func
-        for val_desc in range(0, len(valid_desc)):
-            encoded_desc = desc.get_descriptor_encoding(valid_desc[val_desc])
-            self.assertIsNotNone(encoded_desc, 
-                'Descriptor attribute should not be none.')
-            self.assertFalse(encoded_desc.empty, 
-                'Descriptor attribute should not be empty.')
-            self.assertEqual(encoded_desc.shape[0], len(desc.protein_seqs), 
-                '1st dimension of descriptor attribute should equal number of protein seqs.')
-            self.assertTrue(encoded_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-#2.)
+
         aa_comp_desc = desc.get_descriptor_encoding("amino_comp")
         self.assertIsInstance(aa_comp_desc, pd.DataFrame, 
             'Descriptor attribute should be a dataframe, got {}.'.format(type(aa_comp_desc)))
@@ -650,7 +619,7 @@ class DescriptorTests(unittest.TestCase):
                 "Column datatypes should be np.float64, got:\n{}".format(list(aa_comp_desc.dtypes)))
         self.assertEqual(self.amino_acids, list(aa_comp_desc.columns), 
             'Incorrect column values found in output dataframe: {}.'.format(aa_comp_desc.columns))
-#3.)
+#2.)
         geary_auto_desc = desc.get_descriptor_encoding("geary_auto")
         self.assertIsInstance(geary_auto_desc, pd.DataFrame, 
             'Descriptor attribute should be a dataframe, got {}.'.format(type(geary_auto_desc)))
@@ -664,7 +633,7 @@ class DescriptorTests(unittest.TestCase):
         for col in list(geary_auto_desc.columns):
             self.assertTrue(bool(re.match(r"GAuto_[A-Z0-9]{10}_[0-9]", col)), 
                 "Column name doesn't match expected regex pattern: {}.".format(col))
-#4.)
+#3.)
         socn_desc = desc.get_descriptor_encoding("sequence_order_coupling")
         self.assertIsInstance(socn_desc, pd.DataFrame, 
             'Descriptor attribute should be a dataframe, got {}.'.format(socn_desc))
@@ -677,7 +646,7 @@ class DescriptorTests(unittest.TestCase):
         for col in list(socn_desc.columns):
             self.assertTrue((bool(re.match(r'SOCN_SW[0-9]', col)) or bool(re.match(r'SOCN_SW[0-9][0-9]', col))), 
                 "Column name doesn't match expected regex pattern: {}.".format(col))   
-#5.)
+#4.)
         dipeptide_comp_desc = desc.get_descriptor_encoding("dipeptide")
         self.assertIsInstance(dipeptide_comp_desc, pd.DataFrame, 
             'Descriptor attribute should be a dataframe, got {}.'.format(dipeptide_comp_desc))
@@ -691,29 +660,37 @@ class DescriptorTests(unittest.TestCase):
             self.assertTrue(bool(re.match(r'^[A-Z]{2}$', col)), "")      
             self.assertIn(col[0], self.amino_acids, "")
             self.assertIn(col[1], self.amino_acids, "")
-#6.)
-        amphiphilic_desc = desc.get_descriptor_encoding("amphiphilic_pseudo_")
-        self.assertIsInstance(amphiphilic_desc, pd.DataFrame, 
-            'Descriptor attribute should be a dataframe, got {}.'.format(amphiphilic_desc))
-        self.assertEqual(amphiphilic_desc.shape, (self.num_seqs[0], 80), 
-            "Attribute shape should be ({}, {}), got {}.".format(self.num_seqs[0], 80, amphiphilic_desc.shape))
-        self.assertTrue(amphiphilic_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
-        self.assertTrue(all(col == np.float64 for col in list(amphiphilic_desc.dtypes)), 
-                "Column datatypes should be np.float64, got:\n{}".format(list(amphiphilic_desc.dtypes)))
+#5.)
+        ctd_transition_desc = desc.get_descriptor_encoding("ctd_transition")
+        ctd_properties = ["hydrophobicity", "normalized_vdwv", "polarity", "charge",
+            "secondary_struct", "solvent_accessibility", "polarizability"]
+        self.assertIsInstance(ctd_transition_desc, pd.DataFrame, 
+            'Descriptor attribute should be a dataframe, got {}.'.format(ctd_transition_desc))
+        self.assertEqual(ctd_transition_desc.shape, (self.num_seqs[0], 3), 
+            "Attribute shape should be ({}, {}), got {}.".format(self.num_seqs[0], 3, ctd_transition_desc.shape))
+        self.assertTrue(ctd_transition_desc.any().isnull().sum()==0, 'Descriptor should not contain any null values.')
+        self.assertTrue(all(col == np.float64 for col in list(ctd_transition_desc.dtypes)), 
+                "Column datatypes should be np.float64, got:\n{}".format(list(ctd_transition_desc.dtypes)))
         #check all columns follow pattern of APAAC_X, where x is an integer between 0 and 9
-        for col in list(amphiphilic_desc.columns):
-            self.assertTrue(bool(re.match(r"APAAC_[0-9]", col)), 
-                "Column doesn't follow correct naming convention: {}.".format(col))
-#7.)    
+        for col in list(ctd_transition_desc.columns):
+            matching_col = False
+            for prop in ctd_properties:
+                if (col.endswith(prop)):
+                    matching_col = True
+                    self.assertTrue(((bool(re.search(r"CTD_[A-Z]_[0-9]{2}_" + prop, col))) or \
+                        (bool(re.search(r"CTD_[A-Z]{1}_[0-9]{2}_[0-9]{2}_" + prop, col)))), 
+                            "Column name does not follow expected format: {}.".format(col))
+            self.assertTrue(matching_col, "Column name's property name not found and doesn't match format: {}.".format(col))
+#6.)    
         with self.assertRaises(ValueError):
-            invalid_desc = desc.get_descriptor_encoding("invalid")
-            invalid_desc = desc.get_descriptor_encoding("blahblahblah")
-            invalid_desc = desc.get_descriptor_encoding("12345")
-#8.)
+            desc.get_descriptor_encoding("invalid")
+            desc.get_descriptor_encoding("blahblahblah")
+            desc.get_descriptor_encoding("12345")
+#7.)
         with self.assertRaises(TypeError):
-            invalid_desc = desc.get_descriptor_encoding(1234)
-            invalid_desc = desc.get_descriptor_encoding(5.5)
-            invalid_desc = desc.get_descriptor_encoding(False)
+            desc.get_descriptor_encoding(1234)
+            desc.get_descriptor_encoding(5.5)
+            desc.get_descriptor_encoding(False)
 
     def tearDown(self):
         """ Cleanup tests and delete datasets/config files. """

@@ -217,11 +217,11 @@ To Do List:
 - [X] In unit tests for hyperparameter_tuning, pass in parameter grid rather than just parameters themselves.
 - [X] If calculating only 1 descriptor then could remove the progress bar, not really needed. 
 - [ ] Add bibtex citation into its own txt file.
-- [ ] Is .coveralls.yml needed.
+- [X] Is .coveralls.yml needed.
 - [X] In encoding text output, split list of aai indices and descriptors into new line if they exceed the number of characters in "#" line.
 - [X] Use text wrapper for model_parameters
 - [X] test_window in pyDSP, testing all window inputs from config, same with test_filter.
-- [ ] Can pass in dict of parameters directly into class input parameters instead of just filename.
+- [X] Can pass in dict of parameters directly into class input parameters instead of just filename.
 - [ ] Add results from research - https://drive.google.com/drive/folders/1AO71jZ7-uZDJXlHT_F3baAs09Tww5cum?usp=share_link
 - [X] Is all_desc parameter in config needed?
 - [X] Dont think model_params in model.py is working.
@@ -229,6 +229,39 @@ To Do List:
 - [X] Need to update the above for model_parameters in model.py
 - [X] Remove file=sys.stdout from tqdm Encoding function, test if it works. Add mininterval=30 to tqdms.
 - [X] Combine with.selfassertRaises value/type error into one test unit rather than seperating.
+- [X] Update "Get record from AAIndex database:" in readme.
+- [X] Run vulture library to search package and remove any unused code/vars.
+- [X] Go through all unit tests, any tests that are wrapped in with.selfAssertRaises()... , remove var assignment and just call function.
  <!-- python3 -m venv pysar_venv source pysar_venv/bin/activate pip install . deactivate -->
-
  [Back to top](#TOP)
+- [ ] Mention that individual descriptors are explaiend in the protpy package. Mention protpy in pySar demo.
+- [X] Use **kwargs in class contstructor to be able to pass in specific parameter values, override the config file, if applicable. 
+- [X] Change all config files to not use_dsp by default.
+- [X] Change all comment underlining from "------" to "=======".
+- [ ] Unit tests that include passing keyword args into classes.
+- [X] In encoding class, remove minintervals from tqdm.
+- [X] In descriptors module, remove "Getting descriptor"...
+- [X] After encoding, when outputting parameters, ",".join() on list of descriptors, currently the [] are being output as well.
+- [X] Change self.seq_len to self.sequence_length.
+- [X] Passing in comma seperated string into PySAR.encode_descriptor func takes the last descr mentioned in it (e,g conjoint_triad_geary_auto_descriptor = "conjoint_triad, geary_autocorrelation", will take geary_auto).
+- [X] Individual encode functions in pySAR and Encoding class should accept a string or list of descriptors/aai indices.
+- [X] Add my own paper reference to References section on readme.
+- [X] For pysar.encode_descriptor, pysar.encode_aai and pysar.encode_aai_descriptor functions, there doesnt seem to be any functionality to support list of indices and or descriptors atm.
+- [X] Encoding functions in pySAR used for concatenating multiple descriptors etc.
+- [X] Encoding functions in Encoding used for encoding multiple descriptors seperately.
+- [ ] For descriptor concatenations, maybe have a concat flag that if set to True will concat the multiple descriptors inoput.
+- [ ] Read over and update comments.
+- [X] In encoding.py functions, if the same index/descriptor is put in twice, ensure it isn't duplicated.
+- [X] Order indices alphabetically.
+- [X] Some test outputs when displaying list of parameters have "invalid_aaindex_code" or "invalid_descriptor_name"
+- [X] Disable tqdm using disbale flag if less than 5 or so AAI indices being calcualted.
+- [X] Return error if invalid aai indices/descriptors - don't print out parameters text if invalid.
+- [ ] Go over files and folders in pypi package, remove tests.
+- [X] Add feature space dimensions - add unit tests.
+- [X] After encoding in pysar.py check class variables have been set.
+- [X] aai_indices = ["MUNV940104", "ZASB820101"] / aai_descriptor_encoding = pysar.encode_aai_descriptor(aai_indices=aai_indices, descriptors="sequence_order_coupling_number") - puts Index output in [].
+- [X] encoding = Encoding(config_file='enantioselectivity.json', use_dsp=False) - should not bring up DSP parameters.
+- [X] Remove textwrapper, change to textwrap.fill
+- [X] Reorder parameters, have test split at bottom fo encoding parameters text
+- [X] Add config file to list of parameters in output.
+- [ ] Do i need additional pydsp parameter checks which are already in pYSAR.

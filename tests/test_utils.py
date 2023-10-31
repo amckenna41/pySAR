@@ -16,7 +16,7 @@ class UtilsTest(unittest.TestCase):
     Test suite for testing utilites module and functionality in pySAR package. 
 
     Test Cases
-    ----------
+    ==========
     test_valid_sequence:
         testing correct utils.valid_sequence functionality.
     test_remove_gaps:
@@ -359,9 +359,9 @@ class UtilsTest(unittest.TestCase):
                 "Expected output length to be 1, got {}.".format(len(test_map3)))
 #6.)
         with self.assertRaises(TypeError):
-                test_map4 = utils.Map(1245)
-                test_map5 = utils.Map(10.45)
-                test_map6 = utils.Map(False)
+                utils.Map(1245)
+                utils.Map(10.4)
+                utils.Map(False)
 
     def tearDown(self):
         """ Delete any temp files or folders created during testing process. """

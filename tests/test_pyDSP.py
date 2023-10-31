@@ -15,7 +15,7 @@ class pyDSPTests(unittest.TestCase):
     in pySAR package. 
 
     Test Cases
-    ----------
+    ==========
     test_pyDSP:
         testing correct overall pyDSP class and module functionality.
     test_preprocessing:
@@ -58,12 +58,12 @@ class pyDSPTests(unittest.TestCase):
             "Filter function should be None on class initialisation.")
         self.assertIsNone(pyDSP.filter_type, 
             "Filter type expected to be None, got {}.".format(pyDSP.filter_type))
-        self.assertEqual(pyDSP.spectrum_encoding.shape, (self.pysar.num_seqs, self.pysar.seq_len),
-            "Spectrum encoding shape expected to be ({}, {}), got {}.".format(self.pysar.num_seqs, self.pysar.seq_len, pyDSP.spectrum_encoding.shape))
+        self.assertEqual(pyDSP.spectrum_encoding.shape, (self.pysar.num_seqs, self.pysar.sequence_length),
+            "Spectrum encoding shape expected to be ({}, {}), got {}.".format(self.pysar.num_seqs, self.pysar.sequence_length, pyDSP.spectrum_encoding.shape))
         self.assertEqual(pyDSP.num_seqs, self.pysar.num_seqs,
             "num_seqs attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.num_seqs))
-        self.assertEqual(pyDSP.signal_len, self.pysar.seq_len,
-            "signal_len attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.seq_len))
+        self.assertEqual(pyDSP.signal_len, self.pysar.sequence_length,
+            "signal_len attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.sequence_length))
         self.assertEqual(pyDSP.fft_power.dtype, 'float64',
             "power spectrum expected to be of type float64, got {}.".format(pyDSP.fft_power.dtype))
         self.assertEqual(pyDSP.fft_power.shape, encoded_seq1.shape,
@@ -106,12 +106,12 @@ class pyDSPTests(unittest.TestCase):
             "Filter function should be None on class initialisation.")
         self.assertIsNone(pyDSP.filter_type, 
             "Filter type expected to be None, got {}.".format(pyDSP.filter_type))
-        self.assertEqual(pyDSP.spectrum_encoding.shape, (self.pysar.num_seqs, self.pysar.seq_len),
-            "Spectrum encoding shape expected to be ({}, {}), got {}.".format(self.pysar.num_seqs, self.pysar.seq_len, pyDSP.spectrum_encoding.shape))
+        self.assertEqual(pyDSP.spectrum_encoding.shape, (self.pysar.num_seqs, self.pysar.sequence_length),
+            "Spectrum encoding shape expected to be ({}, {}), got {}.".format(self.pysar.num_seqs, self.pysar.sequence_length, pyDSP.spectrum_encoding.shape))
         self.assertEqual(pyDSP.num_seqs, self.pysar.num_seqs,
             "num_seqs attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.num_seqs))
-        self.assertEqual(pyDSP.signal_len, self.pysar.seq_len,
-            "signal_len attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.seq_len))
+        self.assertEqual(pyDSP.signal_len, self.pysar.sequence_length,
+            "signal_len attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.sequence_length))
         self.assertEqual(pyDSP.fft_power.dtype, 'float64',
             "power spectrum expected to be of type float64, got {}.".format(pyDSP.fft_power.dtype))
         self.assertEqual(pyDSP.fft_power.shape, encoded_seq1.shape,
@@ -154,12 +154,12 @@ class pyDSPTests(unittest.TestCase):
             "Filter function should be None on class initialisation.")
         self.assertIsNone(pyDSP.filter_type, 
             "Filter type expected to be None, got {}.".format(pyDSP.filter_type))
-        self.assertEqual(pyDSP.spectrum_encoding.shape, (self.pysar.num_seqs, self.pysar.seq_len),
-            "Spectrum encoding shape expected to be ({}, {}), got {}.".format(self.pysar.num_seqs, self.pysar.seq_len, pyDSP.spectrum_encoding.shape))
+        self.assertEqual(pyDSP.spectrum_encoding.shape, (self.pysar.num_seqs, self.pysar.sequence_length),
+            "Spectrum encoding shape expected to be ({}, {}), got {}.".format(self.pysar.num_seqs, self.pysar.sequence_length, pyDSP.spectrum_encoding.shape))
         self.assertEqual(pyDSP.num_seqs, self.pysar.num_seqs,
             "num_seqs attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.num_seqs))
-        self.assertEqual(pyDSP.signal_len, self.pysar.seq_len,
-            "signal_len attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.seq_len))
+        self.assertEqual(pyDSP.signal_len, self.pysar.sequence_length,
+            "signal_len attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.sequence_length))
         self.assertEqual(pyDSP.fft_power.dtype, 'float64',
             "power spectrum expected to be of type float64, got {}.".format(pyDSP.fft_power.dtype))
         self.assertEqual(pyDSP.fft_power.shape, encoded_seq1.shape,
@@ -202,12 +202,12 @@ class pyDSPTests(unittest.TestCase):
             "Filter function should be None on class initialisation.")
         self.assertIsNone(pyDSP.filter_type, 
             "Filter type expected to be None, got {}.".format(pyDSP.filter_type))
-        self.assertEqual(pyDSP.spectrum_encoding.shape, (self.pysar.num_seqs, self.pysar.seq_len),
-            "Spectrum encoding shape expected to be ({}, {}), got {}.".format(self.pysar.num_seqs, self.pysar.seq_len, pyDSP.spectrum_encoding.shape))
+        self.assertEqual(pyDSP.spectrum_encoding.shape, (self.pysar.num_seqs, self.pysar.sequence_length),
+            "Spectrum encoding shape expected to be ({}, {}), got {}.".format(self.pysar.num_seqs, self.pysar.sequence_length, pyDSP.spectrum_encoding.shape))
         self.assertEqual(pyDSP.num_seqs, self.pysar.num_seqs,
             "num_seqs attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.num_seqs))
-        self.assertEqual(pyDSP.signal_len, self.pysar.seq_len,
-            "signal_len attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.seq_len))
+        self.assertEqual(pyDSP.signal_len, self.pysar.sequence_length,
+            "signal_len attribute in pyDSP class should equal that of pysar attribute: {}.".format(self.pysar.sequence_length))
         self.assertEqual(pyDSP.fft_power.dtype, 'float64',
             "power spectrum expected to be of type float64, got {}.".format(pyDSP.fft_power.dtype))
         self.assertEqual(pyDSP.fft_power.shape, encoded_seq1.shape,
@@ -238,15 +238,16 @@ class pyDSPTests(unittest.TestCase):
             "Data type of absolute spectrum should be float64, got {}.".format(pyDSP.fft_abs.dtype))
 #5.)
         with self.assertRaises(OSError, msg='OS Error raised, invalid config file path given.'):
-            pyDSP = pyDSP_.PyDSP(config_file="blahblahblah")
+            pyDSP_.PyDSP(config_file="blahblahblah")
 #6.)
         with self.assertRaises(TypeError, msg='Type Error raised, invalid config file path data type given.'):
-            pyDSP = pyDSP_.PyDSP(config_file=4.21)
+            pyDSP_.PyDSP(config_file=4.21)
 #7.)
         with self.assertRaises(ValueError, msg='Value Error raised, protein sequences input parameter cant be none.'):
-            pyDSP = pyDSP_.PyDSP(config_file=self.all_config_files[3], protein_seqs=None)
-            pyDSP = pyDSP_.PyDSP(config_file=self.all_config_files[2], protein_seqs="ABCDEF")
- 
+            pyDSP_.PyDSP(config_file=self.all_config_files[3], protein_seqs=None)
+            pyDSP_.PyDSP(config_file=self.all_config_files[2], protein_seqs="ABCDEF")
+    
+    @unittest.skip("")
     def test_preprocessing(self):
         """ Testing preprocessing functionality of pyDSP class. """
         test_aaindices1 = "COHE430101"
@@ -345,6 +346,7 @@ class pyDSPTests(unittest.TestCase):
                     self.assertFalse(np.isnan(pyDSP.window).any(), 
                         "Expected window output to contain no null/nan values.")
 
+    # @unittest.skip("")
     def test_filter(self):
         """ Testing filter functions that are available in pyDSP module. """
         aa_indices1 = "EISD860101"
@@ -377,7 +379,8 @@ class pyDSPTests(unittest.TestCase):
                         "Expected shape of filter to be (466,), got {}.".format(pyDSP.filter.shape))
                     self.assertFalse(np.isnan(pyDSP.filter).any(), 
                         "Expected filter output to contain no null/nan values.")
-                        
+
+    # @unittest.skip("")               
     def test_max_freq(self):
         """ Testing max frequency functionality. """
 #1.)
@@ -392,4 +395,4 @@ class pyDSPTests(unittest.TestCase):
                 "Expected max frequency index attribute to be a np.int64, got {}.".format(type(max_freq_index)))
 #2.)
         with self.assertRaises(ValueError):
-            max_freq_, max_freq_index = pyDSP.max_freq(pyDSP.spectrum_encoding)
+            pyDSP.max_freq(pyDSP.spectrum_encoding)

@@ -6,10 +6,9 @@ import pandas as pd
 pd.options.mode.chained_assignment = None  #stop pandas warnings, default='warn'
 import numpy as np
 import os
-import shutil
 import csv
 
-from .globals_ import OUTPUT_DIR, OUTPUT_FOLDER, CURRENT_DATETIME
+from .globals_ import OUTPUT_FOLDER, CURRENT_DATETIME
 
 class Map(dict):
     """
@@ -18,12 +17,12 @@ class Map(dict):
     parameters of the config files. It also works for nested dicts.
 
     Parameters 
-    ----------
+    ==========
     :dict : dict 
         input dictionary to be mapped into dot notation.
 
     Usage
-    -----
+    =====
     m = Map({'first_name': 'Eduardo'}, last_name='Pool', age=24, sports=['Soccer'])
     # Add new key
     m.new_key = 'Hello world!'
@@ -83,12 +82,12 @@ def valid_sequence(sequences):
     sequence will be 1 not 0. 
 
     Parameters
-    ----------
+    ==========
     :sequences : list/np.ndarray
         list or array of protein sequences.
 
     Returns
-    -------
+    =======
     :None or invalid_indices : None/list
         if no invalid values found in the protein sequences, None returned. if
         invalid values found, list of dicts returned in the form
@@ -133,12 +132,12 @@ def remove_gaps(sequences):
     on the descriptors calculation. Input can be a string or list/array of sequences.
 
     Parameters
-    ----------
+    ==========
     :sequences : str/list/np.ndarray
         string of 1 protein sequence or array/list of protein sequences.
 
     Returns
-    -------
+    =======
     :protein_seqs : np.ndarray
         returns the same inputted protein sequence(s) but with any gaps ('-') removed.
     """
@@ -176,12 +175,12 @@ def flatten(array):
     reshaped into the required shape and format.
 
     Parameters
-    ----------
+    ==========
     :array : np.ndarray / list
         array of arrays or list of lists to be flattened.
 
     Returns
-    -------
+    =======
     :flatten(array/list) : np.ndarray/list
         flattened 1-dimensional list or array.
     """
@@ -211,12 +210,12 @@ def zero_padding(sequences):
     of max(len(sequences)).
 
     Parameters
-    ----------
+    ==========
     :sequences : np.ndarray / list
         array or list of encoded protein sequences.
 
     Returns
-    -------
+    =======
     :sequences: np.ndarray / list
         input sequences but with every sequence in the object now zero paddded
         to be the same length.
@@ -242,7 +241,7 @@ def save_results(results, file_name, output_folder=""):
     to name input parameter. Function can also accept a dict of results.
 
     Parameters
-    ----------
+    ==========
     :results : dict/pd.DataFrame/pd.Series
         object of the metrics and results from the encoding process. Ideally should
         be a dataframe/series but function also accepts a dict of results.
@@ -250,7 +249,7 @@ def save_results(results, file_name, output_folder=""):
         file name to call results file.
     
     Returns
-    -------
+    =======
     None
     """
     #append extension if not in file name

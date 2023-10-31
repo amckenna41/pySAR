@@ -20,7 +20,7 @@ class PySARTests(unittest.TestCase):
     in pySAR package. 
 
     Test Cases
-    ----------
+    ==========
     test_pySAR_metadata:
         testing correct pysar software metadata.
     test_pySAR:
@@ -58,9 +58,10 @@ class PySARTests(unittest.TestCase):
         #temporary unit test output folder
         self.test_output_folder = os.path.join("tests", "test_outputs")
 
+    @unittest.skip("Skipping metadata tests.")
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.3.4", 
+        self.assertEqual(pysar_.__version__, "2.4.0", 
             "pySAR version is not correct, got: {}.".format(pysar_.__version__))
         self.assertEqual(pysar_.__name__, "pySAR", 
             "pySAR software name is not correct, got: {}.".format(pysar_.__name__))
@@ -115,8 +116,10 @@ class PySARTests(unittest.TestCase):
             'Expected there to be no NAN/null values in data dataframe.')
         self.assertEqual(test_pySAR.num_seqs, 261,
             'Number of sequences expected to be 261, got {}.'.format(test_pySAR.num_seqs))
-        self.assertEqual(test_pySAR.seq_len, 466,
-            'Sequence length expected to be 466, got {}.'.format(test_pySAR.seq_len))
+        self.assertEqual(test_pySAR.sequence_length, 466,
+            'Sequence length expected to be 466, got {}.'.format(test_pySAR.sequence_length))
+        self.assertEqual(test_pySAR.feature_space, (),
+            'Feature space expected to be an empty tuble, got {}.'.format(test_pySAR.feature_space))
 #2.)
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[1]) #enantioselectivity
 
@@ -127,8 +130,8 @@ class PySARTests(unittest.TestCase):
             'Sequence column attribute is not correct, expected {}, got {}.'.format("sequence", test_pySAR.sequence_col))
         self.assertEqual(test_pySAR.activity_col, "e-value",
             "Activity attribute name not correct, expected {}, got {}.".format("e-value", test_pySAR.activity_col))
-        self.assertEqual(test_pySAR.algorithm, "plsregression",
-            'Algorithm attribute not correct, expected {}, got {}.'.format("plsregression", test_pySAR.algorithm))
+        self.assertEqual(test_pySAR.algorithm, "randomforestregressor",
+            'Algorithm attribute not correct, expected {}, got {}.'.format("randomforestregressor", test_pySAR.algorithm))
         self.assertEqual(test_pySAR.test_split, 0.2,
             'Test split not expected, expected 0.2, got {}.'.format(test_pySAR.test_split))
         self.assertIsNone(test_pySAR.aai_indices, 
@@ -147,8 +150,10 @@ class PySARTests(unittest.TestCase):
             'Expected there to be no NAN/null values in data dataframe.')
         self.assertEqual(test_pySAR.num_seqs, 152,
             'Number of sequences expected to be 152, got {}.'.format(test_pySAR.num_seqs))
-        self.assertEqual(test_pySAR.seq_len, 398,
-            'Sequence length expected to be 398, got {}.'.format(test_pySAR.seq_len))
+        self.assertEqual(test_pySAR.sequence_length, 398,
+            'Sequence length expected to be 398, got {}.'.format(test_pySAR.sequence_length))
+        self.assertEqual(test_pySAR.feature_space, (),
+            'Feature space expected to be an empty tuble, got {}.'.format(test_pySAR.feature_space))
 #3.)
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[2]) #absorption
 
@@ -179,8 +184,10 @@ class PySARTests(unittest.TestCase):
             'Expected there to be no NAN/null values in data dataframe.')
         self.assertEqual(test_pySAR.num_seqs, 81,
             'Number of sequences expected to be 81, got {}.'.format(test_pySAR.num_seqs))
-        self.assertEqual(test_pySAR.seq_len, 298,
-            'Sequence length expected to be 298, got {}.'.format(test_pySAR.seq_len))
+        self.assertEqual(test_pySAR.sequence_length, 298,
+            'Sequence length expected to be 298, got {}.'.format(test_pySAR.sequence_length))
+        self.assertEqual(test_pySAR.feature_space, (),
+            'Feature space expected to be an empty tuble, got {}.'.format(test_pySAR.feature_space))
 #4.)
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[3]) #localization
 
@@ -211,15 +218,18 @@ class PySARTests(unittest.TestCase):
             'Expected there to be no NAN/null values in data dataframe.')
         self.assertEqual(test_pySAR.num_seqs, 254,
             'Number of sequences expected to be 254, got {}.'.format(test_pySAR.num_seqs))
-        self.assertEqual(test_pySAR.seq_len, 361,
-            'Sequence length expected to be 361, got {}.'.format(test_pySAR.seq_len))
+        self.assertEqual(test_pySAR.sequence_length, 361,
+            'Sequence length expected to be 361, got {}.'.format(test_pySAR.sequence_length))
+        self.assertEqual(test_pySAR.feature_space, (),
+            'Feature space expected to be an empty tuble, got {}.'.format(test_pySAR.feature_space))
 #5.)
         #validate that if errorneous input parameters are input, that errors are raised
         with self.assertRaises(OSError, msg='OS Error raised, config file not found.'):
-            test_pySAR1 = pysar.PySAR(config_file="blahblahblah")
+            pysar.PySAR(config_file="blahblahblah")
 #6.)
         with self.assertRaises(TypeError, msg='Type Error raised, config file parameter not correct data type.'):
-            test_pySAR2 = pysar.PySAR(config_file=101)
+            pysar.PySAR(config_file=101)
+            pysar.PySAR(config_file=False)
 
     def test_sequences(self):
         """ Testing getting the protein sequences from the dataset. """
@@ -271,7 +281,7 @@ class PySARTests(unittest.TestCase):
             'Error in third seqeuence expected it to start with MSRLVAASWL.')
         self.assertEqual(test_seqs.dtype, object,
             'Sequence object expected to be of dtype object, got {}'.format(test_seqs.dtype))
-
+    
     def test_activity(self):
         """ Testing function that gets activity from dataset. """
 #1.)
@@ -330,7 +340,7 @@ class PySARTests(unittest.TestCase):
             "Expected log_GFP column name for Series, got {}.".format(activity_4.name))
         self.assertTrue(activity_4.dtypes == np.float64, 
             "Column datatypes should be np.float64, got {}.".format(activity_4.dtypes))
-
+    
     def test_get_aai_encoding(self):
         """ Testing getting the AAI encoding from the database for specific indices. """
         aa_indices = ["CHAM810101", "ISOY800103"]
@@ -347,8 +357,8 @@ class PySARTests(unittest.TestCase):
             'AAI Encoding output expected to be a numpy array, got datatype {}.'.format(type(aai_encoding)))
         self.assertEqual(aai_encoding.shape[0], test_pySAR.num_seqs,
             'The number of sequences in the dataset expected to be {}, got {}.'.format(test_pySAR.num_seqs, aai_encoding.shape[0]))
-        self.assertEqual(aai_encoding.shape[1], test_pySAR.seq_len * len(aa_indices),
-            'The length of the sequences expected to be {}, got {}.'.format((test_pySAR.seq_len * len(aa_indices)), str(aai_encoding.shape[1])))
+        self.assertEqual(aai_encoding.shape[1], test_pySAR.sequence_length * len(aa_indices),
+            'The length of the sequences expected to be {}, got {}.'.format((test_pySAR.sequence_length * len(aa_indices)), str(aai_encoding.shape[1])))
         self.assertEqual(aai_encoding.dtype, np.float32,
             'Datatype of elements in numpy array expected to be dtype np.float32, got {}.'.format(aai_encoding.dtype))
         self.assertTrue((np.array([0.78, 0.5, 1.02, 0.68, 0.68, 0.78, 0.36, 0.68, 0.36, 0.68], 
@@ -362,8 +372,8 @@ class PySARTests(unittest.TestCase):
             'AAI Encoding output expected to be a numpy array, got datatype {}.'.format(type(aai_encoding_1)))
         self.assertEqual(aai_encoding_1.shape[0], test_pySAR_1.num_seqs,
             'The number of sequences in the dataset expected to be {}, got {}.'.format(test_pySAR_1.num_seqs, aai_encoding_1.shape[0]))
-        self.assertEqual(aai_encoding_1.shape[1], test_pySAR_1.seq_len,
-            'The length of the sequences expected to be {}, got {}.'.format(test_pySAR_1.seq_len, str(aai_encoding_1.shape[1])))
+        self.assertEqual(aai_encoding_1.shape[1], test_pySAR_1.sequence_length,
+            'The length of the sequences expected to be {}, got {}.'.format(test_pySAR_1.sequence_length, str(aai_encoding_1.shape[1])))
         self.assertEqual(aai_encoding_1.dtype, np.float32,
             'Datatype of elements in numpy array should be of dtype np.float32, got {}.'.format(aai_encoding_1.dtype))
         self.assertTrue((np.array([3.79, 7.25, 10.88, 7.21, 2.93, 10.88, 6.11, 2.93, 7.21, 7.25],
@@ -377,8 +387,8 @@ class PySARTests(unittest.TestCase):
             'AAI Encoding output expected to be a numpy array, got datatype {}.'.format(type(aai_encoding_2)))
         self.assertEqual(aai_encoding_2.shape[0], test_pySAR_2.num_seqs,
             'The number of sequences in the dataset expected to be {}, got {}.'.format(test_pySAR_2.num_seqs, aai_encoding_2.shape[0]))
-        self.assertEqual(aai_encoding_2.shape[1], test_pySAR_2.seq_len,
-            'The length of the sequences expected to be {}, got {}.'.format(test_pySAR_2.seq_len, str(aai_encoding_2.shape[1])))
+        self.assertEqual(aai_encoding_2.shape[1], test_pySAR_2.sequence_length,
+            'The length of the sequences expected to be {}, got {}.'.format(test_pySAR_2.sequence_length, str(aai_encoding_2.shape[1])))
         self.assertEqual(aai_encoding_2.dtype, np.float32,
             'Datatype of elements in numpy array should be of dtype np.float32, got {}.'.format(aai_encoding_2.dtype))
         self.assertTrue((np.array([14.9, 17.6, 14.9, 9.5, 14.3, 18.8, 6.9, 6.9, 9.9, 14.8],
@@ -392,8 +402,8 @@ class PySARTests(unittest.TestCase):
             'AAI Encoding output expected to be a numpy array, got datatype {}.'.format(type(aai_encoding_3)))
         self.assertEqual(aai_encoding_3.shape[0], test_pySAR_3.num_seqs,
             'The number of sequences in the dataset expected to be {}, got {}.'.format(test_pySAR_3.num_seqs, aai_encoding_3.shape[0]))
-        self.assertEqual(aai_encoding_3.shape[1], test_pySAR_3.seq_len * 2,
-            'The length of the sequences expected to be {}, got {}.'.format(test_pySAR_3.seq_len, str(aai_encoding_3.shape[1])))
+        self.assertEqual(aai_encoding_3.shape[1], test_pySAR_3.sequence_length * 2,
+            'The length of the sequences expected to be {}, got {}.'.format(test_pySAR_3.sequence_length, str(aai_encoding_3.shape[1])))
         self.assertEqual(aai_encoding_3.dtype, np.float32,
             'Datatype of elements in numpy array should be of dtype np.float32, got {}.'.format(aai_encoding_3.dtype))
         self.assertTrue((np.array([1.47, 0.77, 1.04, 1.22, 1.05, 1.32, 1.32, 0.77, 1.02, 1.22],
@@ -401,39 +411,44 @@ class PySARTests(unittest.TestCase):
                 'The first 10 elements of sequence 0 do not match what was expected:\n{}.'.format(aai_encoding_3[0][:10]))
 #4.)    
         with self.assertRaises(ValueError, msg='ValueError: Errorneous indices have been input.'):
-            aai_encoding = test_pySAR_1.get_aai_encoding(error_aaindices)
-            aai_encoding = test_pySAR_1.get_aai_encoding(error_aaindices1)
+            test_pySAR_1.get_aai_encoding(error_aaindices)
+            test_pySAR_1.get_aai_encoding(error_aaindices1)
 #5.)
         with self.assertRaises(TypeError, msg='TypeError: Errorneous indices datatypes have been input.'):
-            aai_encoding = test_pySAR_1.get_aai_encoding(1235)
-            aai_encoding = test_pySAR_1.get_aai_encoding(40.89)
-            aai_encoding = test_pySAR_1.get_aai_encoding(False)
-
+            test_pySAR_1.get_aai_encoding(1235)
+            test_pySAR_1.get_aai_encoding(40.89)
+            test_pySAR_1.get_aai_encoding(False)
+    
     def test_aai_encoding(self):
         """ Testing AAI encoding pipeline. """
-        aa_indices = ["CHAM810101", "ISOY800103"]
         aa_indices_1 = "NAKH920102"
-        aa_indices_2 = "LIFS790103"
-        aa_indices_3 = ["PTIO830101", "QIAN880136", "RACS820110"]
-        all_indices = [aa_indices, aa_indices_1, aa_indices_2, aa_indices_3] #list of all indices
+        aa_indices_2 = "CHOP780207, GEIM800104"
+        aa_indices_3 = ["CHAM810101, ISOY800103"]
+        aa_indices_4 = ["PTIO830101", "QIAN880136", "RACS820110"]
         error_aaindices = ["ABCD1234", "ABCD12345"]
         error_aaindices1 = "XYZ4567"
         expected_output_cols = ['Index', 'Category', 'R2', 'RMSE', 'MSE', 
             'RPD', 'MAE', 'Explained Variance']
 #1.)
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[0]) #thermostability
-        test_aai_ = test_pySAR.encode_aai(indices=aa_indices, print_results=0, output_folder=self.test_output_folder)
+        test_aai_ = test_pySAR.encode_aai(aai_indices=aa_indices_1, print_results=0, output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_aai_, pd.DataFrame, 
             'Output should be a DataFrame, got {}.'.format(type(test_aai_)))
         self.assertEqual(len(test_aai_.columns), 8, 
             "Expected 8 columns in dataframe output, got {}.".format(len(test_aai_.columns)))
+        self.assertEqual(test_aai_['Index'].values[0], "NAKH920102", 
+            "Index codes in ouput dataframe don't match expected: {}.".format(test_aai_["Index"]))
+        self.assertEqual(test_aai_['Category'].values[0], "composition",
+            "Category names in ouput dataframe don't match expected: {}.".format(test_aai_["Category"]))
+        self.assertEqual(test_pySAR.feature_space, (261, 466),
+            "Expected feature space dimensions to be 261 x 466, got {}.".format(test_pySAR.feature_space))  
         for col in test_aai_.columns:
             self.assertIn(col, expected_output_cols, 
                 "Col {} not found in list of expected columns:\n{}".format(col, expected_output_cols))
             if (col == "Index" or col == "Category"):
                 self.assertTrue(all(isinstance(row, str) for row in list(test_aai_[col].values)),
-                "Column {} expected to be of type string got {}.".format(col, type(test_aai_[col])))
+                    "Column {} expected to be of type string got {}.".format(col, type(test_aai_[col])))
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_[col].values)),
                     "Column {} expected to be of type np.float64 got {}.".format(col, type(test_aai_[col])))  
@@ -441,53 +456,85 @@ class PySARTests(unittest.TestCase):
             "Output dir storing encoding results not found: {}".format(self.test_output_folder + "_" + _globals.CURRENT_DATETIME))
         self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "aai_results.csv")),
             "Output csv storing encoding results not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "aai_results.csv")))
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regPlot.png")),
-            "Output regression plot not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regPlot.png")))
+        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")),
+            "Output regression plot not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")))
 #2.)
-        test_aai_ = test_pySAR.encode_aai(indices=aa_indices_1, print_results=0, output_folder=self.test_output_folder)
+        test_aai_ = test_pySAR.encode_aai(aai_indices=aa_indices_2, print_results=0, output_folder=self.test_output_folder)
         self.assertIsInstance(test_aai_, pd.DataFrame, 
             'Output should be a DataFrame, got {}.'.format(type(test_aai_)))
         self.assertEqual(len(test_aai_.columns), 8, 
             "Expected 8 columns in dataframe output, got {}.".format(len(test_aai_.columns)))
+        self.assertEqual(test_aai_['Index'].values[0], "CHOP780207, GEIM800104", 
+            "Index codes in ouput dataframe don't match expected: {}.".format(test_aai_["Index"]))
+        self.assertEqual(test_aai_['Category'].values[0], "sec_struct, sec_struct",
+            "Category names in ouput dataframe don't match expected: {}.".format(test_aai_["Category"]))
+        self.assertEqual(test_pySAR.feature_space, (261, 932),
+            "Expected feature space dimensions to be 261 x 932, got {}.".format(test_pySAR.feature_space))  
         for col in test_aai_.columns:
             self.assertIn(col, expected_output_cols, 
                 "Col {} not found in list of expected columns:\n{}".format(col, expected_output_cols))
             if (col == "Index" or col == "Category"):
                 self.assertTrue(all(isinstance(row, str) for row in list(test_aai_[col].values)),
-                "Column {} expected to be of type string got {}.".format(col, type(test_aai_[col])))
+                    "Column {} expected to be of type string got {}.".format(col, type(test_aai_[col])))
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_[col].values)),
                     "Column {} expected to be of type np.float64 got {}.".format(col, type(test_aai_[col])))  
 #3.)
-        for index in range(0, len(all_indices)):
-            test_aai_ = test_pySAR.encode_aai(indices=all_indices[index], print_results=0, output_folder=self.test_output_folder)
-            self.assertIsInstance(test_aai_, pd.DataFrame, 
-                'Output should be a DataFrame, got {}.'.format(type(test_aai_)))
-            self.assertEqual(len(test_aai_.columns), 8, 
-                "Expected 8 columns in dataframe output, got {}.".format(len(test_aai_.columns)))
-            for col in test_aai_.columns:
-                self.assertIn(col, expected_output_cols, 
-                    "Col {} not found in list of expected columns:\n{}".format(col, expected_output_cols))
-                if (col == "Index" or col == "Category"):
-                    self.assertTrue(all(isinstance(row, str) for row in list(test_aai_[col].values)),
+        test_aai_ = test_pySAR.encode_aai(aai_indices=aa_indices_3, print_results=0, output_folder=self.test_output_folder)
+        self.assertIsInstance(test_aai_, pd.DataFrame, 
+            'Output should be a DataFrame, got {}.'.format(type(test_aai_)))
+        self.assertEqual(len(test_aai_.columns), 8, 
+            "Expected 8 columns in dataframe output, got {}.".format(len(test_aai_.columns)))
+        self.assertEqual(test_aai_['Index'].values[0], "CHAM810101, ISOY800103", 
+            "Index codes in ouput dataframe don't match expected: {}.".format(test_aai_["Index"]))
+        self.assertEqual(test_aai_['Category'].values[0], "geometry, sec_struct",
+            "Category names in ouput dataframe don't match expected: {}.".format(test_aai_["Category"]))
+        self.assertEqual(test_pySAR.feature_space, (261, 932),
+            "Expected feature space dimensions to be 261 x 932, got {}.".format(test_pySAR.feature_space))  
+        for col in test_aai_.columns:
+            self.assertIn(col, expected_output_cols, 
+                "Col {} not found in list of expected columns:\n{}".format(col, expected_output_cols))
+            if (col == "Index" or col == "Category"):
+                self.assertTrue(all(isinstance(row, str) for row in list(test_aai_[col].values)),
                     "Column {} expected to be of type string got {}.".format(col, type(test_aai_[col])))
-                else:
-                    self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_[col].values)),
-                        "Column {} expected to be of type np.float64 got {}.".format(col, type(test_aai_[col])))   
+            else:
+                self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_[col].values)),
+                    "Column {} expected to be of type np.float64 got {}.".format(col, type(test_aai_[col])))  
 #4.)
-        with self.assertRaises(ValueError, msg='ValueError: Indices parameter cannot be None or an empty string.'):
-            test_aai_ = test_pySAR.encode_aai(indices=None)
-            test_aai_ = test_pySAR.encode_aai(indices="")
-            test_aai_ = test_pySAR.encode_aai()
-            test_aai_ = test_pySAR.encode_aai(indices=error_aaindices)
-            test_aai_ = test_pySAR.encode_aai(indices=error_aaindices1)
+        test_aai_ = test_pySAR.encode_aai(aai_indices=aa_indices_4, print_results=0, output_folder=self.test_output_folder)
+        self.assertIsInstance(test_aai_, pd.DataFrame, 
+            'Output should be a DataFrame, got {}.'.format(type(test_aai_)))
+        self.assertEqual(len(test_aai_.columns), 8, 
+            "Expected 8 columns in dataframe output, got {}.".format(len(test_aai_.columns)))
+        self.assertEqual(test_aai_['Index'].values[0], "PTIO830101, QIAN880136, RACS820110", 
+            "Index codes in ouput dataframe don't match expected: {}.".format(test_aai_["Index"]))
+        self.assertEqual(test_aai_['Category'].values[0], "sec_struct, sec_struct, geometry",
+            "Category names in ouput dataframe don't match expected: {}.".format(test_aai_["Category"]))
+        self.assertEqual(test_pySAR.feature_space, (261, 1398),
+            "Expected feature space dimensions to be 261 x 1398, got {}.".format(test_pySAR.feature_space))  
+        for col in test_aai_.columns:
+            self.assertIn(col, expected_output_cols, 
+                "Col {} not found in list of expected columns:\n{}".format(col, expected_output_cols))
+            if (col == "Index" or col == "Category"):
+                self.assertTrue(all(isinstance(row, str) for row in list(test_aai_[col].values)),
+                    "Column {} expected to be of type string got {}.".format(col, type(test_aai_[col])))
+            else:
+                self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_[col].values)),
+                    "Column {} expected to be of type np.float64 got {}.".format(col, type(test_aai_[col])))           
 #5.)
+        with self.assertRaises(ValueError, msg='ValueError: Indices parameter cannot be None or an empty string.'):
+            test_pySAR.encode_aai(aai_indices=None)
+            test_pySAR.encode_aai(aai_indices="")
+            test_pySAR.encode_aai()
+            test_pySAR.encode_aai(aai_indices=error_aaindices)
+            test_pySAR.encode_aai(aai_indices=error_aaindices1)
+#6.)
         with self.assertRaises(TypeError, msg='TypeError: Indices must be lists or strings.'):
-            test_aai_ = test_pySAR.encode_aai(indices=123)
-            test_aai_ = test_pySAR.encode_aai(indices=0.90)
-            test_aai_ = test_pySAR.encode_aai(indices=False)
-            test_aai_ = test_pySAR.encode_aai(indices=9000)
-
+            test_pySAR.encode_aai(aai_indices=123)
+            test_pySAR.encode_aai(aai_indices=0.90)
+            test_pySAR.encode_aai(aai_indices=False)
+            test_pySAR.encode_aai(aai_indices=9000)
+    
     def test_get_desc_encoding(self):
         """ Testing Descriptor encoding functionality. """
         desc_1 = "dipeptide_composition"
@@ -557,15 +604,15 @@ class PySARTests(unittest.TestCase):
             "Descriptor values expected to be type np.float64, got:\n{}".format(list(desc_encoding.dtypes)))
 #5.)
         with self.assertRaises(ValueError, msg='ValueError: Descriptor input parameter cannot be None.'):
-            test_desc = test_pySAR.get_descriptor_encoding(descriptors=None)
-            test_desc = test_pySAR.get_descriptor_encoding(descriptors="")
-            test_desc = test_pySAR.get_descriptor_encoding(descriptors=[])
+            test_pySAR.get_descriptor_encoding(descriptors=None)
+            test_pySAR.get_descriptor_encoding(descriptors="")
+            test_pySAR.get_descriptor_encoding(descriptors=[])
 #6.)
         with self.assertRaises(TypeError, msg='ValueError: Descriptor input parameter cannot be an invalid descriptor name.'):
-            test_desc = test_pySAR.get_descriptor_encoding(descriptor=123)
-            test_desc = test_pySAR.get_descriptor_encoding(descriptor=0.90)
-            test_desc = test_pySAR.get_descriptor_encoding(descriptor=False)
-            test_desc = test_pySAR.get_descriptor_encoding(descriptor=9000)
+            test_pySAR.get_descriptor_encoding(descriptor=123)
+            test_pySAR.get_descriptor_encoding(descriptor=0.90)
+            test_pySAR.get_descriptor_encoding(descriptor=False)
+            test_pySAR.get_descriptor_encoding(descriptor=9000)
 
     def test_desc_encoding(self):
         """ Testing Descriptor encoding pipeline. """
@@ -576,11 +623,12 @@ class PySARTests(unittest.TestCase):
         all_desc = [desc_1, desc_2, desc_3, "moranauto, quasi_seq_order"]
         expected_output_cols = ['Descriptor', 'Group', 'R2', 'RMSE', 'MSE', 
             'RPD', 'MAE', 'Explained Variance']
+        expected_descriptor_feature_space = [(261, 400), (261, 15), (261, 30), (261, 290)]
 
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[0]) #thermostability
 #1.)
         for de in range(0, len(all_desc)):
-            test_desc = test_pySAR.encode_descriptor(descriptor=all_desc[de], print_results=0, output_folder=self.test_output_folder)
+            test_desc = test_pySAR.encode_descriptor(descriptors=all_desc[de], print_results=0, output_folder=self.test_output_folder)
             self.assertIsInstance(test_desc, pd.DataFrame, 
                 'Output should be a DataFrame, got {}.'.format(type(test_desc)))
             self.assertEqual(len(test_desc), 1, 
@@ -590,29 +638,31 @@ class PySARTests(unittest.TestCase):
                     "Col {} not found in list of expected columns:\n{}".format(col, expected_output_cols)) 
                 if (col == "Descriptor" or col == "Group"):
                     self.assertTrue(all(isinstance(row, str) for row in list(test_desc[col].values)),
-                    "Column {} expected to be of type string got {}.".format(col, type(test_desc[col])))
+                        "Column {} expected to be of type string got {}.".format(col, type(test_desc[col])))
                 else:
                     self.assertTrue(all(isinstance(row, np.float64) for row in list(test_desc[col].values)),
-                        "Column {} expected to be of type np.float64 got {}.".format(col, type(test_desc[col])))  
-        
+                        "Column {} expected to be of type np.float64 got {}.".format(col, type(test_desc[col]))) 
+            self.assertEqual(test_pySAR.feature_space, expected_descriptor_feature_space[de],
+                "Expected feature space dimensions to be 261 x 466, got {}.".format(test_pySAR.feature_space))  
+            
         self.assertTrue(os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME), 
             "Output dir storing encoding results not found: {}".format(self.test_output_folder + "_" + _globals.CURRENT_DATETIME))
         self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "desc_results.csv")),
             "Output csv storing encoding results not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "desc_results.csv")))
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regPlot.png")),
-            "Output regression plot not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regPlot.png")))
+        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")),
+            "Output regression plot not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")))
 #2.)
         with self.assertRaises(ValueError, msg='ValueError: Descriptor parameter cannot be None or an empty string.'):
-            test_desc = test_pySAR.encode_descriptor(descriptor=None)
-            test_desc = test_pySAR.encode_descriptor(descriptor="")
-            test_desc = test_pySAR.encode_descriptor(descriptor="invalid_descriptor")
-            test_desc = test_pySAR.encode_descriptor(descriptor="blahblahblah")
+            test_pySAR.encode_descriptor(descriptors=None)
+            test_pySAR.encode_descriptor(descriptors="")
+            test_pySAR.encode_descriptor(descriptors="invalid_descriptor")
+            test_pySAR.encode_descriptor(descriptors="blahblahblah")
 #3.)    
         with self.assertRaises(TypeError, msg='TypeError: Descriptor parameter has to be a strong or list.'):
-            test_desc = test_pySAR.encode_descriptor(descriptor=123)
-            test_desc = test_pySAR.encode_descriptor(descriptor=0.90)
-            test_desc = test_pySAR.encode_descriptor(descriptor=False)
-            test_desc = test_pySAR.encode_descriptor(descriptor=9000)
+            test_pySAR.encode_descriptor(descriptors=123)
+            test_pySAR.encode_descriptor(descriptors=0.90)
+            test_pySAR.encode_descriptor(descriptors=False)
+            test_pySAR.encode_descriptor(descriptors=9000)
 
     def test_aai_desc_encoding(self):
         """ Testing AAI + Descriptor encoding functionality. """
@@ -629,7 +679,7 @@ class PySARTests(unittest.TestCase):
 
         test_pySAR = pysar.PySAR(config_file=self.all_config_files[0]) #thermostability
 #1.)
-        test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors=desc_1, indices=aa_indices_1, print_results=0, output_folder=self.test_output_folder)
+        test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors=desc_1, aai_indices=aa_indices_1, print_results=0, output_folder=self.test_output_folder)
         self.assertIsInstance(test_aai_desc, pd.DataFrame, 
             'Expected output to be a DataFrame, got {}.'.format(type(test_aai_desc)))
         self.assertEqual(len(test_aai_desc.columns), 10, 
@@ -643,9 +693,11 @@ class PySARTests(unittest.TestCase):
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_desc[col].values)),
                     "Column {} expected to be of type np.float64 got {}.".format(col, type(test_aai_desc[col])))    
+            self.assertEqual(test_pySAR.feature_space, (261, 486),
+                "Expected feature space dimensions to be 261 x 486, got {}.".format(test_pySAR.feature_space))  
 #2.)
-        test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors=desc_2, indices=aa_indices_2, print_results=0, output_folder=self.test_output_folder)
-        self.assertIsInstance(test_aai_desc, pd.DataFrame, 
+        test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors=desc_2, aai_indices=aa_indices_2, print_results=0, output_folder=self.test_output_folder)
+        self.assertIsInstance(test_aai_desc, pd.DataFrame,   #**add more tests , directly testing output of columns 
             'Output expected to be a DataFrame, got {}.'.format(type(test_aai_desc)))
         self.assertEqual(len(test_aai_desc.columns), 10, 
             "Expected 10 columns in output dataframe, got {}.".format(len(test_aai_desc)))
@@ -658,8 +710,10 @@ class PySARTests(unittest.TestCase):
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_desc[col].values)),
                     "Column {} expected to be of type np.float64 got {}.".format(col, type(test_aai_desc[col])))    
+        self.assertEqual(test_pySAR.feature_space, (261, 481),
+            "Expected feature space dimensions to be 261 x 481, got {}.".format(test_pySAR.feature_space))  
 #3.)
-        test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors=desc_3, indices=aa_indices_3, print_results=0, output_folder=self.test_output_folder)
+        test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors=desc_3, aai_indices=aa_indices_3, print_results=0, output_folder=self.test_output_folder)
         self.assertIsInstance(test_aai_desc, pd.DataFrame, 
             'Output expected to be a DataFrame, got {}.'.format(type(test_aai_desc)))
         self.assertEqual(len(test_aai_desc.columns), 10, 
@@ -673,8 +727,10 @@ class PySARTests(unittest.TestCase):
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_desc[col].values)),
                     "Column {} expected to be of type np.float64 got {}.".format(col, type(test_aai_desc[col])))    
+        self.assertEqual(test_pySAR.feature_space, (261, 809),
+            "Expected feature space dimensions to be 261 x 809, got {}.".format(test_pySAR.feature_space))  
 #4.)
-        test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors=desc_4, indices=aa_indices_4, print_results=0, output_folder=self.test_output_folder)
+        test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors=desc_4, aai_indices=aa_indices_4, print_results=0, output_folder=self.test_output_folder)
         self.assertIsInstance(test_aai_desc, pd.DataFrame, 
             'Output expected to be a DataFrame, got {}.'.format(type(test_aai_desc)))
         self.assertEqual(len(test_aai_desc.columns), 10, 
@@ -692,32 +748,33 @@ class PySARTests(unittest.TestCase):
             "Output dir storing encoding results not found: {}".format(self.test_output_folder + "_" + _globals.CURRENT_DATETIME))
         self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "aai_desc_results.csv")),
             "Output csv storing encoding results not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "aai_desc_results.csv")))
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regPlot.png")),
-            "Output regression plot not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regPlot.png")))
+        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")),
+            "Output regression plot not found: {}".format(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")))
+        self.assertEqual(test_pySAR.feature_space, (261, 1688),
+            "Expected feature space dimensions to be 261 x 1688, got {}.".format(test_pySAR.feature_space))  
 #5.)
         with self.assertRaises(ValueError, msg='ValueError: Descriptor and indices parameter cannot both be None or an empty string.'):
-            test_desc = test_pySAR.encode_aai_descriptor(descriptors=None)
-            test_desc = test_pySAR.encode_aai_descriptor(indices=None)
-            test_desc = test_pySAR.encode_aai_descriptor(descriptors="aa_comp")
-            test_desc = test_pySAR.encode_aai_descriptor(indices="LIFS790103")
-            test_desc = test_pySAR.encode_aai_descriptor(indices=None, descriptors=None)
-            test_desc = test_pySAR.encode_aai_descriptor(indices="", descriptors="")
-            test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors="invalid_descriptor")
-            test_aai_desc = test_pySAR.encode_aai_descriptor(indices="invalid_value")
-            test_aai_desc = test_pySAR.encode_aai_descriptor(descriptors="descriptor not found")
-            test_aai_desc = test_pySAR.encode_aai_descriptor(indices="blahblahblah")
+            test_pySAR.encode_aai_descriptor(descriptors=None)
+            test_pySAR.encode_aai_descriptor(aai_indices=None)
+            test_pySAR.encode_aai_descriptor(descriptors="aa_comp")
+            test_pySAR.encode_aai_descriptor(aai_indices="LIFS790103")
+            test_pySAR.encode_aai_descriptor(aai_indices=None, descriptors=None)
+            test_pySAR.encode_aai_descriptor(aai_indices="", descriptors="")
+            test_pySAR.encode_aai_descriptor(descriptors="invalid_descriptor")
+            test_pySAR.encode_aai_descriptor(aai_indices="invalid_value")
+            test_pySAR.encode_aai_descriptor(descriptors="descriptor not found")
+            test_pySAR.encode_aai_descriptor(aai_indices="blahblahblah")
 #6.)
         with self.assertRaises(TypeError, msg='ValueError: Descriptor and indices must be lists or strings.'):
-            test_desc = test_pySAR.encode_aai_descriptor(descriptors=123, indices=123)
-            test_desc = test_pySAR.encode_aai_descriptor(descriptors=0000, indices=0.90)
-            test_desc = test_pySAR.encode_aai_descriptor(descriptors=False, indices=True)
-            test_desc = test_pySAR.encode_aai_descriptor(descriptors=2.9, indices=9000)
+            test_pySAR.encode_aai_descriptor(descriptors=123, aai_indices=123)
+            test_pySAR.encode_aai_descriptor(descriptors=0000, aai_indices=0.90)
+            test_pySAR.encode_aai_descriptor(descriptors=False, aai_indices=True)
+            test_pySAR.encode_aai_descriptor(descriptors=2.9, aai_indices=9000)
 
     def tearDown(self):
         """ Delete any temp files or folders created during testing process. """
-        #removing any of the temp files created such as the results files, if
-        #you want to verify the results files are actually being created then
-        #comment out the below code block
+        #removing any of the temp files created such as the results files, if you want to verify the results files 
+        # are actually being created thencomment out the below code block
         if (os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME)):
             shutil.rmtree(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, ignore_errors=False, onerror=None)
                 

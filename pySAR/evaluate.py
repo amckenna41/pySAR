@@ -14,14 +14,14 @@ class Evaluate():
     MAE, RPD, Explained Variance, Max Error and Mean Poisson Deviance.
 
     Parameters
-    ----------
+    ==========
     :Y_true : np.ndarray
         array of observed activity/fitness values.
     :Y_pred : np.ndarray
         array of predicted activity/fitness values.
 
     Methods
-    -------
+    =======
     r2_(multioutput='uniform_average'):
         calculate R2 score.
     rmse_(multioutput='uniform_average'):
@@ -66,14 +66,14 @@ class Evaluate():
         Calculate R^2 (coefficient of determination) regression score function.
 
         Parameters
-        ----------
+        ==========
         :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
-        -------
+        =======
         :r2 : float
             R2 (coefficient of determination) score for observed and predicted values.
         """
@@ -85,14 +85,14 @@ class Evaluate():
         and predicted values.
 
         Parameters
-        ----------
+        ==========
         :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
-        -------
+        =======
         :mse : float
             MSE (mean square error) score for observed and predicted values.
         """
@@ -105,14 +105,14 @@ class Evaluate():
         calculating MSE with the squared parameter set to False.
 
         Parameters
-        ----------
+        ==========
         :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
-        -------
+        =======
         :rmse : float
             RMSE score for observed and predicted values.
         """
@@ -124,14 +124,14 @@ class Evaluate():
         inputted observed and predicted values.
 
         Parameters
-        ----------
+        ==========
         :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
-        -------
+        =======
         :mae : float
             If multioutput is ‘raw_values’, then MAE is returned for each output
             separately. If multioutput is ‘uniform_average’ or an ndarray of
@@ -147,11 +147,11 @@ class Evaluate():
         prediction of that variable by a given model.
 
         Parameters
-        ----------
+        ==========
         None
 
         Returns
-        -------
+        =======
         :rpd : float
             the RPD score for the model.
         """
@@ -163,14 +163,14 @@ class Evaluate():
         lower values are worse.
 
         Parameters
-        ----------
+        ==========
         :multioutput : str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
-        -------
+        =======
         :explained_var : float
             The explained variance or ndarray if ‘multioutput’ is ‘raw_values’.
         """
@@ -181,11 +181,11 @@ class Evaluate():
         Calculates the maximum residual error between observed and predicted values.
 
         Parameters
-        ----------
+        ==========
         None
 
         Returns
-        -------
+        =======
         :max_error : float
             A positive floating point value (the best value is 0.0).
         """
@@ -197,11 +197,11 @@ class Evaluate():
         predicted values.
 
         Parameters
-        ----------
+        ==========
         None
         
         Returns
-        -------
+        =======
         :mean_poisson_deviance : float
             A non-negative floating point value (the best value is 0.0).
         """

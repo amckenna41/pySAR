@@ -8,7 +8,7 @@
   
     "model": 
       {
-        "algorithm": "plsregression",
+        "algorithm": "knn",
         "parameters": {},
         "test_split": 0.2
       },
@@ -68,7 +68,7 @@
 
     "pyDSP":
       {
-        "use_dsp": 1,
+        "use_dsp": 0,
         "spectrum": "power",
         "window": {
           "type": "hamming",

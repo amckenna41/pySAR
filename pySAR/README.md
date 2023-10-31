@@ -1,6 +1,14 @@
 # pySAR <a name="TOP"></a>
+
+[![PyPI](https://img.shields.io/pypi/v/pySAR)](https://pypi.org/project/pySAR/)
+[![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
+[![PythonV](https://img.shields.io/pypi/pyversions/pySAR?logo=2)](https://pypi.org/project/pySAR/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
+[![Issues](https://img.shields.io/github/issues/amckenna41/pySAR)](https://github.com/amckenna41/pySAR/issues)
+[![codecov](https://codecov.io/gh/amckenna41/pySAR/branch/master/graph/badge.svg?token=4PQDVGKGYN)](https://codecov.io/gh/amckenna41/pySAR)
+
 Usage
------
+=====
 ### Confile File
 `pySAR` works through JSON configuration files. There are many different customisable parameters for the functionalities in `pySAR` including the metaparameters of each of the available protein descriptors, all Digital Signal Processing (DSP) parameters in the pyDSP module, the type of regression model to use and parameters specific to the dataset. These config files offer a more straightforward way of making any changes to the `pySAR` pipeline. The names of **All** the parameters as listed in the example config files must remain unchanged, only the value of each parameter should be changed, any parameters not being used can be set to <em>null</em>. An example of the config file used in my research project, with most of the available parameters, can be seen below and in <em>config/thermostability.json</em>.
 
@@ -344,7 +352,7 @@ desc = Descriptors("test_config6")
 </details>
 
 <details><summary><b>Get record from AAIndex database:</summary></b><br>
-The AAIndex class offers diverse functionalities for obtaining any element from any record in the database. Each record is stored in json format in a class attribute called <em>aaindex_json</em>. You can search for a particular record by its index code, description or reference. You can also get the index category, and importantly its associated amino acid values.<br>
+A custom-built package called `aaindex` was created for this project to work with all the data in the AAIndex databases, primarily the <b>aaindex1</b>. The AAIndex library offers diverse functionalities for obtaining all data from all records within the <b>aaindex1</b>. Each record is stored in json format and can be retrieved via its accession number. Each record contains the following attributes: description, references, category, notes, correlation coefficient, pmid and values.<br>
 
 ```python
 from aaindex import aaindex1 

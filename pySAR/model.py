@@ -14,12 +14,12 @@ from sklearn.metrics import SCORERS
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.feature_selection import SelectKBest, chi2, VarianceThreshold, RFE, SelectFromModel, SequentialFeatureSelector
 from difflib import get_close_matches
-import inspect
 from copy import deepcopy
-import numpy as np
 import os
 import pickle
 import pandas as pd
+import numpy as np
+np.seterr(divide='ignore', invalid='ignore') #ignore divide by 0 error
 
 from .evaluate import Evaluate
 
@@ -32,8 +32,8 @@ class Model():
     Regression, Lasso, Ridge, Support Vector Regression, Stochastic Gradient
     Descent and K Nearest Neighbours (KNN).
 
-    Attributes
-    ----------
+    Parameters
+    ==========
     :X : np.ndarray
         training data.
     :Y : np.ndarray
@@ -53,7 +53,7 @@ class Model():
         reccomended.
 
     Methods
-    -------
+    =======
     get_model():
         build model using inputtted parameters.
     train_test_split(scale = True, test_split = 0.2, random_state=None, shuffle=True):
@@ -120,11 +120,11 @@ class Model():
         the parameters of the model to the values specified in the 'parameters' input.
 
         Parameters
-        ----------
+        ==========
         None
 
         Returns
-        -------
+        =======
         :model : sklearn.model
             instantiated regression model with default or user-specified parameters.
         """
@@ -274,7 +274,7 @@ class Model():
         variance. By default data is shuffled before the split and random state is None.
 
         Parameters
-        ----------
+        ==========
         :scale : bool (default=True)
             if true then scale the features such that they are standardised.
         :test_split : float (default=0.2)
@@ -286,7 +286,7 @@ class Model():
             Whether or not to shuffle the data before splitting.
 
         Returns
-        -------
+        =======
         :self.X_train, self.X_test, self.Y_train, self.Y_test : np.ndarray
             splitted training and test data features and labels.
         """
@@ -332,11 +332,11 @@ class Model():
         Fit model to training data and labels.
 
         Parameters
-        ----------
+        ==========
         None
 
         Returns
-        -------
+        =======
         :self.model_fit : np.ndarray
             fitted sklearn model of type specified by algorithm attribute.
         """
@@ -348,11 +348,11 @@ class Model():
         Predict the target values of unseen test data using the model.
 
         Parameters
-        ----------
+        ==========
         None
 
         Returns
-        -------
+        =======
         :self.model_fit.predict(self.X_test) : np.ndarray
             array of predicted target values for unseen test data.
         """
@@ -363,12 +363,12 @@ class Model():
         Save fitted model to specified save_folder.
 
         Parameters
-        ----------
+        ==========
         :save_folder : str
             folder to save model to.
         
         Returns
-        -------
+        =======
         None
         """
         #append pickle file extension if not present in filename
@@ -392,7 +392,7 @@ class Model():
         using a Grid Search.
 
         Parameters
-        ----------
+        ==========
         :param_grid : dict (default={})
             dictionary/grid of selected models' parameter and the potential values of each
             that you want to tune.
@@ -411,7 +411,7 @@ class Model():
             https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html
 
         Returns
-        -------
+        =======
         None
         """
         #input 'param_grid' parameter must be a dict, if not raise error
@@ -460,19 +460,19 @@ class Model():
         print('#############################################################\n')
 
         print('######################### Parameters ########################\n')
-        print('# Best Params -> {}'.format(grid_result.best_params_))
-        print('# Model Type -> {}'.format(repr(self)))
-        print('# Scoring Metric -> {}'.format(metric))
-        print('# Number of CV folds -> {}'.format(cv))
-        print('# Test Split -> {}'.format(self.test_split))
+        print('# Best Params: {}'.format(grid_result.best_params_))
+        print('# Model Type: {}'.format(repr(self)))
+        print('# Scoring Metric: {}'.format(metric))
+        print('# Number of CV folds: {}'.format(cv))
+        print('# Test Split: {}\n'.format(self.test_split))
 
         print('######################### Metrics ###########################\n')
-        print('# Best Score (R2) -> {}'.format(grid_result.best_score_))
-        print('# RMSE -> {} '.format(eval.rmse))
-        print('# MSE -> {} '.format(eval.mse))
-        print('# MAE -> {}'.format(eval.mae))
-        print('# RPD -> {}'.format(eval.rpd))
-        print('# Explained Variance -> {}\n'.format(eval.explained_var))
+        print('# Best Score (R2): {}'.format(grid_result.best_score_))
+        print('# RMSE: {} '.format(eval.rmse))
+        print('# MSE: {} '.format(eval.mse))
+        print('# MAE: {}'.format(eval.mae))
+        print('# RPD: {}'.format(eval.rpd))
+        print('# Explained Variance: {}\n'.format(eval.explained_var))
         print('##############################################################')
         
         self.grid_result = grid_result
@@ -482,11 +482,11 @@ class Model():
         Return if model has been fitted, true or false.
 
         Parameters
-        ----------
+        ==========
         None
         
         Returns
-        -------
+        =======
         :True/False : bool
             true if model (self.model) has been fitted, false if not.
         """
@@ -499,17 +499,17 @@ class Model():
         from method input parameter.
 
         Parameters
-        ----------
+        ==========
         :method : str (default="")
             feature selection method to use.
 
         Returns
-        -------
+        =======
         :X_new : np.ndarray
             best found features from training data.
         
         References
-        ----------
+        ==========
         [1] https://scikit-learn.org/stable/modules/feature_selection.html
         """
         #list of available sklearn feature selection techniques
@@ -528,11 +528,11 @@ class Model():
         elif (feature_matches == "chi2"):
             X_new = chi2().fit_transform(self.X, self.Y)
         elif (feature_matches == "rfe"):
-            pass
+            X_new = RFE(self.model, n_features_to_select=5, step=1)
         elif (feature_matches == "sequentialfeatureselector"):
-            pass
+            X_new = SequentialFeatureSelector(self.model, n_features_to_select=3)
         elif (feature_matches == "selectfrommodel"):
-            pass
+            X_new = SelectFromModel(estimator=self.model())
         else:
             X_new = SelectKBest(chi2, k=2).fit_transform(self.X, self.Y)
 

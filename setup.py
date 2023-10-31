@@ -4,12 +4,7 @@
 
 import pathlib
 from setuptools import setup, find_packages
-import sys
 import pySAR
-
-#ensure python version is greater than 3
-if (sys.version_info[0] < 3):
-    sys.exit('Python 3 is the minimum version requirement.')
 
 #parse README file
 HERE = pathlib.Path(__file__).parent
@@ -52,7 +47,6 @@ setup(name=pySAR.__name__,
           'pandas',
           'scipy',
           'delayed',
-          #'scikit-learn==0.24.1',
           'scikit-learn',
           'matplotlib',
           'seaborn',

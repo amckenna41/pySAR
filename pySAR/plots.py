@@ -13,7 +13,7 @@ def plot_reg(Y_true, Y_pred, r2, output_folder="", show_plot=False):
     Plot regression plot of observed (Y_true) vs predicted activity values (Y_pred).
 
     Parameters
-    ----------
+    ==========
     :Y_true : np.ndarray
         array of observed values.
     :Y_pred : np.ndarray
@@ -28,7 +28,7 @@ def plot_reg(Y_true, Y_pred, r2, output_folder="", show_plot=False):
         saved to output folder. 
 
     Returns
-    -------
+    =======
     None
     """
     fig, ax = plt.subplots(figsize=(8, 8))
@@ -51,7 +51,7 @@ def plot_reg(Y_true, Y_pred, r2, output_folder="", show_plot=False):
         os.makedirs(output_folder)    
 
     #save plot to output folder
-    plt.savefig(os.path.join(output_folder, 'model_regPlot.png'))  
+    plt.savefig(os.path.join(output_folder, 'model_regression_plot.png'))  
     if (show_plot): #display plot   
         plt.show(block=False)
         plt.pause(3)

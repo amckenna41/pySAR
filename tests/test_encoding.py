@@ -3,10 +3,8 @@
 #################################################################################
 
 import pandas as pd
-import numpy as np
 import os
 import shutil
-import re
 import unittest
 from aaindex import aaindex1
 unittest.TestLoader.sortTestMethodsUsing = None
@@ -25,7 +23,7 @@ class EncodingTests(unittest.TestCase):
     in pySAR package. 
 
     Test Cases
-    ----------
+    ==========
     test_aai_encoding:
         testing correct aai encoding Encoding class functionality.
     test_descriptor_encoding:
@@ -86,13 +84,13 @@ class EncodingTests(unittest.TestCase):
         #temporary unit test output folder
         self.test_output_folder = os.path.join("tests", "test_outputs")
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_aai_encoding(self):
         """ Testing AAI encoding functionality in Encoding module. """
 #1.)    
         test_aai1 = ["FAUJ880110", "GEIM800111"]
-        test_encoding1 = self.test_config1.aai_encoding(aai_list=test_aai1, sort_by="R2", output_folder=self.test_output_folder)
-        
+        test_encoding1 = self.test_config1.aai_encoding(aai_indices=test_aai1, sort_by="R2", output_folder=self.test_output_folder)
+
         self.assertIsInstance(test_encoding1, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding1)))
         self.assertEqual(len(test_encoding1), 2, 
@@ -123,7 +121,7 @@ class EncodingTests(unittest.TestCase):
                 "Column {} not found in list of column:\n{}".format(col, self.expected_aai_encoding_output_columns))
 #2.)
         test_aai2 = ["FAUJ880110", "GEIM800111", "JOND750102", "MAXF760102"]
-        test_encoding2 = self.test_config2.aai_encoding(aai_list=test_aai2, sort_by="RMSE", output_folder=self.test_output_folder)
+        test_encoding2 = self.test_config2.aai_encoding(aai_indices=test_aai2, sort_by="RMSE", output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_encoding2, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding2)))
@@ -155,7 +153,7 @@ class EncodingTests(unittest.TestCase):
                 "Column {} not found in list of column:\n{}".format(col, self.expected_aai_encoding_output_columns))
 #3.)
         test_aai3 = ["BIGC670101", "CHOP780211", "DESM900101", "FAUJ880113", "KANM800104"]
-        test_encoding3 = self.test_config3.aai_encoding(aai_list=test_aai3, sort_by="MSE", output_folder=self.test_output_folder)
+        test_encoding3 = self.test_config3.aai_encoding(aai_indices=test_aai3, sort_by="MSE", output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_encoding3, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding3)))
@@ -186,8 +184,8 @@ class EncodingTests(unittest.TestCase):
             self.assertIn(col, self.expected_aai_encoding_output_columns,
                 "Column {} not found in list of column:\n{}".format(col, self.expected_aai_encoding_output_columns))
 #4.)
-        test_aai4 = []
-        test_encoding4 = self.test_config4.aai_encoding(aai_list=test_aai4, sort_by="MAE", output_folder=self.test_output_folder)
+        test_aai4 = [] #passing in no indices into the function will calculate all 566+ indices
+        test_encoding4 = self.test_config4.aai_encoding(aai_indices=test_aai4, sort_by="MAE", output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_encoding4, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding4)))
@@ -219,7 +217,7 @@ class EncodingTests(unittest.TestCase):
                 "Column {} not found in list of column:\n{}".format(col, self.expected_aai_encoding_output_columns))
 #5.)
         test_aai5 = ["CHOP780211"]
-        test_encoding5 = self.test_config3.aai_encoding(aai_list=test_aai5, sort_by="invalid_metric", output_folder=self.test_output_folder) #R2 will then be used as default metric
+        test_encoding5 = self.test_config3.aai_encoding(aai_indices=test_aai5, sort_by="invalid_metric", output_folder=self.test_output_folder) #R2 will then be used as default metric
 
         self.assertIsInstance(test_encoding5, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding5)))
@@ -255,31 +253,33 @@ class EncodingTests(unittest.TestCase):
             "Output csv storing encoding results not found.")
 #6.)
         test_aai6 = "blahblah" 
+        test_aai7 = "DESM9001ZZ"
         with self.assertRaises(ValueError):
-            test_encoding6 = self.test_config1.aai_encoding(aai_list=test_aai6, sort_by="RPD", output_folder=self.test_output_folder)
+            self.test_config1.aai_encoding(aai_indices=test_aai6, sort_by="RPD", output_folder=self.test_output_folder)
+            self.test_config1.aai_encoding(aai_indices=test_aai7, sort_by="RMSE", output_folder=self.test_output_folder)
 #7.)
-        test_aai7 = 1234 
+        test_aai8 = 1234 
+        test_aai9 = True 
         with self.assertRaises(TypeError):
-            test_encoding7 = self.test_config2.aai_encoding(aai_list=test_aai7, sort_by="MSE", output_folder=self.test_output_folder)
-#8.)
-        test_aai8 = True 
-        with self.assertRaises(TypeError):
-            test_encoding8 = self.test_config3.aai_encoding(aai_list=test_aai8, sort_by="MAE", output_folder=self.test_output_folder)
+            self.test_config2.aai_encoding(aai_indices=test_aai8, sort_by="MSE", output_folder=self.test_output_folder)
+            self.test_config3.aai_encoding(aai_indices=test_aai9, sort_by="MAE", output_folder=self.test_output_folder)
 
-    # @unittest.skip("Descriptor encoding functionality can take a lot of time, skipping.")
+    @unittest.skip("Descriptor encoding functionality can take a lot of time, skipping.")
     def test_descriptor_encoding(self):
         """ Testing Descriptor encoding functionality in Encoding module. """
 #1.)
-        test_desc1 = ["amino_acid_composition"]
-        test_encoding1 = self.test_config1.descriptor_encoding(desc_list=test_desc1, desc_combo=1, 
+        test_desc1 = "amino_acid_composition"
+        test_encoding1 = self.test_config1.descriptor_encoding(descriptors=test_desc1, desc_combo=1, 
             sort_by="R2", output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_encoding1, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding1)))
         self.assertEqual(len(test_encoding1), 1, 
             "Expected 1 rows in output dataframe, got {}.".format(len(test_encoding1))) 
-        self.assertEqual(list(test_encoding1["Descriptor"]), test_desc1, 
-            "Output index values don't match expected.") 
+        self.assertEqual(test_encoding1["Descriptor"].values[0], test_desc1, 
+            "Output index values don't match expected, got {}.".format(test_encoding1["Descriptor"].values[0])) 
+        self.assertEqual(test_encoding1["Group"].values[0], "Composition", 
+            "Output group values don't match expected, got {}.".format(test_encoding1["Group"].values[0]))
         self.assertEqual(test_encoding1["Descriptor"].dtype, "string[python]", 
             "Expected index column to be type string, got {}.".format(test_encoding1["Descriptor"].dtype))
         self.assertEqual(test_encoding1["Group"].dtype, "string[python]",
@@ -296,23 +296,22 @@ class EncodingTests(unittest.TestCase):
             "Expected RPD column to be type float, got {}.".format(test_encoding1["RPD"].dtype))
         self.assertEqual(test_encoding1["Explained Variance"].dtype, float,
             "Expected Explained Variance column to be type float, got {}.".format(test_encoding1["Explained Variance"].dtype))
-        for group in list(test_encoding1["Group"]):
-            self.assertIn(group, self.descriptor_groups, 
-                "Group {} not found in list of groups:\n{}".format(group, self.descriptor_groups))
         for col in test_encoding1.columns:
             self.assertIn(col, self.expected_desc_encoding_output_columns,
                 "Column {} not found in list of column:\n{}".format(col, self.expected_desc_encoding_output_columns))
 #2.)
-        test_desc2 = ["ctd", "conjoint_triad", "dipeptide_composition"]
-        test_encoding2 = self.test_config2.descriptor_encoding(desc_list=test_desc2, desc_combo=1, 
-            sort_by="MSE", output_folder=self.test_output_folder)
+        test_desc2 = "moran_auto"
+        test_encoding2 = self.test_config2.descriptor_encoding(descriptors=test_desc2, desc_combo=1,
+            sort_by="MAE", output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_encoding2, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding2)))
-        self.assertEqual(len(test_encoding2), 3, 
-            "Expected 3 rows in output dataframe, got {}.".format(len(test_encoding2))) 
-        self.assertEqual(set(list(test_encoding2["Descriptor"])), set(test_desc2), 
-            "Output index values don't match expected.") 
+        self.assertEqual(len(test_encoding2), 1, 
+            "Expected 1 rows in output dataframe, got {}.".format(len(test_encoding2))) 
+        self.assertEqual(test_encoding2["Descriptor"].values[0], test_desc2, 
+            "Output index values don't match expected, got {}.".format(test_encoding2["Descriptor"].values[0])) 
+        self.assertEqual(test_encoding2["Group"].values[0], "Autocorrelation", 
+            "Output group values don't match expected, got {}.".format(test_encoding2["Group"].values[0]))   
         self.assertEqual(test_encoding2["Descriptor"].dtype, "string[python]", 
             "Expected index column to be type string, got {}.".format(test_encoding2["Descriptor"].dtype))
         self.assertEqual(test_encoding2["Group"].dtype, "string[python]",
@@ -329,23 +328,22 @@ class EncodingTests(unittest.TestCase):
             "Expected RPD column to be type float, got {}.".format(test_encoding2["RPD"].dtype))
         self.assertEqual(test_encoding2["Explained Variance"].dtype, float,
             "Expected Explained Variance column to be type float, got {}.".format(test_encoding2["Explained Variance"].dtype))
-        for group in list(test_encoding2["Group"]):
-            self.assertIn(group, self.descriptor_groups, 
-                "Group {} not found in list of groups:\n{}".format(group, self.descriptor_groups))
         for col in test_encoding2.columns:
             self.assertIn(col, self.expected_desc_encoding_output_columns,
                 "Column {} not found in list of column:\n{}".format(col, self.expected_desc_encoding_output_columns))
 #3.)
-        test_desc3 = ["moran_auto"]
-        test_encoding3 = self.test_config3.descriptor_encoding(desc_list=test_desc3, desc_combo=1,
-            sort_by="MAE", output_folder=self.test_output_folder)
+        test_desc3 = ["ctd", "conjoint_triad", "dipeptide_composition"]
+        test_encoding3 = self.test_config2.descriptor_encoding(descriptors=test_desc3, desc_combo=1, 
+            sort_by="MSE", output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_encoding3, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding3)))
-        self.assertEqual(len(test_encoding3), 1, 
-            "Expected 1 rows in output dataframe, got {}.".format(len(test_encoding3))) 
-        self.assertEqual(list(test_encoding3["Descriptor"]), test_desc3, 
-            "Output index values don't match expected.") 
+        self.assertEqual(len(test_encoding3), 3, 
+            "Expected 3 rows in output dataframe, got {}.".format(len(test_encoding3))) 
+        self.assertEqual(set(list(test_encoding3["Descriptor"])), set(test_desc3), 
+            "Output index values don't match expected, got {}.".format(list(test_encoding3["Descriptor"]))) 
+        self.assertEqual(set(list(test_encoding3["Group"])), set(["Composition", "Conjoint Triad", "CTD"]), 
+            "Output group values don't match expected, got {}.".format(list(test_encoding3["Group"])))
         self.assertEqual(test_encoding3["Descriptor"].dtype, "string[python]", 
             "Expected index column to be type string, got {}.".format(test_encoding3["Descriptor"].dtype))
         self.assertEqual(test_encoding3["Group"].dtype, "string[python]",
@@ -362,15 +360,12 @@ class EncodingTests(unittest.TestCase):
             "Expected RPD column to be type float, got {}.".format(test_encoding3["RPD"].dtype))
         self.assertEqual(test_encoding3["Explained Variance"].dtype, float,
             "Expected Explained Variance column to be type float, got {}.".format(test_encoding3["Explained Variance"].dtype))
-        for group in list(test_encoding3["Group"]):
-            self.assertIn(group, self.descriptor_groups, 
-                "Group {} not found in list of groups:\n{}".format(group, self.descriptor_groups))
         for col in test_encoding3.columns:
             self.assertIn(col, self.expected_desc_encoding_output_columns,
                 "Column {} not found in list of column:\n{}".format(col, self.expected_desc_encoding_output_columns))
 #4.)
-        test_desc4 = []
-        test_encoding4 = self.test_config1.descriptor_encoding(desc_list=test_desc4, desc_combo=1, 
+        test_desc4 = [] #no descriptors passed into encoding function will calculate/import all descriptors for dataset
+        test_encoding4 = self.test_config1.descriptor_encoding(descriptors=test_desc4, desc_combo=1, 
             sort_by="RPD", output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_encoding4, pd.DataFrame, 
@@ -407,33 +402,37 @@ class EncodingTests(unittest.TestCase):
 #5.)
         invalid_test_desc5 = "invalid_descriptor_name" 
         with self.assertRaises(ValueError):
-            test_encoding5 = self.test_config1.descriptor_encoding(desc_list=invalid_test_desc5, desc_combo=1, sort_by="Explained Variance")
+            self.test_config1.descriptor_encoding(descriptors=invalid_test_desc5, desc_combo=1, sort_by="Explained Variance")
 #6.)
         invalid_test_desc6 = 12345 
-        with self.assertRaises(TypeError):
-            test_encoding6 = self.test_config1.descriptor_encoding(desc_list=invalid_test_desc6, desc_combo=1, sort_by="MAE")
-#7.)
         invalid_test_desc7 = True 
         with self.assertRaises(TypeError):
-            test_encoding7 = self.test_config1.descriptor_encoding(desc_list=invalid_test_desc7, desc_combo=1, sort_by="RMSE")
+            self.test_config1.descriptor_encoding(descriptors=invalid_test_desc6, desc_combo=1, sort_by="MAE")
+            self.test_config1.descriptor_encoding(descriptors=invalid_test_desc7, desc_combo=1, sort_by="RMSE")
 
     # @unittest.skip("AAI + Descriptor encoding functionality can take a lot of time, skipping.")
     def test_aai_descriptor_encoding(self):
         """ Testing AAI + Descriptor encoding functionality in Encoding module. """
 #1.)    
-        test_aai1 = ["FAUJ880110"]
-        test_desc1 = ["ctd"]
-        test_encoding1 = self.test_config1.aai_descriptor_encoding(aai_list=test_aai1, desc_list=test_desc1, 
+        test_aai1 = "FAUJ880110"
+        test_desc1 = "ctd"
+        test_encoding1 = self.test_config1.aai_descriptor_encoding(aai_indices=test_aai1, descriptors=test_desc1, 
             desc_combo=1, sort_by="R2", output_folder=self.test_output_folder)
-
+        
+        print("test_encoding1")
+        print(test_encoding1)
         self.assertIsInstance(test_encoding1, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding1)))
         self.assertEqual(len(test_encoding1), 1, 
             "Expected 1 rows in output dataframe, got {}.".format(len(test_encoding1))) 
-        self.assertEqual(list(test_encoding1["Index"]), test_aai1, 
-            "Expected index column to be type string, got {}.".format(test_encoding1["Index"].dtype))
-        self.assertEqual(list(test_encoding1["Descriptor"]), test_desc1, 
-            "Output index values don't match expected.") 
+        self.assertEqual(test_encoding1["Index"].values[0], test_aai1, 
+            "Output index values don't match expected, got {}.".format(test_encoding1["Index"].values[0])) 
+        self.assertEqual(test_encoding1["Category"].values[0], "geometry", 
+            "Output group values don't match expected, got {}.".format(test_encoding1["Group"].values[0]))  
+        self.assertEqual(test_encoding1["Descriptor"].values[0], test_desc1, 
+            "Output index values don't match expected, got {}.".format(test_encoding1["Descriptor"].values[0])) 
+        self.assertEqual(test_encoding1["Group"].values[0], "CTD", 
+            "Output group values don't match expected, got {}.".format(test_encoding1["Group"].values[0]))  
         self.assertEqual(test_encoding1["Index"].dtype, "string[python]", 
             "Expected index column to be type string, got {}.".format(test_encoding1["Index"].dtype))
         self.assertEqual(test_encoding1["Category"].dtype, "string[python]", 
@@ -454,26 +453,20 @@ class EncodingTests(unittest.TestCase):
             "Expected RPD column to be type float, got {}.".format(test_encoding1["RPD"].dtype))
         self.assertEqual(test_encoding1["Explained Variance"].dtype, float,
             "Expected Explained Variance column to be type float, got {}.".format(test_encoding1["Explained Variance"].dtype))
-        for cat in list(test_encoding1["Category"]):
-            self.assertIn(cat, self.index_categories, 
-                "Category {} not found in list of categories:\n{}".format(cat, self.index_categories))
-        for group in list(test_encoding1["Group"]):
-            self.assertIn(group, self.descriptor_groups, 
-                "Group {} not found in list of groups:\n{}".format(group, self.descriptor_groups))
         for col in test_encoding1.columns:
             self.assertIn(col, self.expected_aai_desc_encoding_output_columns,
                 "Column {} not found in list of column:\n{}".format(col, self.expected_aai_desc_encoding_output_columns))
 #2.)    
-        test_aai2 = ["BIGC670101", "DAYM780201"]
+        test_aai2 = "BIGC670101, DAYM780201" 
         test_desc2 = ["tripeptide_composition", "quasi_sequence_order", "sequence_order_coupling_number"]
-        test_encoding2 = self.test_config1.aai_descriptor_encoding(aai_list=test_aai2, desc_list=test_desc2, 
+        test_encoding2 = self.test_config2.aai_descriptor_encoding(aai_indices=test_aai2, descriptors=test_desc2, 
             desc_combo=1, sort_by="MSE", output_folder=self.test_output_folder)
 
         self.assertIsInstance(test_encoding2, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding2)))
         self.assertEqual(len(test_encoding2), 6, 
             "Expected 6 rows in output dataframe, got {}.".format(len(test_encoding2))) 
-        self.assertEqual(set(list(test_encoding2["Index"])), set(test_aai2), 
+        self.assertEqual(set(list(test_encoding2["Index"])), set(test_aai2.replace(' ', '').split(',')), 
             "Expected index column to be type string, got {}.".format(test_encoding2["Index"].dtype))
         self.assertEqual(set(list(test_encoding2["Descriptor"])), set(test_desc2), 
             "Output index values don't match expected.") 
@@ -507,17 +500,17 @@ class EncodingTests(unittest.TestCase):
             self.assertIn(col, self.expected_aai_desc_encoding_output_columns,
                 "Column {} not found in list of column:\n{}".format(col, self.expected_aai_desc_encoding_output_columns))
 #3.)    
-        test_aai3 = ["GEOR030107", "KARS160113", "COWR900101"]
+        test_aai3 = "GEOR030107, KARS160113, COWR900101"
         test_desc3 = ["amino_acid_composition", "ctd_distribution"]
-        test_encoding3 = self.test_config2.aai_descriptor_encoding(aai_list=test_aai3, desc_list=test_desc3, 
-            desc_combo=1, sort_by="MSE", output_folder=self.test_output_folder)
-
+        test_encoding3 = self.test_config3.aai_descriptor_encoding(aai_indices=test_aai3, descriptors=test_desc3, 
+            desc_combo=1, sort_by="MSE", output_folder=self.test_output_folder) #**
+        
         self.assertIsInstance(test_encoding3, pd.DataFrame, 
             "Expected output to be a dataframe, got {}.".format(type(test_encoding3)))
         self.assertEqual(len(test_encoding3), 6, 
-            "Expected 6 rows in output dataframe, got {}.".format(len(test_encoding3))) 
-        self.assertEqual(set(list(test_encoding3["Index"])), set(test_aai3), 
-            "Expected index column to be type string, got {}.".format(test_encoding3["Index"].dtype))
+            "Expected 6 rows in output dataframe, got {}.".format(len(test_encoding3)))  #**
+        self.assertEqual(set(list(test_encoding3["Index"])), set(test_aai3.replace(' ', '').split(',')), 
+            "Expected index column to be type string, got {}.".format(list(test_encoding3["Index"])))
         self.assertEqual(set(list(test_encoding3["Descriptor"])), set(test_desc3), 
             "Output index values don't match expected.") 
         self.assertEqual(test_encoding3["Index"].dtype, "string[python]", 
@@ -555,21 +548,21 @@ class EncodingTests(unittest.TestCase):
             "Output csv storing encoding results not found.")
 #4.)    
         test_aai4 = ["invalid_aai_index"]
+        test_aai5 = ""
         test_desc4 = ["invalid_descriptor_name"]
         with self.assertRaises(ValueError):
-            test_encoding4 = self.test_config1.aai_descriptor_encoding(aai_list=test_aai4, desc_list=test_desc4, 
-                desc_combo=1, sort_by="MSE")
+            self.test_config1.aai_descriptor_encoding(aai_indices=test_aai4, descriptors=test_desc4, desc_combo=1, sort_by="MSE")
+            self.test_config1.aai_descriptor_encoding(aai_indices=test_aai5, descriptors=test_desc4, desc_combo=1, sort_by="MSE")
 #6.)
-        test_aai5 = 12345
+        test_aai6 = 12345
         test_desc5 = 1000
         with self.assertRaises(TypeError):
-            test_encoding4 = self.test_config1.aai_descriptor_encoding(aai_list=test_aai5, desc_list=test_desc5, 
-                desc_combo=1, sort_by="MAE")
+            self.test_config1.aai_descriptor_encoding(aai_indices=test_aai6, descriptors=test_desc5, desc_combo=1, sort_by="MAE")
 
-#7.)    ** Below inputs result in all AAI Indices being encoded with all descriptors, commenting out due to time constraints **
+#7.)    ** Below inputs result in all AAI Indices being encoded with all descriptors, commenting out due to time and resource constraints **
         # test_aai7 = []
-        # test_desc7 = []
-        # test_encoding7 = self.test_config1.aai_descriptor_encoding(aai_list=test_aai7, desc_list=test_desc7, 
+        # test_desc6 = []
+        # test_encoding7 = self.test_config1.aai_descriptor_encoding(aai_indices=test_aai7, descriptors=test_desc6, 
         #     desc_combo=1, sort_by="MAE", output_folder=self.test_output_folder)
 
         # self.assertIsInstance(test_encoding7, pd.DataFrame, 

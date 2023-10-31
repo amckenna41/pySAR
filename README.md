@@ -6,8 +6,8 @@
 
 # pySAR #
 [![PyPI](https://img.shields.io/pypi/v/pySAR)](https://pypi.org/project/pySAR/)
-[![pytest](https://github.com/amckenna41/pySAR/workflows/Building%20and%20Testing%20%F0%9F%90%8D/badge.svg)](https://github.com/amckenna41/pySAR/actions?query=workflowBuilding%20and%20Testing%20%F0%9F%90%8D)
-[![CircleCI](https://circleci.com/gh/amckenna41/pySAR.svg?style=svg&circle-token=d860bb64668be19d44f106841b80eb47a8b7e7e8)](https://app.circleci.com/pipelines/github/amckenna41/pySAR)
+[![pytest](https://github.com/amckenna41/pySAR/workflows/Building%20and%20Testing/badge.svg)](https://github.com/amckenna41/pySAR/actions?query=workflowBuilding%20and%20Testing)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/amckenna41/pySAR/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/amckenna41/pySAR/tree/master)
 [![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
 [![PythonV](https://img.shields.io/pypi/pyversions/pySAR?logo=2)](https://pypi.org/project/pySAR/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
@@ -21,7 +21,7 @@
 <!-- [![Documentation Status](https://readthedocs.org/projects/ansicolortags/badge/?version=latest)](http://ansicolortags.readthedocs.io/?badge=latest) -->
 
 Table of Contents
------------------
+=================
 
   * [Introduction](#Introduction)
   * [Requirements](#requirements)
@@ -36,22 +36,22 @@ Table of Contents
 
 
 Research Article
-----------------
-The research article that accompanied this software is titled: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as [pySAR_research.pdf][pdf]. The article was published in the Journal of Biomedical Informatics and is available [here][article]. There is also a quick jupyter notebook demo of `pySAR` available [here][demo].
+================
+The research article that accompanied this software is titled: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors". This research article is uploaded to the repository as [pySAR_research.pdf][pdf]. The article was published in the Journal of Biomedical Informatics and is available [here][article] [[1]](#references). There is also a quick <b>Colab notebook demo</b> of `pySAR` available [here][demo].
 
 How to cite
------------
+===========
 > Mckenna, A., & Dubey, S. (2022). Machine learning based predictive model for the analysis of sequence activity relationships using protein spectra and protein descriptors. Journal of Biomedical Informatics, 128(104016), 104016. https://doi.org/10.1016/j.jbi.2022.104016
 
 Introduction
-------------
-`pySAR` is a Python library for analysing Sequence Activity Relationships (SARs) of protein sequences. `pySAR` offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features. The software uses physiochemical and biochemical features from the Amino Acid Index (AAI) database [[1]](#references) as well as allowing for the calculation of a range of structural, physiochemical and biochemical protein descriptors.<br><br>
+============
+`pySAR` is a Python library for analysing Sequence Activity Relationships (SARs) of protein sequences. `pySAR` offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features. The software uses physiochemical and biochemical features from the Amino Acid Index (AAI) database [[2]](#references) as well as allowing for the calculation of a range of structural, physiochemical and biochemical protein descriptors.<br><br>
 After finding the optimal technique and feature set at which to encode your dataset of sequences, `pySAR` can then be used to build a predictive regression model with the training data being that of the encoded sequences, and training labels being the experimentally pre-calculated activity values for each protein sequence. This model maps a set of protein sequences to the sought-after activity value, being able to accurately predict the activity/fitness value of new unseen sequences. The use-case for the software is within the field of protein engineering and Directed Evolution, where a user has a set of experimentally determined activity values for a library of mutant protein sequences and wants to computationally predict the sought activity value for a selection of mutated sequences, in the aim of finding the best sequence that minimises/maximises their activity value. <br>
 
-Two additional <strong>custom-built</strong> softwares were created alongside pySAR - [aaindex][aaindex] and [protpy][protpy]. The aaindex software package is used for parsing the amino acid index which is a database of numerical indices representing various physicochemical and biochemical properties of amino acids and pairs of amino acids [[1]](#references). protpy is used for calculating a series of protein physiochemical, biochemical and structural protein descriptors. Both of these software packages are integrated into pySAR but can also be used individually for their respective purposes. 
+Two additional <strong>custom-built</strong> softwares were created alongside pySAR - [aaindex][aaindex] and [protpy][protpy]. The aaindex software package is used for parsing the amino acid index which is a database of numerical indices representing various physicochemical and biochemical properties of amino acids and pairs of amino acids [[2]](#references). protpy is used for calculating a series of protein physiochemical, biochemical and structural protein descriptors. Both of these software packages are integrated into pySAR but can also be used individually for their respective purposes. 
 
 Requirements
-------------
+============
 * [Python][python] >= 3.7
 * [aaindex][aaindex] >= 1.0.4
 * [protpy][protpy] >= 1.0.7
@@ -64,7 +64,7 @@ Requirements
 * [seaborn][seaborn] >= 0.12.2
 
 Installation
------------------
+============
 Install the latest version of `pySAR` via [PyPi][PyPi] using pip:
 
 ```bash
@@ -79,7 +79,7 @@ cd pySAR
 ```
 
 Usage
------
+=====
 ### Confile File
 `pySAR` works through JSON configuration files. There are many different customisable parameters for the functionalities in `pySAR` including the metaparameters of each of the available protein descriptors, all Digital Signal Processing (DSP) parameters in the pyDSP module, the type of regression model to use and parameters specific to the dataset. These config files offer a more straightforward way of making any changes to the `pySAR` pipeline. The names of **All** the parameters as listed in the example config files must remain unchanged, only the value of each parameter should be changed, any parameters not being used can be set to <em>null</em>. An example of the config file used in my research project, with most of the available parameters, can be seen below and in <em>config/thermostability.json</em>.
 
@@ -417,7 +417,7 @@ Prior to evaluating the various available properties and features at which to en
 from pySAR.descriptors import *  #import descriptors class
 
 #create instance of descriptors class
-desc = Descriptors("test_config6")
+desc = Descriptors(config_file="test_config6")
 
 #calculating all descriptor values and exporting to file named by parameter descriptors_csv
 desc.get_all_descriptors(export=True)
@@ -426,7 +426,7 @@ desc.get_all_descriptors(export=True)
 </details>
 
 <details><summary><b>Get record from AAIndex database:</summary></b><br>
-The AAIndex class offers diverse functionalities for obtaining any element from any record in the database. Each record is stored in json format in a class attribute called <em>aaindex_json</em>. You can search for a particular record by its index code, description or reference. You can also get the index category, and importantly its associated amino acid values.<br>
+A custom-built package called `aaindex` was created for this project to work with all the data in the AAIndex databases, primarily the <b>aaindex1</b>. The AAIndex library offers diverse functionalities for obtaining all data from all records within the <b>aaindex1</b>. Each record is stored in json format and can be retrieved via its accession number. Each record contains the following attributes: description, references, category, notes, correlation coefficient, pmid and values.<br>
 
 ```python
 from aaindex import aaindex1 
@@ -447,7 +447,7 @@ amino_acids = aaindex1.amino_acids() #get list of all canonical amino acids
 </details>
 
 Directories
------------
+===========
 * `/config` - configuration files for the example datasets that `pySAR` has been tested with, as well as the thermostability.json config file that was used in the research. These config files should be used as a template for future datasets used with `pySAR`.
 * `/docs` - documentation for `pySAR` (pending).
 * `/example_datasets` - example datasets used for the building and testing of `pySAR`, including the thermostability dataset used in the research. The format of these datasets shoould be used as a template for future datasets used with `pySAR`.
@@ -456,11 +456,11 @@ Directories
 * `/tests` - unit and integration tests for `pySAR`.
 
 Issues
------
+======
 Any issues, errors or bugs can be raised via the [Issues](https://github.com/amckenna41/pySAR/issues) tab in the repository.
 
 Tests
------
+=====
 To run all tests, from the main `pySAR` repo folder run:
 ```
 python3 -m unittest discover tests
@@ -472,25 +472,26 @@ python -m unittest tests.MODULE_NAME -v
 ```
 
 Contact
--------
+=======
 If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab. <br><br>
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/adam-mckenna-7a5b22151/)
 
 License
------------
+=======
 Distributed under the MIT License. See `LICENSE` for more details.  
 
 References
-----------
-\[1\]: Kawashima, S. and Kanehisa, M., 2000. AAindex: amino acid index database. Nucleic acids research, 28(1), pp.374-374. DOI: 10.1093/nar/27.1.368 <br><br>
-\[2\]: Fontaine NT, Cadet XF, Vetrivel I. Novel Descriptors and Digital Signal Processing- Based Method for Protein Sequence Activity Relationship Study. Int J Mol Sci. 2019 Nov 11;20(22):5640. doi: 10.3390/ijms20225640. PMID: 31718061; PMCID: PMC6888668. <br><br>
-\[3\]: Cadet, F., Fontaine, N., Li, G. et al. A machine learning approach for reliable prediction of amino acid interactions and its application in the directed evolution of enantioselective enzymes. Sci Rep 8, 16757 (2018).<br><br>
-\[4\]: Lutz S. Beyond directed evolution--semi-rational protein engineering and design. Curr Opin Biotechnol. 2010 Dec;21(6):734-43. doi: 10.1016/j.copbio.2010.08.011. Epub 2010 Sep 24. PMID: 20869867; PMCID: PMC2982887. <br><br>
-\[5\]: Yang, K.K., Wu, Z. & Arnold, F.H. Machine-learning-guided directed evolution for protein engineering. Nat Methods 16, 687–694 (2019). https://doi.org/10.1038/s41592-019-0496-6 <br><br>
-\[6\]: Yuting Xu, Deeptak Verma, Robert P. Sheridan, Andy Liaw, Junshui Ma, Nicholas M. Marshall, John McIntosh, Edward C. Sherer, Vladimir Svetnik, and Jennifer M. Johnston
+==========
+\[1\]: Mckenna, A., & Dubey, S. (2022). Machine learning based predictive model for the analysis of sequence activity relationships using protein spectra and protein descriptors. Journal of Biomedical Informatics, 128(104016), 104016. https://doi.org/10.1016/j.jbi.2022.104016
+\[2\]: Kawashima, S. and Kanehisa, M., 2000. AAindex: amino acid index database. Nucleic acids research, 28(1), pp.374-374. DOI: 10.1093/nar/27.1.368 <br><br>
+\[3\]: Fontaine NT, Cadet XF, Vetrivel I. Novel Descriptors and Digital Signal Processing- Based Method for Protein Sequence Activity Relationship Study. Int J Mol Sci. 2019 Nov 11;20(22):5640. doi: 10.3390/ijms20225640. PMID: 31718061; PMCID: PMC6888668. <br><br>
+\[4\]: Cadet, F., Fontaine, N., Li, G. et al. A machine learning approach for reliable prediction of amino acid interactions and its application in the directed evolution of enantioselective enzymes. Sci Rep 8, 16757 (2018).<br><br>
+\[5\]: Lutz S. Beyond directed evolution--semi-rational protein engineering and design. Curr Opin Biotechnol. 2010 Dec;21(6):734-43. doi: 10.1016/j.copbio.2010.08.011. Epub 2010 Sep 24. PMID: 20869867; PMCID: PMC2982887. <br><br>
+\[6\]: Yang, K.K., Wu, Z. & Arnold, F.H. Machine-learning-guided directed evolution for protein engineering. Nat Methods 16, 687–694 (2019). https://doi.org/10.1038/s41592-019-0496-6 <br><br>
+\[7\]: Yuting Xu, Deeptak Verma, Robert P. Sheridan, Andy Liaw, Junshui Ma, Nicholas M. Marshall, John McIntosh, Edward C. Sherer, Vladimir Svetnik, and Jennifer M. Johnston
 Journal of Chemical Information and Modeling 2020 60 (6), 2773-2790
 DOI: 10.1021/acs.jcim.0c00073 <br><br>
-\[7\]: Medina-Ortiz, D., Contreras, S., Amado-Hinojosa, J., Torres-Almonacid, J., Asenjo, J. A., Navarrete, M., & Olivera-Nappa, Á. (2020). Combination of digital signal processing and assembled predictive models facilitates the rational design of proteins. ArXiv [Cs.CE]. <br>
+\[8\]: Medina-Ortiz, D., Contreras, S., Amado-Hinojosa, J., Torres-Almonacid, J., Asenjo, J. A., Navarrete, M., & Olivera-Nappa, Á. (2020). Combination of digital signal processing and assembled predictive models facilitates the rational design of proteins. ArXiv [Cs.CE]. <br>
 
 <a href="https://www.buymeacoffee.com/amckenna41" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 

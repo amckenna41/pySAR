@@ -26,7 +26,7 @@ class ModelTests(unittest.TestCase):
     in pySAR package. 
 
     Test Cases
-    ----------
+    ==========
     test_model:
         testing correct overall Model class and module functionality.
     test_model_input_closeness:
@@ -171,15 +171,15 @@ class ModelTests(unittest.TestCase):
             "Expected representation of model object to be SGDRegressor, got {}".format(repr(model)))
 #13.)
         with self.assertRaises(ValueError, msg='Value Error raised, invalid model/algorithm name given.'):
-            bad_model = Model(self.dummy_X, self.dummy_Y, 'abcdefg')
-            bad_model = Model(self.dummy_X, self.dummy_Y, 'notamodel')
-            bad_model = Model(self.dummy_X, self.dummy_Y, '123')
-            bad_model = Model(self.dummy_X, self.dummy_Y, 'blahblahblah')
+            Model(self.dummy_X, self.dummy_Y, 'abcdefg')
+            Model(self.dummy_X, self.dummy_Y, 'notamodel')
+            Model(self.dummy_X, self.dummy_Y, '123')
+            Model(self.dummy_X, self.dummy_Y, 'blahblahblah')
 #14.)
         with self.assertRaises(TypeError, msg="Type Error raised, input must be of type string."):
-            bad_model = Model(self.dummy_X, self.dummy_Y, 12345)
-            bad_model = Model(self.dummy_X, self.dummy_Y, 5.60)
-            bad_model = Model(self.dummy_X, self.dummy_Y, False)
+            Model(self.dummy_X, self.dummy_Y, 12345)
+            Model(self.dummy_X, self.dummy_Y, 5.60)
+            Model(self.dummy_X, self.dummy_Y, False)
 
     def test_train_test_split(self):
         """ Testing splitting up dataset into training and test data. """
@@ -225,7 +225,7 @@ class ModelTests(unittest.TestCase):
 #4.)
         model = Model(self.dummy_X_2, self.dummy_Y, 'plsreg')
         with self.assertRaises(ValueError, msg='Value Error raised, invalid test_split type input.'):
-            X_train, X_test, Y_train, Y_test = model.train_test_split(test_split="ABCD")
+            model.train_test_split(test_split="ABCD")
 
     def test_predict(self):
         """ Testing the prediction of values for unseen sequences using the trained model. """

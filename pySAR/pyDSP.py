@@ -2,12 +2,9 @@
 #################                  Protein DSP                 #################
 ################################################################################
 
-from multiprocessing.sharedctypes import Value
-import pandas as pd
 import numpy as np
 from difflib import get_close_matches
 import inspect
-from scipy import signal 
 from scipy.signal import savgol_filter, medfilt, lfilter, hilbert
 from scipy.signal.windows import blackman, hann, hamming, bartlett, blackmanharris, \
      kaiser, gaussian, barthann, bohman, chebwin, cosine, exponential, boxcar, \
@@ -47,17 +44,28 @@ class PyDSP():
     is a pre-reqisite to use the functions in this class, meaning sequences cannot be directly
     input.
 
+    The class accepts two main input parameters. The protein_seqs input param if an numpy array 
+    of numerically pre-encoded protein sequences. The config_file parameter is the filename 
+    or filepath to the configuration file that contains all the required parameters for the 
+    DSP encoding strategy/process. The class also accepts a variable number of keyword arguments
+    (**kwargs) that will override the config file parameter values of the same name if 
+    they are passed in.
+
     Parameters
-    ----------
+    ==========
     :config_file (str/json)
         path to configuration file containing DSP parameters OR JSON object of DSP parameters,
         depending on if the parameter is a valid filepath or not.
     :protein_seqs (np.ndarray)
         array of pre-encoded protein sequences. Class accepts only numerically encoded protein
         sequences, not in amino acid form.
+    **kwargs: dict
+        keyword arguments and values passed into constructor. The keywords should be 
+        the same name and form of those in the configuration file. The keyword values
+        input take precedence over those in the config files.
 
     Methods
-    -------
+    =======
     pre_processing():
         complete pre-processing steps before completeing DSP functionality.
     encode_seqs():
@@ -69,11 +77,11 @@ class PyDSP():
     max_freq():
         calculate max frequency of FFT
     """
-    def __init__(self, config_file="", protein_seqs=None):
+    def __init__(self, config_file="", protein_seqs=None, **kwargs):
 
         self.protein_seqs = protein_seqs
         self.config_file = config_file
-        self.parameters = {}
+        self.config_parameters = {}
 
         config_filepath = ""
 
@@ -86,19 +94,19 @@ class PyDSP():
         elif (isinstance(config_file, str) and os.path.isfile(os.path.join('config', self.config_file))):
             config_filepath = os.path.join('config', self.config_file)
         elif (isinstance(config_file, dict)):
-            self.parameters = config_file
+            self.config_parameters = config_file
         else:
             raise OSError('JSON config file not found at path: {}.'.format(config_filepath))
         if (isinstance(config_file, str)):
             try:
                 #open config file and parse parameters 
                 with open(config_filepath) as f:
-                    self.parameters = json.load(f)
+                    self.config_parameters = json.load(f)
             except:
                 raise JSONDecodeError('Error parsing config JSON file: {}.'.format(config_filepath))
 
         #create instance of Map class so parameters in config can be accessed via dot notation
-        self.parameters = Map(self.parameters)
+        self.config_parameters = Map(self.config_parameters)
 
         #raise error if protein sequences parameter is not set
         if (self.protein_seqs is None):
@@ -118,17 +126,16 @@ class PyDSP():
         #     except:
         #         raise ValueError('Error reshaping input sequences: {}'.format(protein_seqs))
 
-        #set all DSP parameters
-        self.dsp_parameters = self.parameters.pyDSP
-        self.use_dsp = self.dsp_parameters["use_dsp"]
-        self.spectrum = self.dsp_parameters["spectrum"]
-        self.window_parameters = self.dsp_parameters["window"]
-        self.window_type = self.window_parameters["type"]
+        #set pyDSP parameters from kwargs or json config - use_dsp, spectrum, window function, window filter
+        self.dsp_parameters = kwargs.get('dsp_parameters') if 'dsp_parameters' in kwargs else self.config_parameters.pyDSP
+        self.spectrum = kwargs.get('spectrum') if 'spectrum' in kwargs else self.dsp_parameters["spectrum"]
+        self.window_parameters = kwargs.get('window_parameters') if 'window_parameters' in kwargs else self.dsp_parameters["window"]
         self.window = None
-        self.filter_parameters = self.dsp_parameters["filter"]
-        self.filter_type = self.filter_parameters["type"]
+        self.filter_parameters = kwargs.get('filter_parameters') if 'filter_parameters' in kwargs else self.dsp_parameters["filter"]
         self.filter = None
-        
+        self.window_type = kwargs.get('window_type') if 'window_type' in kwargs else self.config_parameters.pyDSP["window"]["type"] 
+        self.filter_type = kwargs.get('filter_type') if 'filter_type' in kwargs else self.config_parameters.pyDSP["filter"]["type"]
+
         #pre-processing of encoded protein sequences
         self.pre_processing()
         
@@ -143,11 +150,11 @@ class PyDSP():
         protein spectra and window function parameter names.
 
         Parameters
-        ----------
+        ==========
         None
             
         Returns
-        -------
+        =======
         None
         """
         #zero-pad encoded sequences so they are all the same length
@@ -323,11 +330,11 @@ class PyDSP():
         spectrum input as parameter then value error raised.
 
         Parameters 
-        ----------
+        ==========
         None
 
         Returns
-        -------
+        =======
         None
         """
         #create copy of protein sequences so the original instance var remains unchanged
@@ -410,14 +417,14 @@ class PyDSP():
         Get the inverse Fourier Transform of FFT.
 
         Parameters
-        ----------
+        ==========
         :a : np.ndarray
             input array of 1D Fourier Transform.
         :n : int
             length of the output.
 
         Returns
-        -------
+        =======
         :inv_fft : np.ndarray
             array of inverse Fourier Transform.
         """
@@ -429,12 +436,12 @@ class PyDSP():
         Get the Consensus Frequency from Fourier Transform of encoded protein sequences.
 
         Parameters
-        ----------
+        ==========
         :freqs : np.ndarray
             frequencies of Fourier Transform.
 
         Returns
-        -------
+        =======
         :CF : float
             consensus frequency found in array of frequencies.
         :CFi : int
@@ -454,12 +461,12 @@ class PyDSP():
         Get the maximum frequency from Fourier Transform of an encoded protein sequence.
 
         Parameters
-        ----------
+        ==========
         :freqs : np.ndarray
             frequencies from Fourier Transform.
 
         Returns
-        -------
+        =======
         :max_F : float
             maximum frequency found in array of frequencies.
         :max_FI : int
