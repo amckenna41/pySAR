@@ -81,12 +81,15 @@ jobs:
         echo "Testing using unittest..."
         python3 -m unittest discover tests -b
         
-    #upload to Code Coverage
+    #upload to Code Coverage, only if matrix python version is 3.9
     - name: Upload Coverage Report to Codecov
       uses: codecov/codecov-action@v3
+      if: ${{ matrix.python-version == '3.9' }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
         flags: pySAR_workflow
-    
+
     #upload test artifacts to workflow
     - name: Upload Test Artifacts
       uses: actions/upload-artifact@v3

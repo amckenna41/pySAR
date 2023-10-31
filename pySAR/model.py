@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRe
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.metrics import SCORERS
+from sklearn.metrics._scorer import _SCORERS
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.feature_selection import SelectKBest, chi2, VarianceThreshold, RFE, SelectFromModel, SequentialFeatureSelector
 from difflib import get_close_matches
@@ -416,12 +416,12 @@ class Model():
         """
         #input 'param_grid' parameter must be a dict, if not raise error
         if not (isinstance(param_grid, dict)):
-            raise TypeError('param_grid argument must be of type dict, got type {}.'.format(type(parameters)))
+            raise TypeError('param_grid argument must be of type dict, got type {}.'.format(type(param_grid)))
 
         #input metric must be in available scoring metrics, if not raise error
-        if (metric not in sorted(SCORERS.keys())):
+        if (metric not in sorted(_SCORERS.keys())):
             raise UndefinedMetricWarning('Invalid scoring metric, {} not in available Sklearn Scoring Metrics: {}.\n'\
-                .format(metric, SCORERS.keys()))
+                .format(metric, _SCORERS.keys()))
 
         #cv must be of type int and be between 5 and 10, if not then default of 5 is used
         if not ((isinstance(cv, int)) or (cv<5 or cv>10)):
