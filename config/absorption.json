@@ -1,7 +1,7 @@
 {
     "dataset": 
       {
-        "dataset": "absorption.txt",
+        "dataset": "example_datasets/absorption.txt",
         "sequence_col": "sequence",
         "activity": "peak"
       },

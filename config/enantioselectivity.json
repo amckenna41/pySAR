@@ -1,7 +1,7 @@
 {
     "dataset": 
       {
-        "dataset": "enantioselectivity.txt",
+        "dataset": "example_datasets/enantioselectivity.txt",
         "sequence_col": "sequence",
         "activity": "e-value"
       },

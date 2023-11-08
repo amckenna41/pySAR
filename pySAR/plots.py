@@ -14,16 +14,16 @@ def plot_reg(Y_true, Y_pred, r2, output_folder="", show_plot=False):
 
     Parameters
     ==========
-    :Y_true : np.ndarray
+    :Y_true: np.ndarray
         array of observed values.
-    :Y_pred : np.ndarray
+    :Y_pred: np.ndarray
         array of predicted values.
-    :r2 : float
+    :r2: float
         r2 score value.
-    :output_folder : str (default="")
+    :output_folder: str (default="")
         output folder to store regression plot to, if empty input it will be stored in 
         the OUTPUT_FOLDER global var.
-    :show_plot : bool (default=False)
+    :show_plot: bool (default=False)
         whether to display plot or not when function is run, if False the plot is just
         saved to output folder. 
 

@@ -1,7 +1,7 @@
 {
     "dataset": 
       {
-        "dataset": "localization.txt",
+        "dataset": "example_datasets/localization.txt",
         "sequence_col": "sequence",
         "activity": "log_GFP"
       },

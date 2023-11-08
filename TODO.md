@@ -79,7 +79,7 @@ To Do List:
 - [X] Could remove aaindex1 & aaindex1.json file from tests/test_data.
 - [X] Remove .coveralls.yml
 - [X] Move pySAR demo to Google Colab.
-- [ ] In descriptors/readme go into more detail about what each descriptor does.
+- [X] In descriptors/readme go into more detail about what each descriptor does.
 - [ ] Add documentation section in readme.
 - [X] Add Assertion message to some unit tests.
 - [X] Change mentions of "descriptor_paramters" to "descriptor_properties".
@@ -93,14 +93,14 @@ To Do List:
 - [X] Reorder software metadata in setup.py to be in order of main func, create __description__ var.
 - [X] Add download_url to setup.py - url of zipped package.
 - [X] In some unit tests, may need to use self.assertAlmostEqual instead of self.assertEqual.
-- [ ] Remove 'get_' from functions.
+- [X] Remove 'get_' from functions.
 - [X] Make self.params & other dicts in pySAR accessible via dot notation. 
 - [ ] Remove all camel casing function names/vars, change to underscores and lowercase (https://peps.python.org/pep-0008/#function-and-variable-names).
 - [X] Usage example using fasta import function/module.
 - [X] Use Map class to allow for config file and parameters accessible via dot notation. 
 - [X] In config files, change 'comp' to 'composition'
 - [X] Change protpy.aa_composition -> protpy.amino_acid_composition
-- [ ] Add normalize parameter to each autocorrelation func & config.
+- [X] Add normalize parameter to each autocorrelation func & config.
 - [X] Change all references of normalized_moreaubroto_autocorrelation to moreaubroto_autocorrelation
 - [X] Change 'Amp' -> 'amphiphilic' - config.md
 - [X] Change seq_order_... -> sequence_order... , quasi_seq_order -> quasi_sequence_order in config.md.
@@ -118,12 +118,12 @@ To Do List:
 - [X] Prepend 'ctd_' to the ctd descriptors names, attributes and function names.
 - [ ] Add reference numbers to comments in descriptor functions - double check existing ones are correct, reorder them.
 - [X] Change QSOrder to QSO.
-- [ ] Rewrite APAAComp descriptor comments to mention its dimensions change with lamda. 
+- [X] Rewrite APAAComp descriptor comments to mention its dimensions change with lamda. 
 - [X] Wrap all if statements in brackets.
 - [X] Remove convolution from pyDSP and config.
 - [X] Move Map class to utils.
 - [X] Ensure all functions have Parameters and Returns in the comments, even if they are None
-- [ ] Add filter function to pyDSP.
+- [X] Add filter function to pyDSP.
 - [X] Change self.spectra to self.spectrum in pyDSP.
 - [X] In function comments change default = X to default=
 - [X] For pseudo and amp composition, only test on 1 dataset as takes to long with all of them.
@@ -139,7 +139,7 @@ To Do List:
 - [X] Change aaindex column names from incrementing numbers to - "aa_1", "aa_2" ...
 - [X] Update aai encoding unit tests to take new naming convention into consideration.
 - [X] Ensure output from encoding funcs is DF not a Series.
-- [ ] Remove "Getting X Descriptor" etc?
+- [X] Remove "Getting X Descriptor" etc?
 - [ ] Rename software from pySAR -> pysar.
 - [X] Go over import_descriptors func.
 - [X] In test_descriptors, check if double import of descriptors module is needed.
@@ -149,7 +149,7 @@ To Do List:
 - [X] Rerun get all descriptors func on colab to take into account new conjoint triad and CTD column names.
 - [X] If ["ctd"]["all"] = true this calculates ALL CTD descriptors for all 7 properties, if not true then CTD descriptors are calculated individually. 
 - [X] Remove ctd_comp, distr, trans descriptors, just use parent CTD descriptors and slice from it.
-- [ ] Python unit tests using ctd with 1 property, and using all properties, check dimensions - 21 vs 147 (147/21=7). 21 dimensions per property. 3 C, 3 T, 15 D.
+- [X] Python unit tests using ctd with 1 property, and using all properties, check dimensions - 21 vs 147 (147/21=7). 21 dimensions per property. 3 C, 3 T, 15 D.
 - [X] Add spaces to test config files.
 - [ ] SOCN tests with distance matrix in config empty & non-empty, different SOCN functions.
 - [X] def quasi_sequence_order() - dimesnion (1,lag). def quasi_sequence_order_all() - dimension (1,lag*2)
@@ -163,7 +163,7 @@ To Do List:
 - [X] Change self.activity -> self.activity_col, set self.activity to the actual column data.
 - [X] Change all references to config_path to config_file, including dsp_config.
 - [X] in aai_encoding func in Encoding, reorder columns such that MAE is before RPD.
-- [ ] when testing desc and aai + desc endoing, use test config with and without pre-calcualted descriptors csv.
+- [X] when testing desc and aai + desc endoing, use test config with and without pre-calcualted descriptors csv.
 - [X] Ensure example_datasets isnt in software packaging.
 - [X] Pretty print json when printing parameters in Encoding functions.
 - [X] Sort by for RMSE and MSE incorrect, smallest values should be first, largest values last. Sort asc instead of sort desc.
@@ -177,7 +177,7 @@ To Do List:
 - [X] CTD columns are repeating twice in output csv.
 - [X] Remove property key from ctd_comp, ctd_distr, ctd_trans and from config.md
 - [X] Double check concatenated AAI columns have prefix aai_. Test this in test_encoding unit tests.
-- [ ] Only generate and or upload coverage report for one Python version in workflows.
+- [X] Only generate and or upload coverage report for one Python version in workflows.
 - [X] Input X and Y into Model class, initialise in constructor.
 - [X] Change test_size param to test_split.
 - [ ] Best params is empty when outputting hyperparameter results. Use default params if params in config is {}.
@@ -186,15 +186,15 @@ To Do List:
 - [ ] Add results from research folder to Google Drive, mention in Research Article section. Mention pre-calculated descriptors from same section.
 - [X] Remove 2 distance matrices from pySAR/data, now a part of protpy package.
 - [X] Remove manifest file after removal of pySAR/data.
-- [ ] Upload pySAR demo as ppt rather than .key.
+- [X] Upload pySAR demo as ppt rather than .key.
 - [X] Double check what happens when dict not passed into Map class, should error be rasied? Reflect change in aaindex.
 - [X] Remove get_protein module and references to it.
 - [X] Add circleci badge back into repo now that it's sorta working.
 - [X] In hyperparameter tuning results change CV to Number of cross-validation folds etc.
 - [X] Less verbose output for hyperparameter tuning.
-- [ ] __str__ of Desscriptor class displays all descriptor names and shapes.
+- [X] __str__ of Desscriptor class displays all descriptor names and shapes.
 - [X] Remove "descriptors" from config, move csv param to "desc_properties", rename desc_properties -> descriptors.
-- [X] Organise config, newline for [ and {
+- [X] Organise config, newline for [] and {}.
 - [X] Change all references of lamda to lambda.
 - [X] Remove cutoff index.
 - [ ] Unit test desc_combo in test_descriptor
@@ -202,11 +202,11 @@ To Do List:
 - [X] If less than 10 AAI Indices or Descriptors being encoded then print out else dont. Slight error when erroneauous index input this still outputs. Also model_parameters is empty.
 - [X] Finish encoding terminal outputs from desc and aai + desc. 
 - [X] Check columns generated from aai_encoding follow format aai_X.
-- [ ] Unit test columns follow format aai_X...
+- [X] Unit test columns follow format aai_X...
 - [X] In utils.save_results, double check that input parameter doesnt already have an extension on it.
 - [ ] Complete test_model feature_selection unit tests.
 - [X] Remove rfft from pyDSP.
-- [ ] Finish window and filter unit tests pyDSP.
+- [X] Finish window and filter unit tests pyDSP.
 - [X] pyDSP encode_seqs(),  window <> window_type
 - [X] for aai_desc_encoding in pySAR.py, check list of indices is split up into str.
 - [X] Test export of results: test output folder is created, import csv, double check columns, length etc, delete folder.
@@ -234,7 +234,7 @@ To Do List:
 - [X] Go through all unit tests, any tests that are wrapped in with.selfAssertRaises()... , remove var assignment and just call function.
  <!-- python3 -m venv pysar_venv source pysar_venv/bin/activate pip install . deactivate -->
  [Back to top](#TOP)
-- [ ] Mention that individual descriptors are explaiend in the protpy package. Mention protpy in pySar demo.
+- [X] Mention that individual descriptors are explaiend in the protpy package. Mention protpy in pySar demo.
 - [X] Use **kwargs in class contstructor to be able to pass in specific parameter values, override the config file, if applicable. 
 - [X] Change all config files to not use_dsp by default.
 - [X] Change all comment underlining from "------" to "=======".
@@ -249,14 +249,14 @@ To Do List:
 - [X] For pysar.encode_descriptor, pysar.encode_aai and pysar.encode_aai_descriptor functions, there doesnt seem to be any functionality to support list of indices and or descriptors atm.
 - [X] Encoding functions in pySAR used for concatenating multiple descriptors etc.
 - [X] Encoding functions in Encoding used for encoding multiple descriptors seperately.
-- [ ] For descriptor concatenations, maybe have a concat flag that if set to True will concat the multiple descriptors inoput.
-- [ ] Read over and update comments.
+- [X] For descriptor concatenations, maybe have a concat flag that if set to True will concat the multiple descriptors inoput.
+- [X] Read over and update comments.
 - [X] In encoding.py functions, if the same index/descriptor is put in twice, ensure it isn't duplicated.
 - [X] Order indices alphabetically.
 - [X] Some test outputs when displaying list of parameters have "invalid_aaindex_code" or "invalid_descriptor_name"
 - [X] Disable tqdm using disbale flag if less than 5 or so AAI indices being calcualted.
 - [X] Return error if invalid aai indices/descriptors - don't print out parameters text if invalid.
-- [ ] Go over files and folders in pypi package, remove tests.
+- [X] Go over files and folders in pypi package, remove tests.
 - [X] Add feature space dimensions - add unit tests.
 - [X] After encoding in pysar.py check class variables have been set.
 - [X] aai_indices = ["MUNV940104", "ZASB820101"] / aai_descriptor_encoding = pysar.encode_aai_descriptor(aai_indices=aai_indices, descriptors="sequence_order_coupling_number") - puts Index output in [].
@@ -264,4 +264,8 @@ To Do List:
 - [X] Remove textwrapper, change to textwrap.fill
 - [X] Reorder parameters, have test split at bottom fo encoding parameters text
 - [X] Add config file to list of parameters in output.
-- [ ] Do i need additional pydsp parameter checks which are already in pYSAR.
+- [X] Mention number of tests and test cases in /tests readme - 51 tests, 6 test cases.
+- [X] Recalculate and reupload descriptors_thermostability.csv.
+- [X] Add info about the colunns and dimensions of each descriptors in pre-calculated csv file - fix Issue.
+- [X] When calculating all descriptors (get_all_descriptors(export=True)), add some sort of print/tracking functionality.
+- [X] Double check all links in readme.

@@ -10,9 +10,9 @@ from scipy.signal.windows import blackman, hann, hamming, bartlett, blackmanharr
      kaiser, gaussian, barthann, bohman, chebwin, cosine, exponential, boxcar, \
         flattop, nuttall, parzen, tukey, triang
 try:
-    from scipy.fftpack import fft, ifft, fftfreq
+    from scipy.fftpack import fft
 except:
-    from numpy.fft import fft, ifft, fftfreq
+    from numpy.fft import fft
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import json
@@ -27,29 +27,31 @@ class PyDSP():
     components. When both the function and its Fourier transform are replaced with discretized 
     counterparts, it is called the Discrete Fourier transform (DFT). An implementation algorithm 
     for the DFT is known as the FFT, which is used here. From the FFT transformations on the 
-    encoded protein sequences (encoded via amino acid property values of the AAI), various 
-    informational protein spectra can be generated, including the power, real, imaginary and 
+    encoded protein sequences (encoded via amino acid property values from records in the AAI), 
+    various informational protein spectra can be generated, including the power, real, imaginary and 
     absolute spectra. Prior to the FFT, a window function can be applied to the sequences 
     which is a mathmatical function that applies a weighting to each discrete time series sample 
-    in a finite set. By default, the hamming window function is applied; although the function 
+    in a finite set. By default, no window function is applied; although the function 
     can also accept the blackman, blackmanharris, bartlett, gaussia, bartlett, barthann, bohman, 
     chebwin, cosine, exponential, flattop, hann, boxcar, nuttall, parzen, triang and tukey windows.
     A filter function can also be applied, the class accepts the savgol, medfilt, lfilter and
-    hilbert filters.
+    hilbert filters, by default no filter function is applied.
 
-    In the pipeline of pySAR this class and its functions are onyl used when the 'use_dsp'
-    parameter is set to true in the config files, meaning that the encoded protein sequences
-    are passed through a Digital Signal Processing (DSP) pipeline before being used as 
-    training data for the regression models. The protein sequences being numerically encoded
-    is a pre-reqisite to use the functions in this class, meaning sequences cannot be directly
-    input.
+    In the pipeline of pySAR this class and its functions are only used when the 'use_dsp'
+    parameter is set to true in the config files or in the class input parameters, meaning that 
+    the encoded protein sequences are passed through a Digital Signal Processing (DSP) pipeline 
+    before being used as training data for the regression models. The protein sequences being 
+    numerically encoded is a pre-requisite to use the functions in this class, meaning sequences 
+    cannot be directly input.
 
-    The class accepts two main input parameters. The protein_seqs input param if an numpy array 
+    The class accepts two main input parameters. The protein_seqs input param is a numpy array 
     of numerically pre-encoded protein sequences. The config_file parameter is the filename 
     or filepath to the configuration file that contains all the required parameters for the 
     DSP encoding strategy/process. The class also accepts a variable number of keyword arguments
     (**kwargs) that will override the config file parameter values of the same name if 
-    they are passed in.
+    they are passed in. The only DSP parameter required from the config file for the classes
+    functionality is the spectrum, so if the config_file parameter is not specified but the 
+    spectrum is passed in then an error will not be raised. 
 
     Parameters
     ==========
@@ -67,8 +69,8 @@ class PyDSP():
     Methods
     =======
     pre_processing():
-        complete pre-processing steps before completeing DSP functionality.
-    encode_seqs():
+        complete required pre-processing steps before DSP functionality/pipeline.
+    encode_sequences():
         calculate FFT and various informational spectra of protein seqeuences.
     inverse_fft():
         calculate inverse FFT of protein sequences.
@@ -116,15 +118,13 @@ class PyDSP():
         for seq in protein_seqs:
             if (isinstance(seq, str)):
                 raise ValueError("Protein sequences cannot be directly passed into the pyDSP class, you "
-                                "must first encode the protein sequences using a specific aaindex code, "
+                                "must first encode the protein sequences using a specific aaindex record, "
                                 "and then pass the resultant encoded sequence to the protein_seqs parameter.")
         
         #reshape protein sequences to 2 dimensions
         # if (self.protein_seqs.ndim != 2):
-        #     try:
-        #         self.protein_seqs = self.protein_seqs.reshape((-1, 1))
-        #     except:
-        #         raise ValueError('Error reshaping input sequences: {}'.format(protein_seqs))
+        #       self.protein_seqs = self.protein_seqs.reshape((-1, 1))
+
 
         #set pyDSP parameters from kwargs or json config - use_dsp, spectrum, window function, window filter
         self.dsp_parameters = kwargs.get('dsp_parameters') if 'dsp_parameters' in kwargs else self.config_parameters.pyDSP
@@ -140,7 +140,7 @@ class PyDSP():
         self.pre_processing()
         
         #transform sequences into the various informational protein spectra
-        self.encode_seqs()
+        self.encode_sequences()
 
     def pre_processing(self):
         """
@@ -180,29 +180,29 @@ class PyDSP():
 
         #list of accepted spectra, window functions and filters
         all_spectra = ['power', 'absolute', 'real', 'imaginary']
+        all_filters = ['savgol', 'medfilt', 'lfilter', 'hilbert']
         all_windows = ['hamming', 'blackman', 'blackmanharris', 'gaussian', 'bartlett',
                        'kaiser', 'barthann', 'bohman', 'chebwin', 'cosine', 'exponential',
                        'flattop', 'hann', 'boxcar', 'nuttall', 'parzen', 'triang', 'tukey']
-        all_filters = ['savgol', 'medfilt', 'lfilter', 'hilbert']
 
-        #set required input parameters, raise error if spectrum is none
+        #get appoximate spectrum type from input, raise error if spectrum None or invalid
         if (self.spectrum == None):
-            raise ValueError('Invalid input Spectrum type ({}) not available: {}.'.
-                format(self.spectrum, all_spectra))
+            raise ValueError('Spectrum parameter cannot be empty of None.')
         else:
             #get closest correct spectra from user input, if no close match then raise error
             spectra_matches = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))
             if (spectra_matches == []):
-                raise ValueError('Invalid input Spectrum type ({}) not available: {}.'.
-                    format(self.spectrum, all_spectra))
+                raise ValueError('Invalid input spectrum type {}, not available in list of available spectra:\n{}.'
+                                 .format(self.spectrum, all_spectra))
             else:
                 self.spectrum = spectra_matches[0]   #closest match in array
 
+        #get appoximate window type from input, if None or invalid set window to 1 (no window)
         if (self.window_type == None):
             self.window = 1       #window = 1 is the same as applying no window
         else:
             #get closest correct window function from user input
-            window_matches = (get_close_matches(self.window_type, all_windows, cutoff=0.4))
+            window_matches = (get_close_matches(self.window_type, all_windows, cutoff=0.6))
 
             #remove any null or None values from window parameters in config
             self.window_parameters = {k: v for k, v in self.window_parameters.items() if v}
@@ -305,13 +305,13 @@ class PyDSP():
             else:
                 self.window = 1     #window = 1 is the same as applying no window
 
+        #get appoximate filter type from input
         if ((self.filter_type != None) and (self.filter_type != "")):
-            #get closest correct filter from user input
             filter_matches = get_close_matches(self.filter_type, all_filters, cutoff=0.4)
         
             #set filter attribute according to approximate user input
             if (filter_matches != []):
-                if (filter_matches[0] == 'savgol'): #***
+                if (filter_matches[0] == 'savgol'):
                     self.filter_type = "savgol"
                 elif (filter_matches[0] == 'medfilt'):        
                     self.filter_type = "medfilt"
@@ -320,14 +320,16 @@ class PyDSP():
                 elif (filter_matches[0] == 'hilbert'):
                     self.filter_type = "hilbert"          
 
-    def encode_seqs(self): 
+    def encode_sequences(self):  
         """
-        Calculate the FFT of the protein sequences already encoded using
-        the AAI indices, then use the output of the FFT to calculate the various
-        informational protein spectra including the power, absolute, real and 
-        imaginary. The spectrum_encoding attribute will be set to the spectrum 
-        inputted by user from the 'spectrum' config parameter, if no valid 
-        spectrum input as parameter then value error raised.
+        Calculate the DFT of the protein sequences already encoded using
+        the AAI indices, using the FFT algorithm, then use the output of the 
+        FFT to calculate the various informational protein spectra including 
+        the power, absolute, real and imaginary. The spectrum_encoding 
+        attribute will be set to the spectrum inputted by user from the 
+        'spectrum' config parameter, if no valid spectrum input as parameter 
+        then value error raised. After spectrum calculated, apply any 
+        window or filter function, if applicable.
 
         Parameters 
         ==========
@@ -341,7 +343,7 @@ class PyDSP():
         encoded_seq_copy = np.copy(self.protein_seqs)
 
         #initialise zero arrays used to store output of both fft, set
-        #datatype to complex number as that is the output type of the transformation
+        #datatype to complex number as that is the output type of the FFT transformation
         encoded_dataset_fft = np.zeros((self.protein_seqs.shape), dtype=complex)
 
         #initialise zero arrays used to store output frequencies from fft transformations
@@ -353,7 +355,7 @@ class PyDSP():
           #create temp zeros arrays to store current sequence's fft
           encoded_fft = np.zeros((self.signal_len), dtype=complex)
 
-          #apply window function to Fourier array, multiplying by 1 if using no window function
+          #apply window function to Fourier array, multiple by 1 if using no window function
           encoded_fft = fft(encoded_seq_copy[seq] * self.window)
           
           #apply filter to encoded sequences if filter_type not empty in config
@@ -418,9 +420,9 @@ class PyDSP():
 
         Parameters
         ==========
-        :a : np.ndarray
+        :a: np.ndarray
             input array of 1D Fourier Transform.
-        :n : int
+        :n: int
             length of the output.
 
         Returns
@@ -437,24 +439,24 @@ class PyDSP():
 
         Parameters
         ==========
-        :freqs : np.ndarray
+        :freqs: np.ndarray
             frequencies of Fourier Transform.
 
         Returns
         =======
-        :CF : float
+        :CF: float
             consensus frequency found in array of frequencies.
-        :CFi : int
-            index of consensus frequency.
         """
         #raise error if more than one sequence passed into function
         if (freqs.ndim == 2 and freqs.shape[1] != 2):
-            raise ValueError("Only one protein sequence should be passed into the function:"
-                            " {}.".format(freqs))
+            raise ValueError("Only one protein sequence should be passed into the function: {}.".format(freqs))
 
+        print(self.max_freq(freqs)[0])
+        print(self.num_seqs)
+        print((self.max_freq(freqs)[0])/self.num_seqs)
         # CF = PP/N ( peak position/length of largest protein in dataset)
-        CF, CFi = (self.max_freq(freqs))/self.num_seqs
-        return CF, CFi
+        CF = (self.max_freq(freqs)[0])/self.num_seqs
+        return CF
 
     def max_freq(self, freqs):
         """
@@ -462,20 +464,20 @@ class PyDSP():
 
         Parameters
         ==========
-        :freqs : np.ndarray
+        :freqs: np.ndarray
             frequencies from Fourier Transform.
 
         Returns
         =======
-        :max_F : float
+        :max_F: float
             maximum frequency found in array of frequencies.
-        :max_FI : int
+        :max_FI: int
             index of maximum frequency.
         """
         #raise error if more than one sequence passed into function
         if (freqs.ndim == 2 and freqs.shape[1] != 2):
-            raise ValueError("Only one protein sequence should be passed into the function:"
-                            "{}.".format(freqs))
+            raise ValueError("Only one protein sequence should be passed into the function: {}.".format(freqs))
+        
         max_F = max(freqs)
         max_FI = np.argmax(freqs)
         return max_F, max_FI
@@ -539,6 +541,14 @@ class PyDSP():
         self._window_type = val
 
     @property
+    def filter(self):
+        return self._filter
+
+    @filter.setter
+    def filter(self, val):
+        self._filter = val
+
+    @property
     def filter_type(self):
         return self._filter_type
 
@@ -550,4 +560,4 @@ class PyDSP():
         return "Instance of PyDSP class, using parameters: {}.".format(self.__dict__.keys())
 
     def __repr__(self):
-        return ('<PyDSP: {}>'.format(self))
+        return ('<PyDSP: {}>.'.format(self))

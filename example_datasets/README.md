@@ -5,13 +5,28 @@ Datasets
 * `thermostability.txt` - dataset studied in the associated work which consists of a dataset to measure the thermostability of various mutants
 from a recombination library designed from parental cytochrome P450's, measured using the T50 metric (temperature at which 50% of a protein is
 irreversibly denatured after 10 mins of incubation, ranging from 39.2 to 64.4 degrees C), which represents the protein activity of this dataset [[1]](#references).
-* `absorption.txt` - dataset of 80 blue and red-shifted protein variants of the Gloeobacter Violaceus rhodopsin (GR) protein that were mutated and substituted to tune its peak absorption wavelength. 1-5 mutations were generated in the course of tuning its absorption wavelength, for a total of 81 sequences, with the peak being captured as each sequence's activity ranging from values of 454 to 622 [[2]](#references).
+* `absorption.txt` - dataset of 80 blue and red-shifted protein variants of the Gloeobacter Violaceus Rhodopsin (GR) protein that were mutated and substituted to tune its peak absorption wavelength. 1-5 mutations were generated in the course of tuning its absorption wavelength, for a total of 81 sequences, with the peak being captured as each sequence's activity ranging from values of 454 to 622 [[2]](#references).
 * `enantioselectivity.txt` - dataset consisting of 37 mutants and one WT (wild-type) sequence from the Aspergillus Niger organism and their calculated enantioselectivity. Enantioselectivity refers to the selectivity of a reaction towards one enantiomer and is expressed by the E-value with a range between 0 and 115 [[3]](#references).
 * `localization.txt` - dataset made up of 248 sequences made up of 2 seperate, 10-block recombination libraries that were designed from 3 parental ChR's (channelrhodopsin). Each chimeric ChR variant in these libraries consist of blocks of sequences from parental ChRs. Genes for these sequences were synthesized and expressed in human embryonic kidney (HEK) cells, and their membrane localization was measured as log_GFP ranging from values of -9.513 to 105 [[4]](#references).
 
-* `descriptors_absorption.csv` - pre-calculated protein descriptors using sequences from absorption test dataset.
-* `descriptors_enantioselectivity.csv` - pre-calculated protein descriptors using sequences from enantioselectivity test dataset.
-* `descriptors_localization.csv` - pre-calculated protein descriptors using sequences from localization test dataset.
+* `descriptors_absorption.csv` - pre-calculated protein descriptors using sequences from absorption test dataset. The dimensions for this csv are 81 x 9714 (81 protein sequences and 9714 features), when using default parameters as in the config file.
+* `descriptors_enantioselectivity.csv` - pre-calculated protein descriptors using sequences from enantioselectivity test dataset. The dimensions for this csv are 152 x 9714 (152 protein sequences and 9714 features), when using default parameters as in the config file.
+* `descriptors_localization.csv` - pre-calculated protein descriptors using sequences from localization test dataset. The dimensions for this csv are 254 x 9714 (254 protein sequences and 9714 features), when using default parameters as in the config file.
+
+Each of the pre-calculated descriptor CSVs have 9714 total features (when using the default parameters), the columns and dimensions of each descriptor file is outlined below:
+
+* Amino Acid Composition - [0:20] (A,C,D,E...)
+* Dipeptide Composition - [20:420] (AA,AC,AD,AE...)
+* Tripeptide Composition - [420:8420] (AAA,AAC,AAD,AAE...)
+* MoreauBroto Autocorrelation - [8420:8660] (MBAuto_CIDH920105_1,MBAuto_CIDH920105_2,MBAuto_CIDH920105_3,MBAuto_CIDH920105_4...)
+* Moran Autocorrelation - [8660:8900] (MAuto_CIDH920105_1,MAuto_CIDH920105_2,MAuto_CIDH920105_3,MAuto_CIDH920105_4...)
+* Geary Autocorrelation - [8900:9140] (GAuto_CIDH920105_1,GAuto_CIDH920105_2,GAuto_CIDH920105_3,GAuto_CIDH920105_4...)
+* CTD - [9140:9161] (CTD_C_01_hydrophobicity,CTD_C_02_hydrophobicity,CTD_C_03_hydrophobicity,CTD_T_12_hydrophobicity...)
+* Conjoint Triad - [9161:9504] (conj_triad_111,conj_triad_112,conj_triad_113,conj_triad_114...)
+* Sequence Order Coupling Number - [9504:9534] (SOCN_SW1,SOCN_SW2,SOCN_SW3,SOCN_SW4...)
+* Quasi Sequence Order - [9534:9584] (QSO_SW1,QSO_SW2,QSO_SW3,QSO_SW4...)
+* Pseudo Amino Acid Composition - [9584:9634] (PAAC_1,PAAC_2,PAAC_3,PAAC_4...)
+* Amphiphilic Pseudo Amino Acid Composition - [9634:9714] (APAAC_1,APAAC_2,APAAC_3,APAAC_4...)
 
 References
 ----------

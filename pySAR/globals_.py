@@ -5,10 +5,6 @@
 import os
 from datetime import datetime
 
-#data dir is the default directory used to store all data required for pySAR
-global DATA_DIR
-DATA_DIR = 'data'
-
 #output dir is the default directory used to store all outputs generated
 global OUTPUT_DIR
 OUTPUT_DIR = 'outputs'

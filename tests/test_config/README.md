@@ -1,6 +1,6 @@
 # PySAR: Configuration files for testing
 
-* `thermostability.json` - configuration file for using pySAR with the thermostability dataset in the /data folder.
-* `absorption.json` - configuration file for using pySAR with the absorption example dataset in the /example_datasets folder.
-* `enantioselectivity.json` - configuration file for using pySAR with the enantioselectivity example dataset in the /example_datasets folder.
-* `localization.json` - configuration file for using pySAR with the localization example dataset in the /example_datasets folder.
+* `test_thermostability.json` - configuration file for testing pySAR with the thermostability dataset.
+* `test_absorption.json` - configuration file for testing pySAR with the absorption example dataset.
+* `test_enantioselectivity.json` - configuration file for testing pySAR with the enantioselectivity example dataset.
+* `test_localization.json` - configuration file for testing pySAR with the localization example dataset.

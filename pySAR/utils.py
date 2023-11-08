@@ -18,7 +18,7 @@ class Map(dict):
 
     Parameters 
     ==========
-    :dict : dict 
+    :dict: dict 
         input dictionary to be mapped into dot notation.
 
     Usage
@@ -83,13 +83,13 @@ def valid_sequence(sequences):
 
     Parameters
     ==========
-    :sequences : list/np.ndarray
+    :sequences: list/np.ndarray
         list or array of protein sequences.
 
     Returns
     =======
-    :None or invalid_indices : None/list
-        if no invalid values found in the protein sequences, None returned. if
+    :None or invalid_indices: None/list
+        if no invalid values found in the protein sequences, None returned. If
         invalid values found, list of dicts returned in the form
         {sequence index: invalid value in sequence index}.
     
@@ -129,16 +129,16 @@ def remove_gaps(sequences):
     The descriptors cannot be calculated if a '-' value is passsed into their
     respective funtions so gaps need to be removed. Removing the gaps has the same
     effect as setting the value at the index of the sequence to 0 and has no effect
-    on the descriptors calculation. Input can be a string or list/array of sequences.
+    on the descriptor calculation. Input can be a string or list/array of sequences.
 
     Parameters
     ==========
-    :sequences : str/list/np.ndarray
+    :sequences: str/list/np.ndarray
         string of 1 protein sequence or array/list of protein sequences.
 
     Returns
     =======
-    :protein_seqs : np.ndarray
+    :protein_seqs: np.ndarray
         returns the same inputted protein sequence(s) but with any gaps ('-') removed.
     """
     #bool needed to ensure correct output format if input is str
@@ -176,12 +176,12 @@ def flatten(array):
 
     Parameters
     ==========
-    :array : np.ndarray / list
+    :array: np.ndarray/list
         array of arrays or list of lists to be flattened.
 
     Returns
     =======
-    :flatten(array/list) : np.ndarray/list
+    :flatten(array/list): np.ndarray/list
         flattened 1-dimensional list or array.
     """
     #if input is a string then return input as cannot be flattened
@@ -204,19 +204,19 @@ def flatten(array):
     else:
         return flattened_array
 
-def zero_padding(sequences):
-    """
+def zero_padding(sequences): 
+    """ 
     Pad sequences in input array with 0's such that every sequence is of the same length
     of max(len(sequences)).
 
     Parameters
     ==========
-    :sequences : np.ndarray / list
+    :sequences: np.ndarray/list
         array or list of encoded protein sequences.
 
     Returns
     =======
-    :sequences: np.ndarray / list
+    :sequences: np.ndarray/list
         input sequences but with every sequence in the object now zero paddded
         to be the same length.
     """
@@ -242,10 +242,10 @@ def save_results(results, file_name, output_folder=""):
 
     Parameters
     ==========
-    :results : dict/pd.DataFrame/pd.Series
+    :results: dict/pd.DataFrame/pd.Series
         object of the metrics and results from the encoding process. Ideally should
         be a dataframe/series but function also accepts a dict of results.
-    :file_name : str
+    :file_name: str
         file name to call results file.
     
     Returns
@@ -262,7 +262,7 @@ def save_results(results, file_name, output_folder=""):
     else:
         output_folder = output_folder + "_" + CURRENT_DATETIME
     
-    #create output folder if it doesnt exist
+    #create output folder if it doesn't exist
     if not (os.path.isdir(output_folder)):
         os.makedirs(output_folder)
 
@@ -277,5 +277,4 @@ def save_results(results, file_name, output_folder=""):
         results.reset_index(drop=True, inplace=True)
         results.to_csv(os.path.join(output_folder, file_name))
     else:
-        raise TypeError('Results Object must be of type: dict, pd.Series or pd.DataFrame, got object of type {}.'
-            .format(type(results)))
+        raise TypeError('Results object must be of type: dict, pd.Series or pd.DataFrame, got object of type {}.'.format(type(results)))

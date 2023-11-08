@@ -32,31 +32,35 @@ class Model():
     Regression, Lasso, Ridge, Support Vector Regression, Stochastic Gradient
     Descent and K Nearest Neighbours (KNN).
 
+    Once a model object has been built and fitted to the training data and 
+    labels, it can then be used for predicting the sought activity/fitness
+    value for unseen test sequences.
+
     Parameters
     ==========
-    :X : np.ndarray
+    :X: np.ndarray
         training data.
-    :Y : np.ndarray
+    :Y: np.ndarray
         training data labels.
-    :algorithm : str
+    :algorithm: str
         sklearn regression algorithm to build and fit model with. Value can be 
         an approximate representation of model name, for example: 'plsreg' will 
         initialiase an instance of the PLSRegression model etc. Available 
         algorithms listed above.
-    :parameters : dict (default={})
+    :parameters: dict (default={})
         parameters to use for specific sklearn model when building regression 
         model, by default it is set to {}, meaning all of the models' default 
         parameters are used. Refer to sci-kit learn for full list of available 
         input parameters for each model: https://scikit-learn.org/stable/index.html.
-    :test_split : float (default=0.2)
+    :test_split: float (default=0.2)
         proportion of the test data to use for building model, default of 0.2 is 
-        reccomended.
+        reccomended, meaning 80% of the data used for training and 20% for testing.
 
     Methods
     =======
     get_model():
         build model using inputtted parameters.
-    train_test_split(scale = True, test_split = 0.2, random_state=None, shuffle=True):
+    train_test_split(scale=True, test_split=0.2, random_state=None, shuffle=True):
         get train-test split of dataset.
     fit():
         fit model.
@@ -71,7 +75,8 @@ class Model():
     feature_selection(method=""):
         undertake feature selection using technique specified by method input
         parameter to find optimal selection of features for maximum predictability
-        in model.
+        in model. Supported feature selection methods include SelectKBest, chi2, 
+        VarianceThreshold, RFE, SelectFromModel and SequentialFeatureSelector.
     """
     def __init__(self, X, Y, algorithm, parameters={}, test_split=0.2):
 
@@ -94,7 +99,7 @@ class Model():
 
         #raise error if algorithm parameter isnt string type
         if not(isinstance(self.algorithm, str)):
-            raise TypeError("Algorithm input parameter must be a string.")
+            raise TypeError("Algorithm input parameter must be a string, got type {}.".format(type(self.algorithm)))
 
         #get closest match of valid model from the input algorithm parameter value using difflib
         model_matches = get_close_matches(self.algorithm.lower().strip(),[item.lower().strip() \
@@ -104,7 +109,7 @@ class Model():
         if (model_matches!=[]):
             self.algorithm = model_matches[0]
         else:
-            raise ValueError('Input algorithm {} not found in list of available valid models {}.'.format(
+            raise ValueError('Input algorithm {} not found in list of available valid models\n{}.'.format(
                     self.algorithm, self.valid_models))
 
         #create instance of algorithm object using its sklearn constructor
@@ -125,7 +130,7 @@ class Model():
 
         Returns
         =======
-        :model : sklearn.model
+        :model: sklearn.model
             instantiated regression model with default or user-specified parameters.
         """
         parameters = {}
@@ -133,7 +138,7 @@ class Model():
         if (self.algorithm.lower().strip() == 'plsregression'):
 
             #get parameters of sklearn model and check that user inputted
-            #parameters are available in the model, only use those that are valid.
+            #parameters are available in the model, only use those that are valid
             for k,v in PLSRegression().__dict__.items(): 
                 if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
             
@@ -260,7 +265,7 @@ class Model():
                 model = KNeighborsRegressor()
         #no matching valid algorithm/model found
         else:
-            raise ValueError('Input Algorithm ({}) not found in available valid models: {}'.
+            raise ValueError('Input Algorithm {} not found in available valid models:\n{}'.
                 format(self.algorithm, self.valid_models))
 
         return model
@@ -275,19 +280,19 @@ class Model():
 
         Parameters
         ==========
-        :scale : bool (default=True)
+        :scale: bool (default=True)
             if true then scale the features such that they are standardised.
-        :test_split : float (default=0.2)
-            proportion of the total dataset to use for testing.
+        :test_split: float (default=0.2)
+            proportion of the total dataset to use for testing, rest used for training.
         :random_state : float (default=None)
             Controls the shuffling applied to the data before applying the split.
             Popular integer random seeds are 0 and 42, None by default.
-        :shuffle : bool (default=True)
+        :shuffle: bool (default=True)
             Whether or not to shuffle the data before splitting.
 
         Returns
         =======
-        :self.X_train, self.X_test, self.Y_train, self.Y_test : np.ndarray
+        :self.X_train, self.X_test, self.Y_train, self.Y_test: np.ndarray
             splitted training and test data features and labels.
         """
         #validate that X and Y arrays are of the same size
@@ -337,7 +342,7 @@ class Model():
 
         Returns
         =======
-        :self.model_fit : np.ndarray
+        :self.model_fit: np.ndarray
             fitted sklearn model of type specified by algorithm attribute.
         """
         self.model_fit = self.model.fit(self.X_train, self.Y_train)
@@ -345,7 +350,8 @@ class Model():
 
     def predict(self):
         """
-        Predict the target values of unseen test data using the model.
+        Predict the target values of unseen test data using the 
+        trained model.
 
         Parameters
         ==========
@@ -353,7 +359,7 @@ class Model():
 
         Returns
         =======
-        :self.model_fit.predict(self.X_test) : np.ndarray
+        :self.model_fit.predict(self.X_test): np.ndarray
             array of predicted target values for unseen test data.
         """
         return self.model_fit.predict(self.X_test)
@@ -364,8 +370,10 @@ class Model():
 
         Parameters
         ==========
-        :save_folder : str
+        :save_folder: str
             folder to save model to.
+        :model_name: str
+            filename for model.
         
         Returns
         =======
@@ -383,7 +391,7 @@ class Model():
         try:
             with open(save_path, 'wb') as file:
                 pickle.dump(self.model, file)
-        except (IOError, OSError, pickle.PickleError, pickle.UnpicklingError):
+        except (pickle.PickleError):
             print("Error pickling model with path: {}.".format(save_path))
 
     def hyperparameter_tuning(self, param_grid={}, metric='r2', cv=5, n_jobs=None, verbose=2):
@@ -393,16 +401,16 @@ class Model():
 
         Parameters
         ==========
-        :param_grid : dict (default={})
-            dictionary/grid of selected models' parameter and the potential values of each
+        :param_grid: dict (default={})
+            dictionary/grid of selected models' parameters and the potential values of each
             that you want to tune.
-        :metric : str (default=r2)
+        :metric: str (default=r2)
             scoring metric used to evaluate the performance of the cross-validated
             model on the test set, R2 by default. List of available scoring metrics
             can be found in documentation:
             https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
-        :cv : int (default=5)
-            Determines the cross-validation splitting strategy.
+        :cv: int (default=5)
+            Determines the cross-validation splitting strategy, a CV fold of 5 is used by default.
         :n_jobs : int (default=None)
             Number of jobs to run in parallel. None means 1 job.
         :verbose: int (default=2)
@@ -420,7 +428,7 @@ class Model():
 
         #input metric must be in available scoring metrics, if not raise error
         if (metric not in sorted(_SCORERS.keys())):
-            raise UndefinedMetricWarning('Invalid scoring metric, {} not in available Sklearn Scoring Metrics: {}.\n'\
+            raise UndefinedMetricWarning('Invalid scoring metric {} not in list of available Sklearn Scoring Metrics:\n{}.'\
                 .format(metric, _SCORERS.keys()))
 
         #cv must be of type int and be between 5 and 10, if not then default of 5 is used
@@ -487,7 +495,7 @@ class Model():
         
         Returns
         =======
-        :True/False : bool
+        :True/False: bool
             true if model (self.model) has been fitted, false if not.
         """
         return (self.model_fit != None)
@@ -500,13 +508,13 @@ class Model():
 
         Parameters
         ==========
-        :method : str (default="")
+        :method: str (default="")
             feature selection method to use.
 
         Returns
         =======
-        :X_new : np.ndarray
-            best found features from training data.
+        :X_new: np.ndarray
+            best found features using training data.
         
         References
         ==========
@@ -518,7 +526,7 @@ class Model():
 
         #get closest valid feature selection method
         feature_matches = get_close_matches(method.lower().strip(), [item.lower().strip() \
-            for item in valid_feature_selection], cutoff=0.5)
+            for item in valid_feature_selection], cutoff=0.6)
 
         #apply feature selection method according to input parameter
         if (feature_matches == 'selectkbest'):
@@ -617,13 +625,13 @@ class Model():
             type(self.model).__name__, self.parameters, self.model_fitted())
 
     def __repr__(self):
-        """ Object representation of class instance """
+        """ Object representation of class instance. """
         return type(self.model).__name__
 
     def __eq__(self, other):
-        """ Checking if 2 sklearn models are the same """
+        """ Checking if 2 sklearn models are the same. """
         return self.model == other.model
 
     def __sizeof__(self):
-        """ Get size of sklearn model """
+        """ Get size of sklearn model. """
         return self.model.__sizeof__()

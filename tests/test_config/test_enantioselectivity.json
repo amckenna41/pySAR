@@ -13,37 +13,36 @@
         "test_split": 0.2
       },
     
-    "descriptors": 
+    "descriptors":
     {
-      "descriptors_csv": "",
-      "all_desc": 0,
-      "moreaubroto_autocorrelation": 
+      "descriptors_csv": "descriptors_enantioselectivity.csv",
+      "moreaubroto_autocorrelation":
         {
         "lag": 30,
         "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
         },
-      "moran_autocorrelation": 
+      "moran_autocorrelation":
         {
         "lag": 30,
         "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
         },
-      "geary_autocorrelation": 
+      "geary_autocorrelation":
         {
         "lag": 30,
         "properties": ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
           "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"],
         "normalize": 1
         },
-      "ctd": 
+      "ctd":
         {
         "property": "hydrophobicity",
         "all": 0
         },
-      "sequence_order_coupling_number": 
+      "sequence_order_coupling_number":
         {
         "lag": 30,
         "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
@@ -54,13 +53,13 @@
         "weight": 0.1,
         "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
         },
-      "pseudo_amino_acid_composition": 
+      "pseudo_amino_acid_composition":
         {
         "lambda": 30,
         "weight": 0.05,
         "properties": []
         },
-      "amphiphilic_pseudo_amino_acid_composition": 
+      "amphiphilic_pseudo_amino_acid_composition":
         {
         "lambda": 30,
         "weight": 0.5
@@ -70,11 +69,11 @@
     "pyDSP":
       {
         "use_dsp": 0,
-        "spectrum": "absolute",
+        "spectrum": "power",
         "window": {
-          "type": "blackman",
+          "type": "hamming",
           "sym": 1,
-          "beta": 14,
+          "beta": 10,
           "alpha": null,
           "nbar": null,
           "sll": null,

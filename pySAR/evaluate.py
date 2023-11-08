@@ -15,9 +15,9 @@ class Evaluate():
 
     Parameters
     ==========
-    :Y_true : np.ndarray
+    :Y_true: np.ndarray
         array of observed activity/fitness values.
-    :Y_pred : np.ndarray
+    :Y_pred: np.ndarray
         array of predicted activity/fitness values.
 
     Methods
@@ -46,7 +46,7 @@ class Evaluate():
         self.Y_pred = np.array(Y_pred).reshape((-1,1))
 
         #validate that predicted and observed input arrays are of the same length,
-        #if input predicted and observed arrays are not same shape then raise error
+        #if not same shape then raise error
         if (self.Y_true.shape != self.Y_pred.shape):
             raise ValueError('Observed and predicted values must be of the same shape,\
                 Y_true = {} & Y_pred = {}.'.format(Y_true.shape, Y_pred.shape))
@@ -67,33 +67,33 @@ class Evaluate():
 
         Parameters
         ==========
-        :multioutput : str (default='uniform_average')
+        :multioutput: str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
         =======
-        :r2 : float
+        :r2: float
             R2 (coefficient of determination) score for observed and predicted values.
         """
         return r2_score(self.Y_true, self.Y_pred, multioutput=multioutput)
 
-    def mse_(self,multioutput='uniform_average'):
+    def mse_(self, multioutput='uniform_average'):
         """
         Calculate MSE (mean square error) regression loss score for observed
         and predicted values.
 
         Parameters
         ==========
-        :multioutput : str (default='uniform_average')
+        :multioutput: str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
         =======
-        :mse : float
+        :mse: float
             MSE (mean square error) score for observed and predicted values.
         """
         return mean_squared_error(self.Y_true, self.Y_pred, multioutput=multioutput)
@@ -106,14 +106,14 @@ class Evaluate():
 
         Parameters
         ==========
-        :multioutput : str (default='uniform_average')
+        :multioutput: str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
         =======
-        :rmse : float
+        :rmse: float
             RMSE score for observed and predicted values.
         """
         return mean_squared_error(self.Y_true, self.Y_pred, squared=False, multioutput=multioutput)
@@ -125,14 +125,14 @@ class Evaluate():
 
         Parameters
         ==========
-        :multioutput : str (default='uniform_average')
+        :multioutput: str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
         =======
-        :mae : float
+        :mae: float
             If multioutput is ‘raw_values’, then MAE is returned for each output
             separately. If multioutput is ‘uniform_average’ or an ndarray of
             weights, then the weighted average of all output errors is returned.
@@ -152,7 +152,7 @@ class Evaluate():
 
         Returns
         =======
-        :rpd : float
+        :rpd: float
             the RPD score for the model.
         """
         return self.Y_true.std() / np.sqrt(self.mse_())
@@ -164,14 +164,14 @@ class Evaluate():
 
         Parameters
         ==========
-        :multioutput : str (default='uniform_average')
+        :multioutput: str (default='uniform_average')
             method that defines aggregating of multiple output scores. Default
             is reccomended ('uniform_average'), available values:
             {‘raw_values’, ‘uniform_average’, ‘variance_weighted’}.
 
         Returns
         =======
-        :explained_var : float
+        :explained_var: float
             The explained variance or ndarray if ‘multioutput’ is ‘raw_values’.
         """
         return explained_variance_score(self.Y_true, self.Y_pred, multioutput=multioutput)
@@ -186,8 +186,9 @@ class Evaluate():
 
         Returns
         =======
-        :max_error : float
-            A positive floating point value (the best value is 0.0).
+        :max_error: float
+            A positive floating point value of the maximal residueal error 
+            (the best value is 0.0).
         """
         return float(max_error(self.Y_true, self.Y_pred))
 
@@ -202,10 +203,10 @@ class Evaluate():
         
         Returns
         =======
-        :mean_poisson_deviance : float
+        :mean_poisson_deviance: float
             A non-negative floating point value (the best value is 0.0).
         """
-        return mean_poisson_deviance(self.Y_true, self.Y_true)
+        return mean_poisson_deviance(self.Y_true, self.Y_pred)
 
     def __repr__(self):
         return "<Evaluate(Y_true: {} Y_pred: {})>.".format(
@@ -214,5 +215,5 @@ class Evaluate():
     def __str__(self):
         return "Instance of Evaluate Class with attribute values: \
                 R2: {}, RMSE: {}, MSE: {}, MAE: {}, RPD: {}, Explained Variance: {},\
-                    Max Error: {}".format(self.r2, self.rmse, self.mse, self.mae, 
+                    Max Error: {}.".format(self.r2, self.rmse, self.mse, self.mae, 
                     self.rpd, self.explained_var, self.max_error)
