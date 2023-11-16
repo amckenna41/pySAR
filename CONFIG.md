@@ -52,13 +52,13 @@ These config files offer a more straightforward way of making any changes to the
       "sequence_order_coupling_number":
         {
         "lag": 30,
-        "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
+        "distance_matrix": "schneider-wrede.json"
         },
       "quasi_sequence_order":
         {
         "lag": 30,
         "weight": 0.1,
-        "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
+        "distance_matrix": "schneider-wrede.json"
         },
       "pseudo_amino_acid_composition":
         {
@@ -101,7 +101,7 @@ These config files offer a more straightforward way of making any changes to the
 ## Below is an explanation of each of the parameters within the JSON config files:
 
 **Dataset Parameters:**
-* `dataset[dataset]` - name of dataset.
+* `dataset[dataset]` - path of dataset.
 * `dataset[sequence_col]` - name of sequence column in dataset holding protein sequences, if left blank 'sequence' will be used by default.
 * `dataset[activity]` - name of protein activity column in dataset being studied.
 
@@ -121,11 +121,11 @@ These config files offer a more straightforward way of making any changes to the
 * `descriptors[ctd][all]` - if True then all 7 of the available physiochemical descriptors will be used when calculating the CTD descriptors. Each proeprty generates 21 features so using all properties will output 147 features. Only 1 property used by default. 
 
 * `descriptors[sequence_order_coupling_number][maxlag]` - maximum lag; length of the protein must be not less than maxlag.
-* `descriptors[sequence_order_coupling_number][distance_matrix]` - physiochemical distance matrix for calculating sequence order coupling number.
+* `descriptors[sequence_order_coupling_number][distance_matrix]` - physiochemical distance matrix name for calculating sequence order coupling number.
 
 * `descriptors[quasi_sequence_order][maxlag]` - maximum lag; length of the protein must be not less than maxlag.
 * `descriptors[quasi_sequence_order][weight]` - weighting factor to use when calculating descriptor.
-* `descriptors[quasi_sequence_order][distance_matrix]` - path to physiochemical distance matrix for calculating quasi sequence order.
+* `descriptors[quasi_sequence_order][distance_matrix]` -  physiochemical distance matrix name for calculating quasi sequence order.
 
 * `descriptors[pseudo_amino_acid_composition][lambda]` - lambda parameter that reflects the rank correlation and should be a non-negative integer and not larger than the length of the protein sequence.
 * `descriptors[pseudo_amino_acid_composition][weight]` - weighting factor to use when calculating descriptor.

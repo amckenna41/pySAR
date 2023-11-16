@@ -60,14 +60,14 @@ class PySARTests(unittest.TestCase):
         if not (os.path.isdir(self.test_output_folder)):
             os.makedirs(self.test_output_folder)
 
-    @unittest.skip("Skipping metadata tests.")
+    # @unittest.skip("Skipping metadata tests.")
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.4.1", 
+        self.assertEqual(pysar_.__version__, "2.4.2", 
             "pySAR version is not correct, got: {}.".format(pysar_.__version__))
         self.assertEqual(pysar_.__name__, "pySAR", 
             "pySAR software name is not correct, got: {}.".format(pysar_.__name__))
-        self.assertEqual(pysar_.__author__, "AJ McKenna, https://github.com/amckenna41", 
+        self.assertEqual(pysar_.__author__, "AJ McKenna: https://github.com/amckenna41", 
             "pySAR author is not correct, got: {}.".format(pysar_.__author__))
         self.assertEqual(pysar_.__authorEmail__, "amckenna41@qub.ac.uk", 
             "pySAR author email is not correct, got: {}.".format(pysar_.__authorEmail__))
@@ -83,7 +83,7 @@ class PySARTests(unittest.TestCase):
             "pySAR maintainer is not correct, got: {}.".format(pysar_.__license__))
         self.assertEqual(pysar_.__keywords__, ["bioinformatics", "protein engineering", "python", \
             "pypi", "machine learning", "directed evolution", "drug discovery", "sequence activity relationships", \
-            "SAR", "aaindex", "protein descriptors"], "pySAR keywords is not correct, got: {}.".format(pysar_.__keywords__))
+            "SAR", "aaindex", "protpy", "protein descriptors"], "pySAR keywords is not correct, got: {}.".format(pysar_.__keywords__))
 
     def test_pySAR(self):
         """ Testing pySAR intialisation process and associated methods & attributes. """

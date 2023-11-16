@@ -45,13 +45,13 @@
       "sequence_order_coupling_number":
         {
         "lag": 30,
-        "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
+        "distance_matrix": "schneider-wrede"
         },
       "quasi_sequence_order":
         {
         "lag": 30,
         "weight": 0.1,
-        "distance_matrix": "schneider-wrede-physiochemical-distance-matrix.json"
+        "distance_matrix": "schneider-wrede"
         },
       "pseudo_amino_acid_composition":
         {

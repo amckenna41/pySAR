@@ -53,8 +53,8 @@ Two additional <strong>custom-built</strong> softwares were created alongside `p
 Requirements
 ============
 * [Python][python] >= 3.8
-* [aaindex][aaindex] >= 1.1.1
-* [protpy][protpy] >= 1.1.10
+* [aaindex][aaindex] >= 1.1.2
+* [protpy][protpy] >= 1.2.0
 * [numpy][numpy] >= 1.24.2
 * [pandas][pandas] >= 1.5.3
 * [scikit-learn][sklearn] >= 1.2.1
@@ -531,6 +531,7 @@ python3 -m unittest discover tests
 To run tests for specific module, from the main `pySAR` repo folder run:
 ```
 python -m unittest tests.MODULE_NAME -v
+-v: verbose output flag
 ```
 
 Contact

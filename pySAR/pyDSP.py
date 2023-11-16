@@ -451,9 +451,6 @@ class PyDSP():
         if (freqs.ndim == 2 and freqs.shape[1] != 2):
             raise ValueError("Only one protein sequence should be passed into the function: {}.".format(freqs))
 
-        print(self.max_freq(freqs)[0])
-        print(self.num_seqs)
-        print((self.max_freq(freqs)[0])/self.num_seqs)
         # CF = PP/N ( peak position/length of largest protein in dataset)
         CF = (self.max_freq(freqs)[0])/self.num_seqs
         return CF

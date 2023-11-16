@@ -88,15 +88,17 @@ class Descriptors():
          Pseudo-Amino Acid Composition. PROTEINS: Structure, Function, and
          Genetics, 2001, 43: 246-255.
     [10] Kuo-Chen Chou. Using amphiphilic pseudo amino acid composition to predict enzyme
-          subfamily classes. Bioinformatics, 2005,21,10-19.
+         subfamily classes. Bioinformatics, 2005,21,10-19.
     [11] J. Shen et al., “Predicting protein-protein interactions based only on sequences
          information,” Proc. Natl. Acad. Sci. U. S. A., vol. 104, no. 11, pp. 4337–4341, 2007.
     [12] Gisbert Schneider and Paul Wrede. The Rational Design of Amino Acid Sequences
          by Artifical Neural Networks and Simulated Molecular Evolution: Do Novo Design
          of an Idealized Leader Cleavge Site. Biophys Journal, 1994, 66, 335-344.
-    [13]  Grantham, R. (1974-09-06). "Amino acid difference formula to help explain protein
+    [13] Grantham, R. (1974-09-06). "Amino acid difference formula to help explain protein
          evolution". Science. 185 (4154): 862–864. Bibcode:1974Sci...185..862G.
          doi:10.1126/science.185.4154.862. ISSN 0036-8075. PMID 4843792. S2CID 35388307.   
+    [14] B. Hollas, “An analysis of the autocorrelation descriptor for molecules,” J. Math. Chem., 
+        vol. 33, no. 2, pp. 91–101, 2003.
     """
     def __init__(self, config_file="", protein_seqs=None, **kwargs):
 
