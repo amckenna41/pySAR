@@ -1,6 +1,6 @@
 # pySAR Tests <a name="TOP"></a>
 
-All of the modules and functionalities of pySAR are thoroughly tested using the Python [unittest][unittest] framework. `pySAR` has hundreds of individual unit tests with 51 test functions and 6 test cases for each of the modules. Running all unit tests takes approximately X minutes.
+All of the modules and functionalities of pySAR are thoroughly tested using the Python [unittest][unittest] framework. `pySAR` has hundreds of individual unit tests with 51 test functions and 6 test cases for each of the modules. Running all unit tests takes approximately 12 minutes.
 
 Module Tests
 ------------

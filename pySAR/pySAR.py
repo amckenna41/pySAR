@@ -89,6 +89,7 @@ class PySAR():
     def __init__(self, config_file="", **kwargs):
 
         self.config_file = config_file
+        self.kwargs = locals()['kwargs'] #get any keyword argument variables of class
         self.config_parameters = {}
 
         config_filepath = ""
@@ -116,14 +117,14 @@ class PySAR():
         self.config_parameters = Map(self.config_parameters)
 
         #dataset parameters
-        self.dataset = kwargs.get('dataset') if 'dataset' in kwargs else self.config_parameters.dataset["dataset"]
-        self.sequence_col = kwargs.get('sequence_col') if 'sequence_col' in kwargs else self.config_parameters.dataset["sequence_col"] 
-        self.activity_col = kwargs.get('activity_col') if 'activity_col' in kwargs else self.config_parameters.dataset["activity"]
+        self.dataset = self.kwargs.get('dataset') if 'dataset' in self.kwargs else self.config_parameters.dataset["dataset"]
+        self.sequence_col = self.kwargs.get('sequence_col') if 'sequence_col' in self.kwargs else self.config_parameters.dataset["sequence_col"] 
+        self.activity_col = self.kwargs.get('activity_col') if 'activity_col' in self.kwargs else self.config_parameters.dataset["activity"]
 
         #model parameters
-        self.model_parameters = kwargs.get('model_parameters') if 'model_parameters' in kwargs else self.config_parameters.model["parameters"]
-        self.algorithm = kwargs.get('algorithm') if 'algorithm' in kwargs else self.config_parameters.model["algorithm"]
-        self.test_split = kwargs.get('test_split') if 'test_split' in kwargs else self.config_parameters.model["test_split"]
+        self.model_parameters = self.kwargs.get('model_parameters') if 'model_parameters' in self.kwargs else self.config_parameters.model["parameters"]
+        self.algorithm = self.kwargs.get('algorithm') if 'algorithm' in self.kwargs else self.config_parameters.model["algorithm"]
+        self.test_split = self.kwargs.get('test_split') if 'test_split' in self.kwargs else self.config_parameters.model["test_split"]
 
         #aai parameters
         self.aai_indices = None
@@ -132,15 +133,15 @@ class PySAR():
         self.descriptors = None
 
         #pyDSP parameters - use_dsp, spectrum, window function, window filter
-        self.use_dsp = kwargs.get('use_dsp') if 'use_dsp' in kwargs else self.config_parameters.pyDSP["use_dsp"]
-        self.dsp_parameters = kwargs.get('dsp_parameters') if 'dsp_parameters' in kwargs else self.config_parameters.pyDSP
-        self.filter_parameters = kwargs.get('filter_parameters') if 'filter_parameters' in kwargs else self.dsp_parameters["filter"]
-        self.spectrum = kwargs.get('spectrum') if 'spectrum' in kwargs else self.config_parameters.pyDSP["spectrum"]
-        self.window_type = kwargs.get('window_type') if 'window_type' in kwargs else self.config_parameters.pyDSP["window"]["type"] 
-        self.filter_type = kwargs.get('filter_type') if 'filter_type' in kwargs else self.config_parameters.pyDSP["filter"]["type"]
+        self.use_dsp = self.kwargs.get('use_dsp') if 'use_dsp' in self.kwargs else self.config_parameters.pyDSP["use_dsp"]
+        self.dsp_parameters = self.kwargs.get('dsp_parameters') if 'dsp_parameters' in self.kwargs else self.config_parameters.pyDSP
+        self.filter_parameters = self.kwargs.get('filter_parameters') if 'filter_parameters' in self.kwargs else self.dsp_parameters["filter"]
+        self.spectrum = self.kwargs.get('spectrum') if 'spectrum' in self.kwargs else self.config_parameters.pyDSP["spectrum"]
+        self.window_type = self.kwargs.get('window_type') if 'window_type' in self.kwargs else self.config_parameters.pyDSP["window"]["type"] 
+        self.filter_type = self.kwargs.get('filter_type') if 'filter_type' in self.kwargs else self.config_parameters.pyDSP["filter"]["type"]
 
         #set use_dsp variable to true if any of the DSP parameters passed in as kwargs
-        if (('spectrum' or 'window_type' or 'filter_type') in kwargs):
+        if (('spectrum' or 'window_type' or 'filter_type') in self.kwargs):
             self.use_dsp = True
 
         #import and read dataset
@@ -162,8 +163,8 @@ class PySAR():
         #feature space dimensions used in building the model
         self.feature_space = ()
 
-        #create instance of Descriptors class
-        self.descriptor = Descriptors(self.config_file, protein_seqs=self.sequences)
+        #create instance of Descriptors class using config file, protein sequences and any kwargs
+        self.descriptor = Descriptors(self.config_file, protein_seqs=self.sequences, **self.kwargs)
 
     def read_data(self):
         """
@@ -475,8 +476,8 @@ class PySAR():
         #remove any leading or trailing whitespace from descriptors
         descriptors = [de.strip() for de in descriptors]
 
-        #create instance of Descriptors class using data in instance variable and config file
-        descr = Descriptors(self.config_file, protein_seqs=self.sequences)
+        #create instance of Descriptors class using data in instance variable, config file and any kwargs
+        descr = Descriptors(self.config_file, protein_seqs=self.sequences, **self.kwargs)
         
         #store list of correct descriptor names from ones user input using the difflib library
         temp_descriptors = []
@@ -562,8 +563,8 @@ class PySAR():
         #sort list of descriptors into alphabetical order
         self.descriptors.sort()
 
-        #create instance of Descriptors class using data in instance variable
-        descr = Descriptors(self.config_file, protein_seqs=self.sequences)
+        #create instance of Descriptors class using data in instance variable and any kwargs
+        descr = Descriptors(self.config_file, protein_seqs=self.sequences, **self.kwargs)
 
         #pandas dataframe to store all output results
         desc_df = pd.DataFrame(columns=['Descriptor', 'Group', 'R2', 'RMSE', 'MSE', 'MAE', 'RPD', 'Explained Variance'])
@@ -727,8 +728,8 @@ class PySAR():
         if (aai_encoding_df.empty):
             raise ValueError('AAI Indices encoding cannot be empty or None: {}.'.format(aai_indices))
 
-        #create instance of Descriptors class using data in instance variable
-        descr = Descriptors(self.config_file, protein_seqs=self.sequences)
+        #create instance of Descriptors class using data in instance variable and any kwargs
+        descr = Descriptors(self.config_file, protein_seqs=self.sequences, **self.kwargs)
 
         #dataframe to store the encodings for the descriptors
         descriptor_encoding_df = pd.DataFrame()

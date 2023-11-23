@@ -18,6 +18,12 @@
 <!-- [![DOI](https://zenodo.org/badge/344290370.svg)](https://zenodo.org/badge/latestdoi/344290370) -->
 <!-- [![Documentation Status](https://readthedocs.org/projects/ansicolortags/badge/?version=latest)](http://ansicolortags.readthedocs.io/?badge=latest) -->
 
+`pySAR` is a Python library for analysing Sequence Activity Relationships (SARs)/Sequence Function Relationships (SFRs) of protein sequences. 
+
+* The published research article is available [here][article].
+* A quick Colab notebook demo of `pySAR` is available [here][demo]. 
+* A **Medium** article that dives deeper into SARs and the `pySAR` software itself is available [here][medium].
+
 Table of Contents
 =================
   * [Introduction](#Introduction)
@@ -25,7 +31,6 @@ Table of Contents
   * [Installation](#installation)
   * [Usage](#usage)
   * [Directories](#directories)
-  * [Tests](#tests)
   * [Issues](#Issues)
   * [Contact](#contact)
   * [License](#license)
@@ -34,7 +39,7 @@ Table of Contents
 
 Research Article
 ================
-The research article that accompanied this software is titled: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors" and was published in the Journal of Biomedical Informatics and is available [here][article] [[1]](#references). There is also a quick <b>Colab notebook demo</b> of `pySAR` available [here][demo].
+The research article that accompanied this software is titled: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors" and was published in the Journal of Biomedical Informatics and is available [here][article] [[1]](#references).
 
 How to cite
 ===========
@@ -46,9 +51,11 @@ Introduction
 
 After finding the optimal technique and feature set at which to numerically encode your dataset of sequences, `pySAR` can then be used to build a predictive regression ML model with the training data being that of the encoded protein sequences, and training labels being the in vitro experimentally pre-calculated activity values for each protein sequence. This model maps a set of protein sequences to the sought-after activity value, being able to accurately predict the activity/fitness value of new unseen sequences. The use-case for the software is within the field of Protein Engineering, Directed Evolution and or Drug Discovery, where a user has a set of in vitro experimentally determined activity/fitness values for a library of mutant protein sequences and wants to computationally predict the sought activity value for a selection of mutated unseen sequences, in the aim of finding the best sequence that minimises/maximises their activity value. <br>
 
-In the published [research][article], the sought activity/fitness characterisitc is the thermostability of proteins from a recombination library designed from parental cytochrome P450's. This thermostability is measured using the T50 metric (temperature at which 50% of a protein is irreversibly denatured after 10 mins of incubation, ranging from 39.2 to 64.4 degrees C), which we want to maximise [[1]](#references).
+In the published [research][article], the sought activity/fitness characteristic is the thermostability of proteins from a recombination library designed from parental cytochrome P450's. This thermostability is measured using the T50 metric (temperature at which 50% of a protein is irreversibly denatured after 10 mins of incubation, ranging from 39.2 to 64.4 degrees C), which we want to maximise [[1]](#references).
 
 Two additional <strong>custom-built</strong> softwares were created alongside `pySAR` - [`aaindex`][aaindex] and [`protpy`][protpy]. The `aaindex` software package is used for parsing the amino acid index which is a database of numerical indices representing various physicochemical and biochemical properties of amino acids and pairs of amino acids [[2]](#references). `protpy` is used for calculating a series of protein physiochemical, biochemical and structural protein descriptors. Both of these software packages are integrated into `pySAR` but can also be used individually for their respective purposes. 
+
+**A quick Colab notebook demo of `pySAR` is available [here][demo]. There is also a Medium article that dives deeper into SARs and the `pySAR` software itself, available [here][medium].** 
 
 Requirements
 ============
@@ -521,19 +528,6 @@ Issues
 ======
 Any issues, errors or bugs can be raised via the [Issues](https://github.com/amckenna41/pySAR/issues) tab in the repository.
 
-Tests
-=====
-To run all tests, from the main `pySAR` repo folder run:
-```
-python3 -m unittest discover tests
-```
-
-To run tests for specific module, from the main `pySAR` repo folder run:
-```
-python -m unittest tests.MODULE_NAME -v
--v: verbose output flag
-```
-
 Contact
 =======
 If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab. <br><br>
@@ -580,3 +574,4 @@ DOI: 10.1021/acs.jcim.0c00073 <br><br>
 [Issues]: https://github.com/amckenna41/pySAR/issues
 [license]: https://github.com/amckenna41/pySAR/blob/master/LICENSE
 [config]: https://github.com/amckenna41/pySAR/blob/master/CONFIG.md
+[medium]: https://ajmckenna69.medium.com/pysar-a3de9f71733f

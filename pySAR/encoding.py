@@ -200,7 +200,7 @@ class Encoding(PySAR):
             #generate protein spectra from pyDSP class if use_dsp is true, pass in all DSP related parameters, use object as training data
             if (self.use_dsp):
                 pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs, spectrum=self.spectrum, window_type=self.window_type, filter_type=self.filter_type)
-                pyDSP.encode_seqs()
+                pyDSP.encode_sequences()
                 X = pd.DataFrame(pyDSP.spectrum_encoding)
             else:
                 #aai index encoding set as training data
@@ -336,8 +336,8 @@ class Encoding(PySAR):
         mae_ = []
         explained_var_ = []
 
-        #create instance of descriptors class using config file
-        desc = Descriptors(self.config_file)
+        #create instance of descriptors class using config file and any kwargs
+        desc = Descriptors(self.config_file, **self.kwargs)
 
         #if no descriptors passed into descriptors input param then use all descriptors by default,
         #get list of all descriptors according to desc_combo value
@@ -607,8 +607,8 @@ class Encoding(PySAR):
             if not (index in aaindex1.record_codes()):
                 raise ValueError("AAI record {} not found in list of available record codes.".format(index))
            
-        #create instance of Descriptors class
-        desc = Descriptors(config_file=self.config_file)
+        #create instance of Descriptors class using config file and any kwargs
+        desc = Descriptors(config_file=self.config_file, **self.kwargs)
 
         #raise error if invalid parameter data types input
         if ((not isinstance(descriptors, list)) and (not isinstance(descriptors, str))):
@@ -688,7 +688,7 @@ class Encoding(PySAR):
             #generate protein spectra from pyDSP class if use_dsp is true, pass in all DSP related parameters, use object as training data
             if (self.use_dsp):
                 pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs, spectrum=self.spectrum, window_type=self.window_type, filter_type=self.filter_type)
-                pyDSP.encode_seqs()
+                pyDSP.encode_sequences()
                 X_aai = pd.DataFrame(pyDSP.spectrum_encoding)
             else:
                 X_aai = pd.DataFrame(encoded_seqs)

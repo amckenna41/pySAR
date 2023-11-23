@@ -63,24 +63,24 @@ class PySARTests(unittest.TestCase):
     # @unittest.skip("Skipping metadata tests.")
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.4.2", 
-            "pySAR version is not correct, got: {}.".format(pysar_.__version__))
+        self.assertEqual(pysar_.__version__, "2.4.3", 
+            "pySAR version is not correct, expected 2.4.3, got {}.".format(pysar_.__version__))
         self.assertEqual(pysar_.__name__, "pySAR", 
-            "pySAR software name is not correct, got: {}.".format(pysar_.__name__))
+            "pySAR software name is not correct, expected pySAR, got {}.".format(pysar_.__name__))
         self.assertEqual(pysar_.__author__, "AJ McKenna: https://github.com/amckenna41", 
-            "pySAR author is not correct, got: {}.".format(pysar_.__author__))
+            "pySAR author is not correct, expected AJ McKenna, got {}.".format(pysar_.__author__))
         self.assertEqual(pysar_.__authorEmail__, "amckenna41@qub.ac.uk", 
-            "pySAR author email is not correct, got: {}.".format(pysar_.__authorEmail__))
+            "pySAR author email is not correct, expected amckenna41@qub.ac.uk, got {}.".format(pysar_.__authorEmail__))
         self.assertEqual(pysar_.__url__, "https://github.com/amckenna41/pySAR", 
-            "pySAR repo URL is not correct, got: {}.".format(pysar_.__url__))
+            "pySAR repo URL is not correct, expected https://github.com/amckenna41/pySAR, got {}.".format(pysar_.__url__))
         self.assertEqual(pysar_.__download_url__, "https://github.com/amckenna41/pySAR/archive/refs/heads/main.zip", 
-            "pySAR repo download URL is not correct, got: {}.".format(pysar_.__download_url__))
+            "pySAR repo download URL is not correct, expected https://github.com/amckenna41/pySAR/archive/refs/heads/main.zip, got {}.".format(pysar_.__download_url__))
         self.assertEqual(pysar_.__status__, "Production", 
-            "pySAR status is not correct, got: {}.".format(pysar_.__status__))
+            "pySAR status is not correct, expected Production, got {}.".format(pysar_.__status__))
         self.assertEqual(pysar_.__license__, "MIT", 
-            "pySAR license type is not correct, got: {}.".format(pysar_.__license__))
+            "pySAR license type is not correct, expected MIT, got {}.".format(pysar_.__license__))
         self.assertEqual(pysar_.__maintainer__, "AJ McKenna", 
-            "pySAR maintainer is not correct, got: {}.".format(pysar_.__license__))
+            "pySAR maintainer is not correct, expected AJ McKenna, got {}.".format(pysar_.__license__))
         self.assertEqual(pysar_.__keywords__, ["bioinformatics", "protein engineering", "python", \
             "pypi", "machine learning", "directed evolution", "drug discovery", "sequence activity relationships", \
             "SAR", "aaindex", "protpy", "protein descriptors"], "pySAR keywords is not correct, got: {}.".format(pysar_.__keywords__))

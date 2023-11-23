@@ -104,6 +104,7 @@ class Descriptors():
 
         self.config_file = config_file
         self.protein_seqs = protein_seqs
+        self.kwargs = locals()['kwargs'] #get any keyword argument variables of class
         self.config_parameters = {}
 
         desc_config_filepath = ""
@@ -132,8 +133,8 @@ class Descriptors():
         self.desc_parameters = Map(self.config_parameters["descriptors"])
         
         #set dataset and descriptors csv filepath from kwargs, if applicable, or the config file values
-        self.dataset_filepath = kwargs.get('dataset_filepath') if 'dataset_filepath' in kwargs else self.dataset_parameters["dataset"]
-        self.descriptors_csv = kwargs.get('descriptors_csv') if 'descriptors_csv' in kwargs else self.desc_parameters.descriptors_csv
+        self.dataset_filepath = self.kwargs.get('dataset') if 'dataset' in self.kwargs else self.dataset_parameters["dataset"]
+        self.descriptors_csv = self.kwargs.get('descriptors_csv') if 'descriptors_csv' in self.kwargs else self.desc_parameters.descriptors_csv
 
         #import protein sequences from dataset if not directly specified in protein_seqs input param
         if not (isinstance(self.protein_seqs, pd.Series)):

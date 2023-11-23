@@ -269,8 +269,10 @@ To Do List:
 - [X] Add info about the colunns and dimensions of each descriptors in pre-calculated csv file - fix Issue.
 - [X] When calculating all descriptors (get_all_descriptors(export=True)), add some sort of print/tracking functionality.
 - [X] Double check all links in readme.
-- [ ] Add dimensions of each dataset to https://github.com/amckenna41/pySAR/tree/master/example_datasets.
+- [X] Add dimensions of each dataset to https://github.com/amckenna41/pySAR/tree/master/example_datasets.
 - [ ] Go over references in descriptors module - refer to protpy.
 - [X] Update distance matrices in configs - test once protpy published.
-- [ ] Add link to medium article.
+- [X] Add link to medium article.
 - [X] Update aaindex version on readme.
+- [X] Add elapsed time for each case study - calculating protein descriptors on demo.
+- [ ] readthedocs(https://github.com/MartinThoma/propy3/tree/master).
