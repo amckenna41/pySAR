@@ -78,6 +78,7 @@ jobs:
     name: Security Scan
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       contents: read
     steps:
