@@ -1,5 +1,5 @@
 Welcome to pySAR's documentation!
-================================
+==================================
 
 .. image:: ../images/pySAR.png
    :alt: pySAR logo
@@ -92,4 +92,5 @@ Contents
    descriptors
    models
    dsp
+   webapp
    contributing
