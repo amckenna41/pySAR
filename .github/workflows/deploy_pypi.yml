@@ -44,10 +44,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools wheel twine build
 
-      - name: Install package dependencies
-        run: |
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
       - name: Verify TestPyPI deployment
         if: github.event_name == 'workflow_run'
         run: |

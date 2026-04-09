@@ -92,5 +92,4 @@ Contents
    descriptors
    models
    dsp
-   webapp
    contributing

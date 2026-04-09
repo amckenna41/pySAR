@@ -31,6 +31,7 @@ Table of Contents
   * [Background](#background)
   * [Requirements](#requirements)
   * [Installation](#installation)
+  * [Documentation](#documentation)
   * [Usage](#usage)
   * [Directories](#directories)
   * [Issues](#Issues)
@@ -93,6 +94,10 @@ git clone -b master https://github.com/amckenna41/pySAR.git
 cd pySAR
 pip3 install .
 ```
+
+Documentation
+=============
+Full documentation for `pySAR` is available on [Read the Docs](https://pysar.readthedocs.io/en/latest/), including:
 
 Usage
 =====
