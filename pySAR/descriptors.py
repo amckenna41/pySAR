@@ -2,6 +2,8 @@
 #################                  Descriptors                 #################
 ################################################################################
 
+from typing import Union, List, Optional, Dict, Any, Callable, Tuple
+from enum import Enum
 import pandas as pd
 import numpy as np
 from difflib import get_close_matches
@@ -10,29 +12,77 @@ from json import JSONDecodeError
 import itertools
 import time
 from tqdm import tqdm
+from functools import lru_cache
 
 from .utils import *
 import protpy as protpy
 
+# Descriptor feature dimension constants
+AA_COUNT = 20
+DIPEPTIDE_FEATURES = 20 ** 2  # 400
+TRIPEPTIDE_FEATURES = 20 ** 3  # 8000
+CONJOINT_TRIAD_FEATURES = 343
+
+class DescriptorType(Enum):
+    """Enumeration of available protein descriptor types."""
+    AMINO_ACID_COMPOSITION = 'amino_acid_composition'
+    DIPEPTIDE_COMPOSITION = 'dipeptide_composition'
+    TRIPEPTIDE_COMPOSITION = 'tripeptide_composition'
+    GRAVY = 'gravy'
+    AROMATICITY = 'aromaticity'
+    INSTABILITY_INDEX = 'instability_index'
+    ISOELECTRIC_POINT = 'isoelectric_point'
+    MOLECULAR_WEIGHT = 'molecular_weight'
+    CHARGE_DISTRIBUTION = 'charge_distribution'
+    HYDROPHOBIC_POLAR_CHARGED_COMPOSITION = 'hydrophobic_polar_charged_composition'
+    SECONDARY_STRUCTURE_PROPENSITY = 'secondary_structure_propensity'
+    KMER_COMPOSITION = 'kmer_composition'
+    REDUCED_ALPHABET_COMPOSITION = 'reduced_alphabet_composition'
+    MOTIF_COMPOSITION = 'motif_composition'
+    AMINO_ACID_PAIR_COMPOSITION = 'amino_acid_pair_composition'
+    ALIPHATIC_INDEX = 'aliphatic_index'
+    EXTINCTION_COEFFICIENT = 'extinction_coefficient'
+    BOMAN_INDEX = 'boman_index'
+    AGGREGATION_PROPENSITY = 'aggregation_propensity'
+    HYDROPHOBIC_MOMENT = 'hydrophobic_moment'
+    SHANNON_ENTROPY = 'shannon_entropy'
+    MOREAUBROTO_AUTOCORRELATION = 'moreaubroto_autocorrelation'
+    MORAN_AUTOCORRELATION = 'moran_autocorrelation'
+    GEARY_AUTOCORRELATION = 'geary_autocorrelation'
+    CTD = 'ctd'
+    CTD_COMPOSITION = 'ctd_composition'
+    CTD_TRANSITION = 'ctd_transition'
+    CTD_DISTRIBUTION = 'ctd_distribution'
+    CONJOINT_TRIAD = 'conjoint_triad'
+    SEQUENCE_ORDER_COUPLING_NUMBER = 'sequence_order_coupling_number'
+    QUASI_SEQUENCE_ORDER = 'quasi_sequence_order'
+    PSEUDO_AMINO_ACID_COMPOSITION = 'pseudo_amino_acid_composition'
+    AMPHIPHILIC_PSEUDO_AMINO_ACID_COMPOSITION = 'amphiphilic_pseudo_amino_acid_composition'
+
 class Descriptors():
     """
-    Class for calculating a wide variety of protein physiochemical, biochemical and structural 
-    descriptors. These descriptors have been used in a wide variety of Bioinformaitcs 
-    applications including: protein strucutral and functional class prediction, 
+    Class for calculating a wide variety of protein physicochemical, biochemical and structural 
+    descriptors. These descriptors have been used in a wide variety of Bioinformatics 
+    applications including: protein structural and functional class prediction, 
     protein-protein interactions, subcellular location, secondary structure prediction, among
     many more. They represent the different structural, functional & interaction profiles of 
     proteins by exploring the features in the groups of composition, correlation and distribution 
-    of the constituent residues and their biochemical and physiochemical properties.
+    of the constituent residues and their biochemical and physicochemical properties.
 
     A custom-built software package was created to generate these descriptors - protpy, which
     is also open-source and available here: https://github.com/amckenna41/protpy. The package
     takes 1 or more protein sequences, returning the respective descriptor values in a Pandas
     DataFrame. protpy and this class allows calculation of the following descriptors: Amino 
-    Acid Compostion (AAComp), Dipeptide Composition (DPComp), Tripeptide Composition (TPComp), 
+    Acid Composition (AAComp), Dipeptide Composition (DPComp), Tripeptide Composition (TPComp), 
     MoreauBroto Autocorrelation (MBAuto), Moran Autocorrelation (MAuto), Geary Autocorrelation 
     (GAuto), Composition (CTD_C), Transition (CTD_T), Distribution (CTD_D), CTD, Conjoint Triad 
     (CTriad), Sequence Order Coupling Number (SOCN), Quasi Sequence Order (QSO), Pseudo Amino Acid 
-    Composition - type 1 (PAAcomp) and Amphiphilic Pseudo Amino Acid Composition - type 2 (APAAComp). 
+    Composition - type 1 (PAAcomp), Amphiphilic Pseudo Amino Acid Composition - type 2 (APAAComp),
+    GRAVY, Aromaticity, Instability Index, Isoelectric Point, Molecular Weight, Charge Distribution,
+    Hydrophobic/Polar/Charged Composition (HPC), Secondary Structure Propensity (SSP), k-mer
+    Composition, Reduced Alphabet Composition, Motif Composition, Amino Acid Pair Composition,
+    Aliphatic Index, Extinction Coefficient, Boman Index, Aggregation Propensity, Hydrophobic
+    Moment, and Shannon Entropy.
 
     Similar to other classes in pySAR, this class works via configuration files which contain
     the values for all the potential parameters, if applicable, of each descriptor. By default, 
@@ -40,7 +90,13 @@ class Descriptors():
     values for the specified dataset, if this file doesn't exist, or the parameter value is blank, 
     then each descriptor will have to be calculated using its respective function.
 
-    It is reccomended that with every new dataset, the Descriptors class should be instantiated 
+    During initialization, input sequences are normalized by removing gaps and then validated
+    against canonical amino acids before descriptor generation begins.
+
+    This class is also designed to feed descriptor feature matrices directly into downstream
+    Encoding and PySAR workflows for model training and evaluation.
+
+    It is recommended that with every new dataset, the Descriptors class should be instantiated 
     with the "all_desc" parameter set to 1 in the config file. This will calculate all the descriptor
     values for the dataset of protein sequences, storing the result in a csv file, meaning that
     this file can be used for future use and the descriptors will not have to be recalculated each 
@@ -52,13 +108,232 @@ class Descriptors():
     :config_file: str
         path to configuration file which will contain the various parameter values for all
         descriptors. If invalid value input then error will be raised.
-    :protein_seqs: np.ndarray
-        array of protein sequences that descriptors will be calculated for. If set to none 
-        or empty then error will be raised.
+    :protein_seqs: pd.Series or str
+        protein sequences to calculate descriptors for. A single sequence string is converted
+        internally to a pandas Series. If None or empty, sequences are loaded from the dataset
+        path in the configuration.
     **kwargs: dict
         keyword argument names and values for the dataset filename/path and the descriptors 
         csv path parameters. The keywords should be the same name and form of those in the 
         configuration file. The keyword values input take precedence over those in the config files.
+
+    Attributes
+    ==========
+    :amino_acid_composition: pd.DataFrame
+        Amino acid composition descriptor (20 features)
+    :dipeptide_composition: pd.DataFrame
+        Dipeptide composition descriptor (400 features)
+    :tripeptide_composition: pd.DataFrame
+        Tripeptide composition descriptor (8000 features)
+    :moreaubroto_autocorrelation: pd.DataFrame
+        Moreaubroto autocorrelation descriptor (240 features)
+    :moran_autocorrelation: pd.DataFrame
+        Moran autocorrelation descriptor (240 features)
+    :geary_autocorrelation: pd.DataFrame
+        Geary autocorrelation descriptor (240 features)
+    :ctd: pd.DataFrame
+        Composition-Transition-Distribution descriptor
+    :conjoint_triad: pd.DataFrame
+        Conjoint triad descriptor (343 features)
+    :pseudo_amino_acid_composition: pd.DataFrame
+        Pseudo amino acid composition descriptor
+    :amphiphilic_pseudo_amino_acid_composition: pd.DataFrame
+        Amphiphilic pseudo amino acid composition descriptor
+    :gravy: pd.DataFrame
+        GRAVY (Grand Average of Hydropathy) descriptor (1 feature)
+    :aromaticity: pd.DataFrame
+        Aromaticity descriptor (1 feature)
+    :instability_index: pd.DataFrame
+        Instability Index descriptor (1 feature)
+    :isoelectric_point: pd.DataFrame
+        Isoelectric Point descriptor (1 feature)
+    :molecular_weight: pd.DataFrame
+        Molecular Weight descriptor (1 feature)
+    :charge_distribution: pd.DataFrame
+        Charge Distribution descriptor (3 features)
+    :hydrophobic_polar_charged_composition: pd.DataFrame
+        Hydrophobic/Polar/Charged Composition descriptor (3 features)
+    :secondary_structure_propensity: pd.DataFrame
+        Secondary Structure Propensity descriptor (3 features)
+    :kmer_composition: pd.DataFrame
+        k-mer Composition descriptor (20^k features, default 400)
+    :reduced_alphabet_composition: pd.DataFrame
+        Reduced Alphabet Composition descriptor (alphabet_size features, default 6)
+    :motif_composition: pd.DataFrame
+        Motif Composition descriptor (8 features by default)
+    :amino_acid_pair_composition: pd.DataFrame
+        Amino Acid Pair Composition descriptor (400 features)
+    :aliphatic_index: pd.DataFrame
+        Aliphatic Index descriptor (1 feature)
+    :extinction_coefficient: pd.DataFrame
+        Extinction Coefficient descriptor (2 features)
+    :boman_index: pd.DataFrame
+        Boman Index descriptor (1 feature)
+    :aggregation_propensity: pd.DataFrame
+        Aggregation Propensity descriptor (2 features)
+    :hydrophobic_moment: pd.DataFrame
+        Hydrophobic Moment descriptor (2 features)
+    :shannon_entropy: pd.DataFrame
+        Shannon Entropy descriptor (1 feature)
+    :all_descriptors: pd.DataFrame
+        Concatenated dataframe of all calculated descriptors
+    :valid_descriptors: list
+        List of all available descriptor names
+    :descriptor_groups: dict
+        Mapping of descriptor names to their functional groups
+    :num_seqs: int
+        Total number of input protein sequences
+    :protein_seqs: pd.Series
+        Loaded protein sequences with gaps removed
+
+    Methods
+    =======
+    import_descriptors()
+        Import pre-calculated descriptors from CSV file
+    get_amino_acid_composition()
+        Calculate amino acid composition for all sequences
+    get_dipeptide_composition()
+        Calculate dipeptide composition for all sequences
+    get_tripeptide_composition()
+        Calculate tripeptide composition for all sequences
+    get_moreaubroto_autocorrelation()
+        Calculate Moreau-Broto autocorrelation descriptor
+    get_moran_autocorrelation()
+        Calculate Moran autocorrelation descriptor
+    get_geary_autocorrelation()
+        Calculate Geary autocorrelation descriptor
+    get_ctd()
+        Calculate CTD descriptor
+    get_ctd_composition()
+        Calculate CTD composition descriptor
+    get_ctd_transition()
+        Calculate CTD transition descriptor
+    get_ctd_distribution()
+        Calculate CTD distribution descriptor
+    get_conjoint_triad()
+        Calculate conjoint triad descriptor
+    get_sequence_order_coupling_number()
+        Calculate sequence order coupling number descriptor
+    get_quasi_sequence_order()
+        Calculate quasi sequence order descriptor
+    get_pseudo_amino_acid_composition()
+        Calculate pseudo amino acid composition descriptor
+    get_amphiphilic_pseudo_amino_acid_composition()
+        Calculate amphiphilic pseudo amino acid composition descriptor
+    get_gravy()
+        Calculate GRAVY (Grand Average of Hydropathy) descriptor
+    get_aromaticity()
+        Calculate Aromaticity descriptor
+    get_instability_index()
+        Calculate Instability Index descriptor
+    get_isoelectric_point()
+        Calculate Isoelectric Point descriptor
+    get_molecular_weight()
+        Calculate Molecular Weight descriptor
+    get_charge_distribution()
+        Calculate Charge Distribution descriptor
+    get_hydrophobic_polar_charged_composition()
+        Calculate Hydrophobic/Polar/Charged Composition descriptor
+    get_secondary_structure_propensity()
+        Calculate Secondary Structure Propensity descriptor
+    get_kmer_composition()
+        Calculate k-mer Composition descriptor
+    get_reduced_alphabet_composition()
+        Calculate Reduced Alphabet Composition descriptor
+    get_motif_composition()
+        Calculate Motif Composition descriptor
+    get_amino_acid_pair_composition()
+        Calculate Amino Acid Pair Composition descriptor
+    get_aliphatic_index()
+        Calculate Aliphatic Index descriptor
+    get_extinction_coefficient()
+        Calculate Extinction Coefficient descriptor
+    get_boman_index()
+        Calculate Boman Index descriptor
+    get_aggregation_propensity()
+        Calculate Aggregation Propensity descriptor
+    get_hydrophobic_moment()
+        Calculate Hydrophobic Moment descriptor
+    get_shannon_entropy()
+        Calculate Shannon Entropy descriptor
+    get_all_descriptors()
+        Calculate all descriptors and return a concatenated dataframe
+    get_descriptor_encoding()
+        Resolve a descriptor name and return its encoding dataframe
+    all_descriptors_list()
+        Return descriptor names or combinations of descriptor names
+    validate_descriptors()
+        Validate descriptor names exist in valid descriptors list
+    validate_sequences()
+        Validate sequences contain only canonical amino acids
+    get_descriptor_info()
+        Get metadata about a specific descriptor
+    reset_descriptors()
+        Clear all descriptor DataFrames to empty state
+    clear_cache()
+        Free memory from cached descriptor metadata
+    get_descriptor_columns()
+        Get column names for a calculated descriptor
+    __str__()
+        Return a human-readable string summary of descriptor shapes
+    __repr__()
+        Return the object representation string
+    __len__()
+        Return number of rows in all_descriptors
+    __shape__()
+        Return shape of all_descriptors
+    __sizeof__()
+        Return memory footprint of all_descriptors
+
+    Raises
+    ======
+    :TypeError
+        If config_file is not a string or protein sequences are invalid type
+    :OSError
+        If config file or dataset file not found at specified path
+    :InvalidSequenceError
+        If protein sequences contain non-canonical amino acids
+    :InvalidDescriptorError
+        If requesting a non-existent descriptor
+    :DescriptorConfigError
+        If configuration JSON file is invalid or malformed
+
+    Examples
+    ========
+    >>> from pySAR.descriptors import Descriptors
+    >>> desc = Descriptors(config_file='config/thermostability.json')
+    >>> 
+    >>> # Calculate single descriptor
+    >>> aa_comp = desc.get_amino_acid_composition()
+    >>> 
+    >>> # Calculate multiple descriptors
+    >>> desc.get_dipeptide_composition()
+    >>> desc.get_moran_autocorrelation()
+    >>> 
+    >>> # Get all descriptors at once
+    >>> all_desc = desc.get_all_descriptors()
+    >>> alldescs.shape
+    (261, 10572)
+    >>> 
+    >>> # Get descriptor information
+    >>> info = desc.get_descriptor_info('amino_acid_composition')
+    >>> info['feature_count']
+    20
+    >>> 
+    >>> # Get columns for a descriptor
+    >>> columns = desc.get_descriptor_columns('dipeptide_composition')
+    >>> len(columns)
+    400
+
+    Notes
+    =====
+    - Tripeptide and pseudo-amino acid composition descriptors are computationally expensive
+      and may take significant time to calculate on large datasets
+    - Pre-calculating all descriptors and exporting to CSV (via 'all_desc' config parameter)
+      is recommended to avoid recalculation
+    - The descriptor_feature_count property is cached for performance
+    - Memory usage scales with dataset size and number of descriptors calculated
+    - Protein sequences must contain only standard 20 amino acids (A-W, excluding B, O, U, Z)
 
     References
     ==========
@@ -100,7 +375,10 @@ class Descriptors():
     [14] B. Hollas, “An analysis of the autocorrelation descriptor for molecules,” J. Math. Chem., 
         vol. 33, no. 2, pp. 91–101, 2003.
     """
-    def __init__(self, config_file="", protein_seqs=None, **kwargs):
+    def __init__(self, 
+                 config_file: str = "", 
+                 protein_seqs: Optional[Union[pd.Series, str]] = None, 
+                 **kwargs) -> None:
 
         self.config_file = config_file
         self.protein_seqs = protein_seqs
@@ -109,9 +387,9 @@ class Descriptors():
 
         desc_config_filepath = ""
 
-        #import congfig file, raise error if invalid path
+        #import config file, raise error if invalid path
         if not (isinstance(self.config_file, str) or (self.config_file is None)):
-            raise TypeError('JSON config file must be a filepath of type string, got type {}.'.format(type(config_file)))
+            raise TypeError(f'JSON config file must be a filepath of type string, got type {type(config_file)}.')
         if (os.path.splitext(self.config_file)[1] == ''):
             self.config_file = self.config_file + '.json' #append extension if only filename input        
         if (os.path.isfile(self.config_file)):
@@ -119,14 +397,14 @@ class Descriptors():
         elif (os.path.isfile(os.path.join('config', self.config_file))):
             desc_config_filepath = os.path.join('config', self.config_file)
         else:
-            raise OSError('JSON config file not found at path: {}.'.format(self.config_file))
+            raise OSError(f'JSON config file not found at path: {self.config_file}.')
 
         #open json file and read config parameters
         try:
             with open(desc_config_filepath) as f:
                 self.config_parameters = json.load(f)
-        except:
-            raise JSONDecodeError('Error parsing config JSON file: {}.'.format(desc_config_filepath))
+        except (json.JSONDecodeError, FileNotFoundError, IOError) as e:
+            raise DescriptorConfigError(f'Error parsing config JSON file {desc_config_filepath}: {e}')
         
         #create instance of Map class so parameters in config can be accessed via dot notation
         self.dataset_parameters = Map(self.config_parameters["dataset"])
@@ -141,14 +419,14 @@ class Descriptors():
             if (self.protein_seqs is None or self.protein_seqs == ""): 
                 #open dataset and read protein seqs if protein_seqs is empty/None
                 if not (os.path.isfile(self.dataset_filepath)):
-                    raise OSError('Dataset file not found at path: {}.'.format(self.dataset_filepath))
+                    raise OSError(f'Dataset file not found at path: {self.dataset_filepath}.')
 
                 #read in dataset csv from filepath mentioned in config 
                 try:
                     data = pd.read_csv(self.dataset_filepath, sep=",", header=0)
                     self.protein_seqs = data[self.dataset_parameters["sequence_col"]]
-                except:
-                    raise IOError('Error opening dataset file: {}.'.format(self.dataset_filepath))
+                except (FileNotFoundError, IOError, KeyError, pd.errors.ParserError) as e:
+                    raise DescriptorError(f'Error opening dataset file {self.dataset_filepath}: {e}')
             else: 
                 #if 1 protein sequence (1 string) input then convert to pandas Series object
                 if (isinstance(self.protein_seqs, str)):
@@ -163,11 +441,10 @@ class Descriptors():
         #remove any gaps from protein sequences
         self.protein_seqs = remove_gaps(self.protein_seqs)
 
-        #validate that all input protein sequences are valid and only contain
-        #valid amino acids, if not then raise ValueError
+        #validate that all input protein sequences are valid and only contain valid amino acids, if not then raise ValueError
         invalid_seqs = valid_sequence(self.protein_seqs)
         if (invalid_seqs != None):
-            raise ValueError('Invalid Amino Acids found in protein sequence dataset: {}.'.format(invalid_seqs))
+            raise InvalidSequenceError(f'Invalid Amino Acids found in protein sequence dataset: {invalid_seqs}.')
 
         #get the total number of inputted protein sequences
         self.num_seqs = len(self.protein_seqs)
@@ -176,6 +453,25 @@ class Descriptors():
         self.amino_acid_composition = pd.DataFrame()
         self.dipeptide_composition = pd.DataFrame()
         self.tripeptide_composition = pd.DataFrame()
+        # new composition descriptors (protpy >= 1.3.0)
+        self.gravy = pd.DataFrame()
+        self.aromaticity = pd.DataFrame()
+        self.instability_index = pd.DataFrame()
+        self.isoelectric_point = pd.DataFrame()
+        self.molecular_weight = pd.DataFrame()
+        self.charge_distribution = pd.DataFrame()
+        self.hydrophobic_polar_charged_composition = pd.DataFrame()
+        self.secondary_structure_propensity = pd.DataFrame()
+        self.kmer_composition = pd.DataFrame()
+        self.reduced_alphabet_composition = pd.DataFrame()
+        self.motif_composition = pd.DataFrame()
+        self.amino_acid_pair_composition = pd.DataFrame()
+        self.aliphatic_index = pd.DataFrame()
+        self.extinction_coefficient = pd.DataFrame()
+        self.boman_index = pd.DataFrame()
+        self.aggregation_propensity = pd.DataFrame()
+        self.hydrophobic_moment = pd.DataFrame()
+        self.shannon_entropy = pd.DataFrame()
         self.moreaubroto_autocorrelation = pd.DataFrame()
         self.moran_autocorrelation = pd.DataFrame()
         self.geary_autocorrelation = pd.DataFrame()
@@ -203,8 +499,9 @@ class Descriptors():
 
         #create dictionary of descriptors and their associated groups
         keys = self.all_descriptors_list()
-        values = ["Composition"]*3 + ["Autocorrelation"]*3 + ["CTD"]*4 + ["Conjoint Triad"] + \
-            ["Sequence Order"]*2 + ["Pseudo Composition"]*2
+        # 21 Composition (3 original + 18 new) + 3 Autocorrelation + 4 CTD + 1 Conjoint Triad + 2 Sequence Order + 2 Pseudo Composition
+        values = (["Composition"] * 21 + ["Autocorrelation"] * 3 + ["CTD"] * 4 +
+                  ["Conjoint Triad"] + ["Sequence Order"] * 2 + ["Pseudo Composition"] * 2)
         self.descriptor_groups = dict(zip(keys,values))
 
         #get shape of descriptors
@@ -213,16 +510,22 @@ class Descriptors():
         #list of available protein descriptors
         self.valid_descriptors = [
             'amino_acid_composition', 'dipeptide_composition', 'tripeptide_composition',
+            'gravy', 'aromaticity', 'instability_index', 'isoelectric_point', 'molecular_weight',
+            'charge_distribution', 'hydrophobic_polar_charged_composition',
+            'secondary_structure_propensity', 'kmer_composition', 'reduced_alphabet_composition',
+            'motif_composition', 'amino_acid_pair_composition', 'aliphatic_index',
+            'extinction_coefficient', 'boman_index', 'aggregation_propensity',
+            'hydrophobic_moment', 'shannon_entropy',
             'moreaubroto_autocorrelation', 'moran_autocorrelation', 'geary_autocorrelation',
             'ctd', 'ctd_composition', 'ctd_transition', 'ctd_distribution', 'conjoint_triad',
             'sequence_order_coupling_number', 'quasi_sequence_order',
             'pseudo_amino_acid_composition', 'amphiphilic_pseudo_amino_acid_composition'
         ]
 
-    def import_descriptors(self, descriptor_filepath=""):
+    def import_descriptors(self, descriptor_filepath: str = "") -> None:
         """
-        Import descriptors from descriptors csv, setting the class attrbutes to their values.
-        It is reccommended that after calculating the descriptors for a dataset of sequences 
+        Import descriptors from descriptors csv, setting the class attributes to their values.
+        It is recommended that after calculating the descriptors for a dataset of sequences 
         that the calculated values are exported to a csv; this means they don't need to be 
         recalculated each time. The all_descriptors class attribute is a dataframe of all 
         concatenated descriptors from the csv.
@@ -236,41 +539,41 @@ class Descriptors():
         =======
         None
         """
-        #raise type error if filepath parameter isnt string
+        #raise type error if filepath parameter isn't string
         if not (isinstance(descriptor_filepath, str)):
-            raise TypeError("Filepath input parameter should be type str, got {}.".format(type(descriptor_filepath)))
+            raise TypeError(f"Filepath input parameter should be type str, got {type(descriptor_filepath)}.")
 
         #verify descriptors csv exists at filepath
         if not (os.path.isfile(descriptor_filepath)):
-            raise OSError('Descriptors csv file does not exist at filepath: {}.'.format(descriptor_filepath))
+            raise OSError(f'Descriptors csv file does not exist at filepath: {descriptor_filepath}.')
 
         #import descriptors csv as dataframe
         try:
             descriptor_df = pd.read_csv(descriptor_filepath)
-        except IOError:
-            print('Error reading descriptors csv file: {}.'.format(descriptor_filepath))
+        except (FileNotFoundError, IOError, pd.errors.ParserError) as e:
+            raise DescriptorError(f'Error reading descriptors csv file {descriptor_filepath}: {e}')
 
         #replacing any +/- infinity or NAN values with 0
-        descriptor_df.replace([np.inf, -np.inf], np.nan)
-        descriptor_df = descriptor_df.fillna(0)
+        descriptor_df = descriptor_df.replace([np.inf, -np.inf], np.nan).fillna(0)
 
         '''
         calculate dimension of each descriptor in the csv according to the properties of each
         descriptor, pull each descriptor value from the csv according to its dimension, 
         setting the values to the class instance variables
         '''
-        amino_acid_composition_dim = (0, 20)
+        amino_acid_composition_dim = (0, AA_COUNT)
         self.amino_acid_composition = descriptor_df.iloc[:,amino_acid_composition_dim[0]:amino_acid_composition_dim[1]]
 
-        dipeptide_composition_dim = (20, 420)
+        dipeptide_composition_dim = (AA_COUNT, AA_COUNT + DIPEPTIDE_FEATURES)
         self.dipeptide_composition = descriptor_df.iloc[:,dipeptide_composition_dim[0]:dipeptide_composition_dim[1]]
 
-        tripeptide_composition_dim = (420, 8420)
+        tripeptide_composition_dim = (AA_COUNT + DIPEPTIDE_FEATURES, AA_COUNT + DIPEPTIDE_FEATURES + TRIPEPTIDE_FEATURES)
         self.tripeptide_composition = descriptor_df.iloc[:,tripeptide_composition_dim[0]:tripeptide_composition_dim[1]]
 
         #dimension of autocorrelation (moreaubroto, moran and geary) descriptors depends on the lag value and number of properties
-        moreaubroto_dim = (8420,
-            8420 + (self.desc_parameters.moreaubroto_autocorrelation["lag"] * len(self.desc_parameters.moreaubroto_autocorrelation["properties"])))
+        _comp_offset = AA_COUNT + DIPEPTIDE_FEATURES + TRIPEPTIDE_FEATURES
+        moreaubroto_dim = (_comp_offset,
+            _comp_offset + (self.desc_parameters.moreaubroto_autocorrelation["lag"] * len(self.desc_parameters.moreaubroto_autocorrelation["properties"])))
         self.moreaubroto_autocorrelation = descriptor_df.iloc[:,moreaubroto_dim[0]:moreaubroto_dim[1]]
 
         moran_auto_dim = (moreaubroto_dim[1], moreaubroto_dim[1] +
@@ -293,7 +596,7 @@ class Descriptors():
             ctd_comp_dim = (geary_auto_dim[1], geary_auto_dim[1] + 21) #3 CTD_Comp features per 7 properties = 21
             ctd_trans_dim = (ctd_comp_dim[1], ctd_comp_dim[1] + 21) #3 CTD_Trans features per 7 properties = 21
             ctd_distr_dim = (ctd_trans_dim[1], ctd_trans_dim[1] + 105) #15 CTD_Distr features per 7 properties = 105
-        #only using a pre-determined list of physiochemical properties, 21 features per property
+        #only using a pre-determined list of physicochemical properties, 21 features per property
         else: 
             ctd_comp_dim = (geary_auto_dim[1], geary_auto_dim[1] + (len(ctd_property) * 3)) #3 CTD_Comp features per property
             ctd_trans_dim = (ctd_comp_dim[1], ctd_comp_dim[1] + (len(ctd_property) * 3)) #3 CTD_Trans features per property
@@ -308,7 +611,7 @@ class Descriptors():
 
         self.ctd_distribution = descriptor_df.iloc[:,ctd_distr_dim[0]:ctd_distr_dim[1]]
 
-        conjoint_triad_dim = (ctd_distr_dim[1], ctd_distr_dim[1]+343)
+        conjoint_triad_dim = (ctd_distr_dim[1], ctd_distr_dim[1] + CONJOINT_TRIAD_FEATURES)
 
         self.conjoint_triad = descriptor_df.iloc[:,conjoint_triad_dim[0]:conjoint_triad_dim[1]]
         
@@ -352,7 +655,120 @@ class Descriptors():
 
         self.all_descriptors = descriptor_df.iloc[:,:]
 
-    def get_amino_acid_composition(self):
+    def validate_descriptors(self, descriptors: Union[str, List[str]]) -> List[str]:
+        """
+        Validate that requested descriptors exist in the valid descriptors list.
+        
+        Parameters
+        ==========
+        :descriptors: str or list of str
+            Descriptor name(s) to validate
+        
+        Returns
+        =======
+        :List[str]
+            List of validated descriptor names
+        
+        Raises
+        ======
+        :TypeError
+            If descriptors is not a string or list of strings
+        :InvalidDescriptorError
+            If any invalid descriptors are requested
+        """
+        if isinstance(descriptors, str):
+            descriptors = [descriptors]
+        elif not isinstance(descriptors, list):
+            raise TypeError(
+                f"Descriptors must be a string or list of strings, got {type(descriptors)}."
+            )
+
+        if not all(isinstance(descriptor, str) for descriptor in descriptors):
+            raise TypeError("All descriptor names must be strings.")
+        
+        invalid = set(descriptors) - set(self.valid_descriptors)
+        if invalid:
+            raise InvalidDescriptorError(f"Invalid descriptors requested: {invalid}. "
+                f"Valid descriptors: {self.valid_descriptors}")
+        
+        return descriptors
+
+    def validate_sequences(self, seqs: Optional[pd.Series] = None) -> bool:
+        """
+        Validate all sequences contain only valid amino acids.
+        
+        Parameters
+        ==========
+        :seqs: pd.Series, optional
+            Sequences to validate. If None, uses self.protein_seqs
+        
+        Returns
+        =======
+        :bool
+            True if all sequences are valid
+        
+        Raises
+        ======
+        :InvalidSequenceError
+            If invalid amino acids found
+        """
+        seqs = seqs if seqs is not None else self.protein_seqs
+        invalid = valid_sequence(seqs)
+        
+        if invalid is not None:
+            raise InvalidSequenceError(f"Invalid amino acids found: {invalid}")
+        
+        return True
+
+    @property
+    @lru_cache(maxsize=1)
+    def descriptor_feature_count(self) -> Dict[str, int]:
+        """
+        Get count of features in each descriptor (cached for performance).
+        
+        Returns
+        =======
+        :Dict[str, int]
+            Dictionary mapping descriptor names to feature counts
+        """
+        counts = {
+            'amino_acid_composition': AA_COUNT,
+            'dipeptide_composition': DIPEPTIDE_FEATURES,
+            'tripeptide_composition': TRIPEPTIDE_FEATURES,
+        }
+        
+        # Autocorrelation counts depend on lag and properties
+        if not self.moreaubroto_autocorrelation.empty:
+            counts['moreaubroto_autocorrelation'] = self.moreaubroto_autocorrelation.shape[1]
+        if not self.moran_autocorrelation.empty:
+            counts['moran_autocorrelation'] = self.moran_autocorrelation.shape[1]
+        if not self.geary_autocorrelation.empty:
+            counts['geary_autocorrelation'] = self.geary_autocorrelation.shape[1]
+        
+        # CTD counts
+        if not self.ctd.empty:
+            counts['ctd'] = self.ctd.shape[1]
+            counts['ctd_composition'] = self.ctd_composition.shape[1]
+            counts['ctd_transition'] = self.ctd_transition.shape[1]
+            counts['ctd_distribution'] = self.ctd_distribution.shape[1]
+        
+        counts['conjoint_triad'] = CONJOINT_TRIAD_FEATURES
+        
+        # Sequence order counts
+        if not self.sequence_order_coupling_number.empty:
+            counts['sequence_order_coupling_number'] = self.sequence_order_coupling_number.shape[1]
+        if not self.quasi_sequence_order.empty:
+            counts['quasi_sequence_order'] = self.quasi_sequence_order.shape[1]
+        
+        # Pseudo composition counts
+        if not self.pseudo_amino_acid_composition.empty:
+            counts['pseudo_amino_acid_composition'] = self.pseudo_amino_acid_composition.shape[1]
+        if not self.amphiphilic_pseudo_amino_acid_composition.empty:
+            counts['amphiphilic_pseudo_amino_acid_composition'] = self.amphiphilic_pseudo_amino_acid_composition.shape[1]
+        
+        return counts
+
+    def get_amino_acid_composition(self) -> pd.DataFrame:
         """
         Calculate Amino Acid Composition (AAComp) of protein sequence using the
         custom-built protpy package. AAComp describes the fraction of each amino 
@@ -377,22 +793,18 @@ class Descriptors():
             (for the 20 canonical amino acids).
         """
         #if attribute already calculated & not empty then return it
-        if not (self.amino_acid_composition.empty):
+        if not self.amino_acid_composition.empty:
             return self.amino_acid_composition
 
-        #initialise dataframe
-        aa_comp_df = pd.DataFrame()
-
-        #calculate descriptor value for each sequence, concatenate descriptor values
-        for seq in self.protein_seqs:
-            aa_comp_seq = protpy.amino_acid_composition(seq)
-            aa_comp_df = pd.concat([aa_comp_df, aa_comp_seq])
-
-        self.amino_acid_composition = aa_comp_df
+        #calculate descriptor value for each sequence using helper method
+        self.amino_acid_composition = self._calculate_descriptor_batch(
+            protpy.amino_acid_composition,
+            desc_name="Amino Acid Composition"
+        )
 
         return self.amino_acid_composition
 
-    def get_dipeptide_composition(self):
+    def get_dipeptide_composition(self) -> pd.DataFrame:
         """
         Calculate Dipeptide Composition (DPComp) for protein sequence using
         the custom-built protpy package. Dipeptide composition is the fraction 
@@ -421,22 +833,18 @@ class Descriptors():
             amino acids).
         """
         #if attribute already calculated & not empty then return it
-        if not (self.dipeptide_composition.empty):
+        if not self.dipeptide_composition.empty:
             return self.dipeptide_composition
 
-        #initialise dataframe
-        dipeptide_comp_df = pd.DataFrame()
-        
-        #calculate descriptor value, for each sequence, concatenate descriptor values
-        for seq in self.protein_seqs:
-            dipeptide_comp_seq = protpy.dipeptide_composition(seq)
-            dipeptide_comp_df = pd.concat([dipeptide_comp_df, dipeptide_comp_seq])
-
-        self.dipeptide_composition = dipeptide_comp_df
+        #calculate descriptor value using helper method
+        self.dipeptide_composition = self._calculate_descriptor_batch(
+            protpy.dipeptide_composition,
+            desc_name="Dipeptide Composition"
+        )
 
         return self.dipeptide_composition
 
-    def get_tripeptide_composition(self):
+    def get_tripeptide_composition(self) -> pd.DataFrame:
         """ 
         Calculate Tripeptide Composition (TPComp) of protein sequence using
         custom-built protpy package. Tripeptide composition is the fraction of 
@@ -465,22 +873,534 @@ class Descriptors():
             amino acids).
         """
         #if attribute already calculated & not empty then return it
-        if not (self.tripeptide_composition.empty):
+        if not self.tripeptide_composition.empty:
             return self.tripeptide_composition
 
-        #initialise dataframe
-        tripeptide_comp_df = pd.DataFrame()
-        
-        #calculate descriptor value, for each sequence, concatenate descriptor values
-        for seq in self.protein_seqs:
-            tripeptide_comp_seq = protpy.tripeptide_composition(seq)
-            tripeptide_comp_df = pd.concat([tripeptide_comp_df, tripeptide_comp_seq])
-
-        self.tripeptide_composition = tripeptide_comp_df
+        #calculate descriptor value using helper method
+        self.tripeptide_composition = self._calculate_descriptor_batch(
+            protpy.tripeptide_composition,
+            desc_name="Tripeptide Composition"
+        )
 
         return self.tripeptide_composition
 
-    def get_moreaubroto_autocorrelation(self):
+    def get_gravy(self) -> pd.DataFrame:
+        """
+        Calculate the Grand Average of Hydropathy (GRAVY) for protein sequences using
+        the protpy package. GRAVY is the mean of Kyte-Doolittle hydropathy values across
+        all residues. A positive value indicates overall hydrophobicity; a negative value
+        indicates overall hydrophilicity.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :gravy: pd.DataFrame
+            Dataframe of GRAVY values, shape N x 1 where N is the number of sequences.
+        """
+        # return cached result if already computed
+        if not self.gravy.empty:
+            return self.gravy
+
+        # calculate GRAVY for all sequences
+        self.gravy = self._calculate_descriptor_batch(
+            protpy.gravy,
+            desc_name="GRAVY"
+        )
+        return self.gravy
+
+    def get_aromaticity(self) -> pd.DataFrame:
+        """
+        Calculate Aromaticity for protein sequences using the protpy package.
+        Aromaticity is the fraction of aromatic residues (F, W, Y, H) in the sequence.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :aromaticity: pd.DataFrame
+            Dataframe of Aromaticity values, shape N x 1 where N is the number of sequences.
+        """
+        # return cached result if already computed
+        if not self.aromaticity.empty:
+            return self.aromaticity
+
+        # calculate aromaticity for all sequences
+        self.aromaticity = self._calculate_descriptor_batch(
+            protpy.aromaticity,
+            desc_name="Aromaticity"
+        )
+        return self.aromaticity
+
+    def get_instability_index(self) -> pd.DataFrame:
+        """
+        Calculate the Instability Index for protein sequences using the protpy package.
+        Based on dipeptide instability weight values (DIWV). Values below 40 indicate a
+        stable protein; 40 or above indicates instability.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :instability_index: pd.DataFrame
+            Dataframe of InstabilityIndex values, shape N x 1.
+        """
+        # return cached result if already computed
+        if not self.instability_index.empty:
+            return self.instability_index
+
+        # calculate instability index for all sequences
+        self.instability_index = self._calculate_descriptor_batch(
+            protpy.instability_index,
+            desc_name="Instability Index"
+        )
+        return self.instability_index
+
+    def get_isoelectric_point(self) -> pd.DataFrame:
+        """
+        Calculate the Isoelectric Point for protein sequences using the protpy package.
+        The isoelectric point is the estimated pH at which the protein carries no net
+        charge, calculated iteratively using standard pKa values for ionisable residues.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :isoelectric_point: pd.DataFrame
+            Dataframe of IsoelectricPoint values, shape N x 1.
+        """
+        # return cached result if already computed
+        if not self.isoelectric_point.empty:
+            return self.isoelectric_point
+
+        # calculate isoelectric point for all sequences
+        self.isoelectric_point = self._calculate_descriptor_batch(
+            protpy.isoelectric_point,
+            desc_name="Isoelectric Point"
+        )
+        return self.isoelectric_point
+
+    def get_molecular_weight(self) -> pd.DataFrame:
+        """
+        Calculate the Molecular Weight for protein sequences using the protpy package.
+        Average molecular weight calculated from residue masses, corrected for water
+        lost at each peptide bond.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :molecular_weight: pd.DataFrame
+            Dataframe of MolecularWeight values (Da), shape N x 1.
+        """
+        # return cached result if already computed
+        if not self.molecular_weight.empty:
+            return self.molecular_weight
+
+        # calculate molecular weight for all sequences
+        self.molecular_weight = self._calculate_descriptor_batch(
+            protpy.molecular_weight,
+            desc_name="Molecular Weight"
+        )
+        return self.molecular_weight
+
+    def get_charge_distribution(self) -> pd.DataFrame:
+        """
+        Calculate Charge Distribution for protein sequences using the protpy package.
+        Computes positive, negative, and net charge contributions of ionisable residues
+        at a given pH using the Henderson-Hasselbalch equation.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :charge_distribution: pd.DataFrame
+            Dataframe of charge values, shape N x 3 (PositiveCharge, NegativeCharge, NetCharge).
+        """
+        # return cached result if already computed
+        if not self.charge_distribution.empty:
+            return self.charge_distribution
+
+        # get pH parameter from config, falling back to physiological default
+        ph_params = getattr(self.desc_parameters, 'charge_distribution', {})
+        ph = ph_params.get('ph', 7.4) if ph_params else 7.4
+
+        # calculate charge distribution for all sequences
+        self.charge_distribution = self._calculate_descriptor_batch(
+            protpy.charge_distribution,
+            desc_name="Charge Distribution",
+            ph=ph
+        )
+        return self.charge_distribution
+
+    def get_hydrophobic_polar_charged_composition(self) -> pd.DataFrame:
+        """
+        Calculate Hydrophobic/Polar/Charged Composition (HPC) for protein sequences
+        using the protpy package. Computes the percentage of residues belonging to each
+        of three physicochemical groups: hydrophobic (A, C, F, I, L, M, V, W, Y),
+        polar (G, N, Q, S, T), and charged (D, E, H, K, R).
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :hydrophobic_polar_charged_composition: pd.DataFrame
+            Dataframe of HPC values, shape N x 3 (Hydrophobic, Polar, Charged).
+        """
+        # return cached result if already computed
+        if not self.hydrophobic_polar_charged_composition.empty:
+            return self.hydrophobic_polar_charged_composition
+
+        # calculate HPC composition for all sequences
+        self.hydrophobic_polar_charged_composition = self._calculate_descriptor_batch(
+            protpy.hydrophobic_polar_charged_composition,
+            desc_name="Hydrophobic/Polar/Charged Composition"
+        )
+        return self.hydrophobic_polar_charged_composition
+
+    def get_secondary_structure_propensity(self) -> pd.DataFrame:
+        """
+        Calculate Secondary Structure Propensity (SSP) for protein sequences using the
+        protpy package. Computes average Chou-Fasman propensity values for alpha-helix,
+        beta-sheet, and random coil conformations across all residues.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :secondary_structure_propensity: pd.DataFrame
+            Dataframe of SSP values, shape N x 3 (Helix, Sheet, Coil).
+        """
+        # return cached result if already computed
+        if not self.secondary_structure_propensity.empty:
+            return self.secondary_structure_propensity
+
+        # calculate secondary structure propensity for all sequences
+        self.secondary_structure_propensity = self._calculate_descriptor_batch(
+            protpy.secondary_structure_propensity,
+            desc_name="Secondary Structure Propensity"
+        )
+        return self.secondary_structure_propensity
+
+    def get_kmer_composition(self) -> pd.DataFrame:
+        """
+        Calculate k-mer Composition for protein sequences using the protpy package.
+        Computes the frequency of all possible k-length residue subsequences, expressed
+        as a percentage of total k-mers.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :kmer_composition: pd.DataFrame
+            Dataframe of k-mer composition values, shape N x 20^k (e.g. N x 400 for k=2).
+        """
+        # return cached result if already computed
+        if not self.kmer_composition.empty:
+            return self.kmer_composition
+
+        # get k-mer length from config, defaulting to 2 (dipeptide)
+        kmer_params = getattr(self.desc_parameters, 'kmer_composition', {})
+        k = kmer_params.get('k', 2) if kmer_params else 2
+
+        # calculate k-mer composition for all sequences
+        self.kmer_composition = self._calculate_descriptor_batch(
+            protpy.kmer_composition,
+            desc_name="k-mer Composition",
+            k=k
+        )
+        return self.kmer_composition
+
+    def get_reduced_alphabet_composition(self) -> pd.DataFrame:
+        """
+        Calculate Reduced Alphabet Composition for protein sequences using the protpy
+        package. Computes amino acid composition after mapping residues to a reduced
+        alphabet of physicochemical groups. Supported alphabet sizes: 2, 3, 4, 6.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :reduced_alphabet_composition: pd.DataFrame
+            Dataframe of reduced composition values, shape N x alphabet_size.
+        """
+        # return cached result if already computed
+        if not self.reduced_alphabet_composition.empty:
+            return self.reduced_alphabet_composition
+
+        # get alphabet size from config, defaulting to 6 groups
+        rac_params = getattr(self.desc_parameters, 'reduced_alphabet_composition', {})
+        alphabet_size = rac_params.get('alphabet_size', 6) if rac_params else 6
+
+        # calculate reduced alphabet composition for all sequences
+        self.reduced_alphabet_composition = self._calculate_descriptor_batch(
+            protpy.reduced_alphabet_composition,
+            desc_name="Reduced Alphabet Composition",
+            alphabet_size=alphabet_size
+        )
+        return self.reduced_alphabet_composition
+
+    def get_motif_composition(self) -> pd.DataFrame:
+        """
+        Calculate Motif Composition for protein sequences using the protpy package.
+        Counts occurrences (including overlapping) of biological sequence motifs matched
+        via regular expressions. Uses 8 built-in motifs by default; a custom dict of
+        name->pattern mappings can be supplied via config.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :motif_composition: pd.DataFrame
+            Dataframe of motif counts, shape N x len(motifs).
+        """
+        # return cached result if already computed
+        if not self.motif_composition.empty:
+            return self.motif_composition
+
+        # get custom motifs from config; None causes protpy to use built-in defaults
+        motif_params = getattr(self.desc_parameters, 'motif_composition', {})
+        motifs = motif_params.get('motifs', None) if motif_params else None
+        # treat empty list/dict as None to trigger built-in default motifs
+        if not motifs:
+            motifs = None
+
+        # calculate motif composition for all sequences
+        self.motif_composition = self._calculate_descriptor_batch(
+            protpy.motif_composition,
+            desc_name="Motif Composition",
+            motifs=motifs
+        )
+        return self.motif_composition
+
+    def get_amino_acid_pair_composition(self) -> pd.DataFrame:
+        """
+        Calculate Amino Acid Pair Composition for protein sequences using the protpy
+        package. Computes the frequency of all 400 residue-pair combinations with
+        column names annotated by the physicochemical class of each residue.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :amino_acid_pair_composition: pd.DataFrame
+            Dataframe of pair composition values, shape N x 400.
+        """
+        # return cached result if already computed
+        if not self.amino_acid_pair_composition.empty:
+            return self.amino_acid_pair_composition
+
+        # calculate amino acid pair composition for all sequences
+        self.amino_acid_pair_composition = self._calculate_descriptor_batch(
+            protpy.amino_acid_pair_composition,
+            desc_name="Amino Acid Pair Composition"
+        )
+        return self.amino_acid_pair_composition
+
+    def get_aliphatic_index(self) -> pd.DataFrame:
+        """
+        Calculate the Aliphatic Index for protein sequences using the protpy package.
+        Measures the relative volume occupied by aliphatic side chains (Ala, Val, Ile,
+        Leu). Higher values indicate greater thermostability.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :aliphatic_index: pd.DataFrame
+            Dataframe of AliphaticIndex values, shape N x 1.
+        """
+        # return cached result if already computed
+        if not self.aliphatic_index.empty:
+            return self.aliphatic_index
+
+        # calculate aliphatic index for all sequences
+        self.aliphatic_index = self._calculate_descriptor_batch(
+            protpy.aliphatic_index,
+            desc_name="Aliphatic Index"
+        )
+        return self.aliphatic_index
+
+    def get_extinction_coefficient(self) -> pd.DataFrame:
+        """
+        Calculate the Extinction Coefficient for protein sequences using the protpy
+        package. Computes the molar extinction coefficient at 280 nm from the number of
+        Trp (W), Tyr (Y), and Cys (C) residues. Reported for reduced and oxidized states.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :extinction_coefficient: pd.DataFrame
+            Dataframe of extinction coefficient values, shape N x 2
+            (ExtCoeff_Reduced, ExtCoeff_Oxidized).
+        """
+        # return cached result if already computed
+        if not self.extinction_coefficient.empty:
+            return self.extinction_coefficient
+
+        # calculate extinction coefficient for all sequences
+        self.extinction_coefficient = self._calculate_descriptor_batch(
+            protpy.extinction_coefficient,
+            desc_name="Extinction Coefficient"
+        )
+        return self.extinction_coefficient
+
+    def get_boman_index(self) -> pd.DataFrame:
+        """
+        Calculate the Boman Index for protein sequences using the protpy package.
+        Sum of solubility values for amino acids divided by sequence length, predicting
+        potential for protein-protein interactions.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :boman_index: pd.DataFrame
+            Dataframe of BomanIndex values, shape N x 1.
+        """
+        # return cached result if already computed
+        if not self.boman_index.empty:
+            return self.boman_index
+
+        # calculate Boman index for all sequences
+        self.boman_index = self._calculate_descriptor_batch(
+            protpy.boman_index,
+            desc_name="Boman Index"
+        )
+        return self.boman_index
+
+    def get_aggregation_propensity(self) -> pd.DataFrame:
+        """
+        Calculate Aggregation Propensity for protein sequences using the protpy package.
+        Estimates aggregation-prone regions via a sliding-window approach combining
+        Kyte-Doolittle hydrophobicity and charge neutrality. Returns the count of
+        qualifying windows and the fraction of the sequence covered.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :aggregation_propensity: pd.DataFrame
+            Dataframe of aggregation values, shape N x 2
+            (AggregProneRegions, AggregProneFraction).
+        """
+        # return cached result if already computed
+        if not self.aggregation_propensity.empty:
+            return self.aggregation_propensity
+
+        # get sliding-window parameters from config, using standard defaults otherwise
+        agg_params = getattr(self.desc_parameters, 'aggregation_propensity', {})
+        window = agg_params.get('window', 5) if agg_params else 5
+        hydrophobicity_threshold = agg_params.get('hydrophobicity_threshold', 2.0) if agg_params else 2.0
+        charge_threshold = agg_params.get('charge_threshold', 1) if agg_params else 1
+
+        # calculate aggregation propensity for all sequences
+        self.aggregation_propensity = self._calculate_descriptor_batch(
+            protpy.aggregation_propensity,
+            desc_name="Aggregation Propensity",
+            window=window,
+            hydrophobicity_threshold=hydrophobicity_threshold,
+            charge_threshold=charge_threshold
+        )
+        return self.aggregation_propensity
+
+    def get_hydrophobic_moment(self) -> pd.DataFrame:
+        """
+        Calculate Hydrophobic Moment for protein sequences using the protpy package.
+        Computes the mean and maximum hydrophobic moment across sliding windows using
+        the Eisenberg hydrophobicity scale and a helical-wheel projection. Captures
+        amphipathicity of putative helix segments.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :hydrophobic_moment: pd.DataFrame
+            Dataframe of hydrophobic moment values, shape N x 2
+            (HydrophobicMoment_Mean, HydrophobicMoment_Max).
+        """
+        # return cached result if already computed
+        if not self.hydrophobic_moment.empty:
+            return self.hydrophobic_moment
+
+        # get window and helical angle from config, using Eisenberg scale defaults
+        hm_params = getattr(self.desc_parameters, 'hydrophobic_moment', {})
+        window = hm_params.get('window', 11) if hm_params else 11
+        angle = hm_params.get('angle', 100) if hm_params else 100
+
+        # calculate hydrophobic moment for all sequences
+        self.hydrophobic_moment = self._calculate_descriptor_batch(
+            protpy.hydrophobic_moment,
+            desc_name="Hydrophobic Moment",
+            window=window,
+            angle=angle
+        )
+        return self.hydrophobic_moment
+
+    def get_shannon_entropy(self) -> pd.DataFrame:
+        """
+        Calculate Shannon Entropy for protein sequences using the protpy package.
+        An information-theoretic measure of amino acid diversity in a sequence computed
+        as H = -sum(p_i * log2(p_i)). A value of 0 means a completely repetitive
+        sequence; the theoretical maximum of ~4.322 bits corresponds to a perfectly
+        uniform distribution across all 20 canonical amino acids.
+
+        Parameters
+        ==========
+        None
+
+        Returns
+        =======
+        :shannon_entropy: pd.DataFrame
+            Dataframe of ShannonEntropy values, shape N x 1.
+        """
+        # return cached result if already computed
+        if not self.shannon_entropy.empty:
+            return self.shannon_entropy
+
+        # calculate Shannon entropy for all sequences
+        self.shannon_entropy = self._calculate_descriptor_batch(
+            protpy.shannon_entropy,
+            desc_name="Shannon Entropy"
+        )
+        return self.shannon_entropy
+
+    def get_moreaubroto_autocorrelation(self) -> pd.DataFrame:
         """
         Calculate MoreauBrotoAuto Autocorrelation (MBAuto) descriptor using
         custom-built protpy package. Autocorrelation descriptors are a class 
@@ -512,7 +1432,7 @@ class Descriptors():
         ==========
         None
 
-        Returns
+        Returns15
         =======
         :moreaubroto_autocorrelation: pd.Dataframe
             pandas Dataframe of MBAuto values for protein sequence. Output will
@@ -522,7 +1442,7 @@ class Descriptors():
             (30 features per property - using 8 properties, with lag=30).
         """
         #if attribute already calculated & not empty then return it
-        if not (self.moreaubroto_autocorrelation.empty):
+        if not self.moreaubroto_autocorrelation.empty:
             return self.moreaubroto_autocorrelation
 
         #get descriptor-specific parameters from config file
@@ -530,20 +1450,18 @@ class Descriptors():
         properties = self.desc_parameters.moreaubroto_autocorrelation["properties"]
         normalize = self.desc_parameters.moreaubroto_autocorrelation["normalize"]
 
-        #initialise dataframe
-        moreaubroto_df = pd.DataFrame()
-
-        #calculate descriptor value, for each sequence, concatenate descriptor values
-        for seq in self.protein_seqs:
-            moreaubroto_seq = protpy.moreaubroto_autocorrelation(seq, lag=lag, 
-                properties=properties, normalize=normalize)
-            moreaubroto_df = pd.concat([moreaubroto_df, moreaubroto_seq])
-            
-        self.moreaubroto_autocorrelation = moreaubroto_df
+        #calculate descriptor value using helper method
+        self.moreaubroto_autocorrelation = self._calculate_descriptor_batch(
+            protpy.moreaubroto_autocorrelation,
+            desc_name="MoreauBroto Autocorrelation",
+            lag=lag,
+            properties=properties,
+            normalize=normalize
+        )
 
         return self.moreaubroto_autocorrelation
 
-    def get_moran_autocorrelation(self):
+    def get_moran_autocorrelation(self) -> pd.DataFrame:
         """
         Calculate Moran autocorrelation (MAuto) of protein sequences using the custom-built
         protpy package. MAuto utilizes property deviations from the average values.
@@ -564,7 +1482,7 @@ class Descriptors():
             with lag=30).
         """
         #if attribute already calculated & not empty then return it
-        if not (self.moran_autocorrelation.empty):
+        if not self.moran_autocorrelation.empty:
             return self.moran_autocorrelation
 
         #get descriptor-specific parameters from config file
@@ -572,20 +1490,18 @@ class Descriptors():
         properties = self.desc_parameters.moran_autocorrelation["properties"]
         normalize = self.desc_parameters.moran_autocorrelation["normalize"]
 
-        #initialise dataframe
-        moran_df = pd.DataFrame()
-
-        #calculate descriptor value, for each sequence, concatenate descriptor values
-        for seq in self.protein_seqs:
-            moran_seq = protpy.moran_autocorrelation(seq, lag=lag, 
-                properties=properties, normalize=normalize)
-            moran_df = pd.concat([moran_df, moran_seq])
-
-        self.moran_autocorrelation = moran_df
+        #calculate descriptor value using helper method
+        self.moran_autocorrelation = self._calculate_descriptor_batch(
+            protpy.moran_autocorrelation,
+            desc_name="Moran Autocorrelation",
+            lag=lag,
+            properties=properties,
+            normalize=normalize
+        )
 
         return self.moran_autocorrelation 
 
-    def get_geary_autocorrelation(self):
+    def get_geary_autocorrelation(self) -> pd.DataFrame:
         """
         Calculate Geary Autocorrelation (GAuto) of protein sequences using the
         custom-built protpy package. GAuto utilizes the square-difference of 
@@ -607,7 +1523,7 @@ class Descriptors():
             (30 features per property - using 8 properties, with lag=30).
         """
         #if attribute already calculated & not empty then return it
-        if not (self.geary_autocorrelation.empty):
+        if not self.geary_autocorrelation.empty:
             return self.geary_autocorrelation
 
         #get descriptor-specific parameters from config file
@@ -615,22 +1531,20 @@ class Descriptors():
         properties = self.desc_parameters.geary_autocorrelation["properties"]
         normalize = self.desc_parameters.geary_autocorrelation["normalize"]
 
-        #initialise dataframe
-        geary_df = pd.DataFrame()
-
-        #calculate descriptor value, for each sequence, concatenate descriptor values
-        for seq in self.protein_seqs:
-            geary_seq = protpy.geary_autocorrelation(seq, lag=lag, 
-                properties=properties, normalize=normalize)
-            geary_df = pd.concat([geary_df, geary_seq])
-
-        self.geary_autocorrelation = geary_df
+        #calculate descriptor value using helper method
+        self.geary_autocorrelation = self._calculate_descriptor_batch(
+            protpy.geary_autocorrelation,
+            desc_name="Geary Autocorrelation",
+            lag=lag,
+            properties=properties,
+            normalize=normalize
+        )
 
         return self.geary_autocorrelation 
 
-    def get_ctd_composition(self):
+    def get_ctd_composition(self) -> pd.DataFrame:
         """ 
-        Calculate Composition (C_CTD) physiochemical/structural descriptor
+        Calculate Composition (C_CTD) physicochemical/structural descriptor
         of protein sequences from the calculated CTD descriptor. Composition 
         is determined as the number of amino acids of a particular property 
         divided by total number of amino acids,
@@ -644,7 +1558,7 @@ class Descriptors():
         :ctd_composition: pd.DataFrame
             pandas dataframe of C_CTD values for protein sequence. Output will
             be of the shape N x M, where N is the number of protein sequences 
-            and M is the (number of physiochemical properties * 3), with 3 
+            and M is the (number of physicochemical properties * 3), with 3 
             features being calculated per property. By default the 
             "hydrophobicity" property will be used, generating an output of 
             N x 3. 
@@ -676,9 +1590,9 @@ class Descriptors():
 
         return self.ctd_composition
   
-    def get_ctd_transition(self):
+    def get_ctd_transition(self) -> pd.DataFrame:
         """ 
-        Calculate Transition (T_CTD) physiochemical/structural descriptor of 
+        Calculate Transition (T_CTD) physicochemical/structural descriptor of 
         protein sequences from the calculated CTD descriptor. Transition is 
         determined as the number of transitions from a particular property to 
         different property divided by (total number of amino acids − 1).
@@ -692,7 +1606,7 @@ class Descriptors():
         :ctd_transition: pd.Dataframe
             pandas Dataframe of T_CTD values for protein sequence. Output will
             be of the shape N x M, where N is the number of protein sequences 
-            and M is the (number of physiochemical properties * 3), with 3 
+            and M is the (number of physicochemical properties * 3), with 3 
             features being calculated per property. By default the 
             "hydrophobicity" property will be used, generating an output of 
             N x 3. 
@@ -724,9 +1638,9 @@ class Descriptors():
 
         return self.ctd_transition
 
-    def get_ctd_distribution(self):
+    def get_ctd_distribution(self) -> pd.DataFrame:
         """ 
-        Calculate Distribution (D_CTD) physiochemical/structural descriptor of 
+        Calculate Distribution (D_CTD) physicochemical/structural descriptor of 
         protein sequences from the calculated CTD descriptor. Distribution is 
         the chain length within which the first, 25%, 50%, 75% and 100% of the 
         amino acids of a particular property are located.
@@ -740,7 +1654,7 @@ class Descriptors():
         :ctd_distribution: pd.Dataframe
             pandas Dataframe of D_CTD values for protein sequence. Output will
             be of the shape N x M, where N is the number of protein sequences 
-            and M is the (number of physiochemical properties * 15), with 15
+            and M is the (number of physicochemical properties * 15), with 15
             features being calculated per property. By default the 
             "hydrophobicity" property will be used, generating an output of 
             N x 15. 
@@ -772,10 +1686,10 @@ class Descriptors():
 
         return self.ctd_distribution
 
-    def get_ctd(self):
+    def get_ctd(self) -> pd.DataFrame:
         """
         Calculate all CTD (Composition, Transition, Distribution) 
-        physiochemical/structural descriptor of protein sequences using the 
+        physicochemical/structural descriptor of protein sequences using the 
         custom-built protpy package. 
 
         Parameters
@@ -787,7 +1701,7 @@ class Descriptors():
         :ctd: pd.Series
             pandas Series of CTD values for protein sequence. Output will
             be of the shape N x M, where N is the number of protein 
-            sequences and M is (number of physiochemical properties * 21),
+            sequences and M is (number of physicochemical properties * 21),
             with 21 being the number of features calculated for each of the
             CTD descriptors per property. Using all properties will generate
             an output of N x 147, by default the "hydrophobicity"
@@ -809,11 +1723,11 @@ class Descriptors():
             ctd_seq = protpy.ctd_(seq, property=ctd_property, all_ctd=all_ctd)
             ctd_df = pd.concat([ctd_df, ctd_seq])
 
-        self.ctd = ctd_df
+        self.ctd = ctd_df.reset_index(drop=True)
 
         return self.ctd
 
-    def get_conjoint_triad(self):
+    def get_conjoint_triad(self) -> pd.DataFrame:
         """
         Calculate Conjoint Triad (CTriad) of protein sequences using the custom-built
         protpy package. The descriptor mainly considers neighbour relationships in 
@@ -845,11 +1759,11 @@ class Descriptors():
             conjoint_triad_seq = protpy.conjoint_triad(seq)
             conjoint_triad_df = pd.concat([conjoint_triad_df, conjoint_triad_seq])
 
-        self.conjoint_triad = conjoint_triad_df
+        self.conjoint_triad = conjoint_triad_df.reset_index(drop=True)
 
         return self.conjoint_triad
 
-    def get_sequence_order_coupling_number(self):
+    def get_sequence_order_coupling_number(self) -> pd.DataFrame:
         """
         Calculate Sequence Order Coupling Number (SOCN) features for input protein sequence
         using custom-built protpy package. SOCN computes the dissimilarity between amino acid
@@ -893,11 +1807,11 @@ class Descriptors():
             #concat sequence's descriptor output to dataframe
             sequence_order_coupling_number_df = pd.concat([sequence_order_coupling_number_df, sequence_order_coupling_number_seq])
 
-        self.sequence_order_coupling_number = sequence_order_coupling_number_df
+        self.sequence_order_coupling_number = sequence_order_coupling_number_df.reset_index(drop=True)
 
         return self.sequence_order_coupling_number
 
-    def get_quasi_sequence_order(self):
+    def get_quasi_sequence_order(self) -> pd.DataFrame:
         """
         Calculate Quasi Sequence Order features for the protein sequences using the
         custom-built protpy package.The quasi-sequence-order descriptors were proposed 
@@ -944,21 +1858,21 @@ class Descriptors():
             #concat sequence's descriptor output to dataframe
             quasi_sequence_order_df = pd.concat([quasi_sequence_order_df, quasi_sequence_order_seq])
 
-        self.quasi_sequence_order = quasi_sequence_order_df
+        self.quasi_sequence_order = quasi_sequence_order_df.reset_index(drop=True)
 
         return self.quasi_sequence_order
 
-    def get_pseudo_amino_acid_composition(self):
+    def get_pseudo_amino_acid_composition(self) -> pd.DataFrame:
         """
         Calculate Pseudo Amino Acid Composition (PAAComp) descriptor using custom-built protpy 
         package. PAAComp combines the vanilla amino acid composition descriptor with additional 
         local features, such as correlation between residues of a certain distance, as amino 
         acid composition doesn't take into account sequence order info. The pseudo components 
         of the descriptor are a series rank-different correlation factors [10]. The first 20 
-        components are a weighted sum of the amino acid composition and 30 are physiochemical 
+        components are a weighted sum of the amino acid composition and 30 are physicochemical 
         square correlations as dictated by the lambda and properties parameters. This generates 
         an output of [(20 + λ), 1] = 50 x 1 when using the default lambda of 30. By default, 
-        the physiochemical properties used are hydrophobicity and hydrophillicity, with a lambda 
+        the physicochemical properties used are hydrophobicity and hydrophillicity, with a lambda 
         of 30 and weight of 0.05.
 
         Parameters
@@ -992,11 +1906,11 @@ class Descriptors():
                 weight=weight, properties=properties)
             pseudo_amino_acid_composition_df = pd.concat([pseudo_amino_acid_composition_df, pseudo_amino_acid_composition_seq])
 
-        self.pseudo_amino_acid_composition = pseudo_amino_acid_composition_df
+        self.pseudo_amino_acid_composition = pseudo_amino_acid_composition_df.reset_index(drop=True)
 
         return self.pseudo_amino_acid_composition
         
-    def get_amphiphilic_pseudo_amino_acid_composition(self):
+    def get_amphiphilic_pseudo_amino_acid_composition(self) -> pd.DataFrame:
         """
         Calculate Amphiphilic Pseudo Amino Acid Composition (APAAComp) of protein sequences 
         using custom-built protpy package. APAAComp has the same form as the amino acid 
@@ -1038,11 +1952,11 @@ class Descriptors():
             amphiphilic_pseudo_amino_acid_composition_df = pd.concat([amphiphilic_pseudo_amino_acid_composition_df, 
                 amphiphilic_pseudo_amino_acid_composition_seq])
 
-        self.amphiphilic_pseudo_amino_acid_composition = amphiphilic_pseudo_amino_acid_composition_df
+        self.amphiphilic_pseudo_amino_acid_composition = amphiphilic_pseudo_amino_acid_composition_df.reset_index(drop=True)
 
         return self.amphiphilic_pseudo_amino_acid_composition
 
-    def get_all_descriptors(self, export=False, descriptors_export_filename=""):
+    def get_all_descriptors(self, export: bool = False, descriptors_export_filename: str = "") -> pd.DataFrame:
         """
         Calculate all individual descriptor values, concatenating each descriptor
         Dataframe into one storing all descriptors. The number of descriptor
@@ -1074,7 +1988,7 @@ class Descriptors():
         :all_descriptor_df: pd.DataFrame
             concatenated dataframe of all individual descriptors. Using the default
             attributes and their associated values, the output will be of the shape
-            N x 9714, where N is the number of protein sequences and 9714 is the 
+            N x 10572, where N is the number of protein sequences and 10572 is the 
             number of descriptor features. 
         """
         print('############################### Exporting all descriptors ################################\n')
@@ -1136,7 +2050,7 @@ class Descriptors():
         end = time.time()      
         elapsed = end - start
 
-        print('\nElapsed time for calculating all descriptors: {0:.2f} minutes.'.format(elapsed/60))
+        print(f'\nElapsed time for calculating all descriptors: {elapsed/60:.2f} minutes.')
         print('\n##########################################################################################')
 
         #append all calculated descriptors to list
@@ -1166,7 +2080,7 @@ class Descriptors():
 
         return all_descriptor_df
 
-    def get_descriptor_encoding(self, descriptor):
+    def get_descriptor_encoding(self, descriptor: str) -> Optional[pd.DataFrame]:
         """
         Get the protein descriptor values of a specified input descriptor. If the
         sought descriptor has already been calculated then its attribute is returned,
@@ -1182,7 +2096,7 @@ class Descriptors():
 
         Returns
         =======
-        :desc_encoding: pd.DataFrame/None
+        :desc_encoding: pd.DataFrame or None
             dataframe of matching descriptor attribute. None returned if no matching 
             descriptor found.
         """
@@ -1199,8 +2113,8 @@ class Descriptors():
         if (desc_matches != []):
             desc = desc_matches[0]  #set desc to closest descriptor match found
         else:
-            raise ValueError("Could not find a match for the input descriptor {} in"
-                " list of available valid models:\n{}.".format(descriptor, self.valid_descriptors))
+            raise ValueError(f"Could not find a match for the input descriptor {descriptor} in"
+                f" list of available valid models:\n{self.valid_descriptors}.")
 
         #if sought descriptor attribute dataframe is empty, call the descriptor's
         #  get_descriptor() function, set desc_encoding to descriptor attribute
@@ -1218,6 +2132,96 @@ class Descriptors():
             if (getattr(self, desc).empty):
                 self.get_tripeptide_composition()
             desc_encoding = self.tripeptide_composition
+
+        elif (desc == 'gravy'):
+            if (getattr(self, desc).empty):
+                self.get_gravy()
+            desc_encoding = self.gravy
+
+        elif (desc == 'aromaticity'):
+            if (getattr(self, desc).empty):
+                self.get_aromaticity()
+            desc_encoding = self.aromaticity
+
+        elif (desc == 'instability_index'):
+            if (getattr(self, desc).empty):
+                self.get_instability_index()
+            desc_encoding = self.instability_index
+
+        elif (desc == 'isoelectric_point'):
+            if (getattr(self, desc).empty):
+                self.get_isoelectric_point()
+            desc_encoding = self.isoelectric_point
+
+        elif (desc == 'molecular_weight'):
+            if (getattr(self, desc).empty):
+                self.get_molecular_weight()
+            desc_encoding = self.molecular_weight
+
+        elif (desc == 'charge_distribution'):
+            if (getattr(self, desc).empty):
+                self.get_charge_distribution()
+            desc_encoding = self.charge_distribution
+
+        elif (desc == 'hydrophobic_polar_charged_composition'):
+            if (getattr(self, desc).empty):
+                self.get_hydrophobic_polar_charged_composition()
+            desc_encoding = self.hydrophobic_polar_charged_composition
+
+        elif (desc == 'secondary_structure_propensity'):
+            if (getattr(self, desc).empty):
+                self.get_secondary_structure_propensity()
+            desc_encoding = self.secondary_structure_propensity
+
+        elif (desc == 'kmer_composition'):
+            if (getattr(self, desc).empty):
+                self.get_kmer_composition()
+            desc_encoding = self.kmer_composition
+
+        elif (desc == 'reduced_alphabet_composition'):
+            if (getattr(self, desc).empty):
+                self.get_reduced_alphabet_composition()
+            desc_encoding = self.reduced_alphabet_composition
+
+        elif (desc == 'motif_composition'):
+            if (getattr(self, desc).empty):
+                self.get_motif_composition()
+            desc_encoding = self.motif_composition
+
+        elif (desc == 'amino_acid_pair_composition'):
+            if (getattr(self, desc).empty):
+                self.get_amino_acid_pair_composition()
+            desc_encoding = self.amino_acid_pair_composition
+
+        elif (desc == 'aliphatic_index'):
+            if (getattr(self, desc).empty):
+                self.get_aliphatic_index()
+            desc_encoding = self.aliphatic_index
+
+        elif (desc == 'extinction_coefficient'):
+            if (getattr(self, desc).empty):
+                self.get_extinction_coefficient()
+            desc_encoding = self.extinction_coefficient
+
+        elif (desc == 'boman_index'):
+            if (getattr(self, desc).empty):
+                self.get_boman_index()
+            desc_encoding = self.boman_index
+
+        elif (desc == 'aggregation_propensity'):
+            if (getattr(self, desc).empty):
+                self.get_aggregation_propensity()
+            desc_encoding = self.aggregation_propensity
+
+        elif (desc == 'hydrophobic_moment'):
+            if (getattr(self, desc).empty):
+                self.get_hydrophobic_moment()
+            desc_encoding = self.hydrophobic_moment
+
+        elif (desc == 'shannon_entropy'):
+            if (getattr(self, desc).empty):
+                self.get_shannon_entropy()
+            desc_encoding = self.shannon_entropy
 
         elif (desc == 'moreaubroto_autocorrelation'):
             if (getattr(self, desc).empty):
@@ -1283,13 +2287,13 @@ class Descriptors():
 
         return desc_encoding
 
-    def all_descriptors_list(self, desc_combo=1):
+    def all_descriptors_list(self, desc_combo: int = 1) -> Union[List[str], List[Tuple[str, ...]]]:
        """
        Get list of all available descriptor attributes. Using the desc_combo
        input parameter you can get the list of all descriptors, all combinations
        of 2 descriptors or all combinations of 3 descriptors. Default of 1 will
        mean a list of all available descriptor attributes will be returned. With 
-       there being 15 descriptors, 105 and 455 combinations of 2 and 3 descriptors
+       there being 33 descriptors, 528 and 5456 combinations of 2 and 3 descriptors
        will be returned if desc_combo=2 or desc_combo=3, respectively.
 
        Parameters
@@ -1300,13 +2304,12 @@ class Descriptors():
 
        Returns
        =======
-       :all_descriptors: list
-            list of available descriptor attributes.
+       :all_descriptors: List[str] or List[Tuple[str, ...]]
+            list of available descriptor attributes, or list of tuples of descriptor combinations.
        """
        #filter out class attributes that are not any of the desired descriptors
-       all_descriptors = list(filter(lambda x: x.startswith('_'), list(self.__dict__.keys())))
-       all_descriptors = list(filter(lambda x: not x.startswith('_all_desc'), all_descriptors))
-       all_descriptors = [de[1:] for de in all_descriptors]
+       all_descriptors = [k[1:] for k in self.__dict__.keys()
+                          if k.startswith('_') and not k.startswith('_all_desc')]
 
        #get all combinations of 2 or 3 descriptors
        if (desc_combo == 2):
@@ -1318,6 +2321,34 @@ class Descriptors():
 
        return all_descriptors
 
+    def _calculate_descriptor_batch(self, 
+                                   descriptor_func: Callable, 
+                                   desc_name: str = "",
+                                   **kwargs) -> pd.DataFrame:
+        """
+        Generic helper method to calculate descriptors for all sequences, preventing code repetition.
+        
+        Parameters
+        ==========
+        :descriptor_func: Callable
+            Function to calculate descriptor (e.g., protpy.amino_acid_composition)
+        :desc_name: str
+            Name of descriptor for progress tracking
+        :kwargs: dict
+            Additional keyword arguments to pass to descriptor function
+        
+        Returns
+        =======
+        :pd.DataFrame
+            Dataframe with calculated descriptor values for all sequences
+        """
+        iterator = tqdm(self.protein_seqs, desc=f"Computing {desc_name}") if desc_name else self.protein_seqs
+
+        # accumulate results in a list to avoid O(n²) repeated concat
+        desc_list = [descriptor_func(seq, **kwargs) for seq in iterator]
+
+        return pd.concat(desc_list, ignore_index=False).reset_index(drop=True)
+        
 ######################          Getters & Setters          ######################
 
     @property
@@ -1351,6 +2382,150 @@ class Descriptors():
     @tripeptide_composition.setter
     def tripeptide_composition(self, val):
         self._tripeptide_composition = val
+
+    @property
+    def gravy(self):
+        return self._gravy
+
+    @gravy.setter
+    def gravy(self, val):
+        self._gravy = val
+
+    @property
+    def aromaticity(self):
+        return self._aromaticity
+
+    @aromaticity.setter
+    def aromaticity(self, val):
+        self._aromaticity = val
+
+    @property
+    def instability_index(self):
+        return self._instability_index
+
+    @instability_index.setter
+    def instability_index(self, val):
+        self._instability_index = val
+
+    @property
+    def isoelectric_point(self):
+        return self._isoelectric_point
+
+    @isoelectric_point.setter
+    def isoelectric_point(self, val):
+        self._isoelectric_point = val
+
+    @property
+    def molecular_weight(self):
+        return self._molecular_weight
+
+    @molecular_weight.setter
+    def molecular_weight(self, val):
+        self._molecular_weight = val
+
+    @property
+    def charge_distribution(self):
+        return self._charge_distribution
+
+    @charge_distribution.setter
+    def charge_distribution(self, val):
+        self._charge_distribution = val
+
+    @property
+    def hydrophobic_polar_charged_composition(self):
+        return self._hydrophobic_polar_charged_composition
+
+    @hydrophobic_polar_charged_composition.setter
+    def hydrophobic_polar_charged_composition(self, val):
+        self._hydrophobic_polar_charged_composition = val
+
+    @property
+    def secondary_structure_propensity(self):
+        return self._secondary_structure_propensity
+
+    @secondary_structure_propensity.setter
+    def secondary_structure_propensity(self, val):
+        self._secondary_structure_propensity = val
+
+    @property
+    def kmer_composition(self):
+        return self._kmer_composition
+
+    @kmer_composition.setter
+    def kmer_composition(self, val):
+        self._kmer_composition = val
+
+    @property
+    def reduced_alphabet_composition(self):
+        return self._reduced_alphabet_composition
+
+    @reduced_alphabet_composition.setter
+    def reduced_alphabet_composition(self, val):
+        self._reduced_alphabet_composition = val
+
+    @property
+    def motif_composition(self):
+        return self._motif_composition
+
+    @motif_composition.setter
+    def motif_composition(self, val):
+        self._motif_composition = val
+
+    @property
+    def amino_acid_pair_composition(self):
+        return self._amino_acid_pair_composition
+
+    @amino_acid_pair_composition.setter
+    def amino_acid_pair_composition(self, val):
+        self._amino_acid_pair_composition = val
+
+    @property
+    def aliphatic_index(self):
+        return self._aliphatic_index
+
+    @aliphatic_index.setter
+    def aliphatic_index(self, val):
+        self._aliphatic_index = val
+
+    @property
+    def extinction_coefficient(self):
+        return self._extinction_coefficient
+
+    @extinction_coefficient.setter
+    def extinction_coefficient(self, val):
+        self._extinction_coefficient = val
+
+    @property
+    def boman_index(self):
+        return self._boman_index
+
+    @boman_index.setter
+    def boman_index(self, val):
+        self._boman_index = val
+
+    @property
+    def aggregation_propensity(self):
+        return self._aggregation_propensity
+
+    @aggregation_propensity.setter
+    def aggregation_propensity(self, val):
+        self._aggregation_propensity = val
+
+    @property
+    def hydrophobic_moment(self):
+        return self._hydrophobic_moment
+
+    @hydrophobic_moment.setter
+    def hydrophobic_moment(self, val):
+        self._hydrophobic_moment = val
+
+    @property
+    def shannon_entropy(self):
+        return self._shannon_entropy
+
+    @shannon_entropy.setter
+    def shannon_entropy(self, val):
+        self._shannon_entropy = val
 
     @property
     def moreaubroto_autocorrelation(self):
@@ -1463,6 +2638,24 @@ class Descriptors():
         del self._amino_acid_composition
         del self._dipeptide_composition
         del self._tripeptide_composition
+        del self._gravy
+        del self._aromaticity
+        del self._instability_index
+        del self._isoelectric_point
+        del self._molecular_weight
+        del self._charge_distribution
+        del self._hydrophobic_polar_charged_composition
+        del self._secondary_structure_propensity
+        del self._kmer_composition
+        del self._reduced_alphabet_composition
+        del self._motif_composition
+        del self._amino_acid_pair_composition
+        del self._aliphatic_index
+        del self._extinction_coefficient
+        del self._boman_index
+        del self._aggregation_propensity
+        del self._hydrophobic_moment
+        del self._shannon_entropy
         del self._moreaubroto_autocorrelation
         del self._moran_autocorrelation
         del self._geary_autocorrelation
@@ -1476,29 +2669,225 @@ class Descriptors():
         del self._pseudo_amino_acid_composition
         del self._amphiphilic_pseudo_amino_acid_composition
 
-    def __str__(self):
-        return '''{}\nAmino Acid Composition: {}\nDipeptide Composition: {}\
-            \nTripeptide Composition: {}\nMoreauBroto Autocorrelation: {}\
-            \nMoran Autocorrelation: {}\nGeary Autocorrelation: {}\
-            \nCTD: {}\nConjoint Triad: {}\nSequence Order Coupling Number: {}\
-            \nQuasi Sequence Order: {}\nPseudo Amino Acid Composition: {}\
-            \nAmphipilic Pseudo Amino Acid Composition: {}'''.format(
-            self.shape, self.amino_acid_composition.shape, self.dipeptide_composition.shape,
-            self.tripeptide_composition.shape, self.moreaubroto_autocorrelation.shape,
-            self.moran_autocorrelation.shape, self.geary_autocorrelation.shape, self.ctd.shape,
-            self.conjoint_triad.shape, self.sequence_order_coupling_number.shape, 
-            self.quasi_sequence_order.shape, self.pseudo_amino_acid_composition.shape, 
-            self.amphiphilic_pseudo_amino_acid_composition.shape)
+    def __str__(self) -> str:
+        return f'''{self.shape}
+Amino Acid Composition: {self.amino_acid_composition.shape}
+Dipeptide Composition: {self.dipeptide_composition.shape}
+Tripeptide Composition: {self.tripeptide_composition.shape}
+GRAVY: {self.gravy.shape}
+Aromaticity: {self.aromaticity.shape}
+Instability Index: {self.instability_index.shape}
+Isoelectric Point: {self.isoelectric_point.shape}
+Molecular Weight: {self.molecular_weight.shape}
+Charge Distribution: {self.charge_distribution.shape}
+Hydrophobic/Polar/Charged Composition: {self.hydrophobic_polar_charged_composition.shape}
+Secondary Structure Propensity: {self.secondary_structure_propensity.shape}
+k-mer Composition: {self.kmer_composition.shape}
+Reduced Alphabet Composition: {self.reduced_alphabet_composition.shape}
+Motif Composition: {self.motif_composition.shape}
+Amino Acid Pair Composition: {self.amino_acid_pair_composition.shape}
+Aliphatic Index: {self.aliphatic_index.shape}
+Extinction Coefficient: {self.extinction_coefficient.shape}
+Boman Index: {self.boman_index.shape}
+Aggregation Propensity: {self.aggregation_propensity.shape}
+Hydrophobic Moment: {self.hydrophobic_moment.shape}
+Shannon Entropy: {self.shannon_entropy.shape}
+MoreauBroto Autocorrelation: {self.moreaubroto_autocorrelation.shape}
+Moran Autocorrelation: {self.moran_autocorrelation.shape}
+Geary Autocorrelation: {self.geary_autocorrelation.shape}
+CTD: {self.ctd.shape}
+Conjoint Triad: {self.conjoint_triad.shape}
+Sequence Order Coupling Number: {self.sequence_order_coupling_number.shape}
+Quasi Sequence Order: {self.quasi_sequence_order.shape}
+Pseudo Amino Acid Composition: {self.pseudo_amino_acid_composition.shape}
+Amphiphilic Pseudo Amino Acid Composition: {self.amphiphilic_pseudo_amino_acid_composition.shape}'''
 
-    def __repr__(self):
-        return ('<Descriptor: {}>'.format(self))
+    def get_all_descriptors(self, 
+                           descriptors: Optional[List[str]] = None) -> pd.DataFrame:
+        """
+        Calculate multiple descriptors efficiently in batch.
+        
+        Parameters
+        ==========
+        :descriptors: list of str, optional
+            List of specific descriptors to calculate. If None, calculates all.
+        
+        Returns
+        =======
+        :pd.DataFrame
+            DataFrame with all calculated descriptor values concatenated
+        """
+        if descriptors is None:
+            descriptors = self.valid_descriptors
+        else:
+            descriptors = self.validate_descriptors(descriptors)
+        
+        results = {}
+        for desc in tqdm(descriptors, desc="Computing all descriptors"):
+            method = getattr(self, f'get_{desc}')
+            results[desc] = method()
+        
+        self.all_descriptors = pd.concat(results.values(), axis=1)
+        return self.all_descriptors
 
-    def __len__(self):
+    def get_descriptor_info(self, descriptor_name: str) -> Dict[str, Any]:
+        """
+        Get metadata and information about a specific descriptor.
+        
+        Parameters
+        ==========
+        :descriptor_name: str
+            Name of the descriptor
+        
+        Returns
+        =======
+        :Dict[str, Any]
+            Dictionary with descriptor metadata including name, feature count, group, and parameters
+        """
+        self.validate_descriptors(descriptor_name)
+        
+        descriptor_info = {
+            'name': descriptor_name,
+            'group': self.descriptor_groups.get(descriptor_name, 'Unknown'),
+            'feature_count': self.descriptor_feature_count.get(descriptor_name, 0),
+            'parameters': {},
+        }
+        
+        # Add parameters if available
+        if hasattr(self.desc_parameters, descriptor_name):
+            parameters = getattr(self.desc_parameters, descriptor_name)
+            if isinstance(parameters, dict):
+                descriptor_info['parameters'] = dict(parameters)
+            elif hasattr(parameters, '__dict__'):
+                descriptor_info['parameters'] = vars(parameters)
+        
+        return descriptor_info
+
+    def reset_descriptors(self) -> None:
+        """
+        Reset all descriptor attributes to empty DataFrames.
+        Clears all calculated descriptor values without affecting configuration.
+        
+        Parameters
+        ==========
+        None
+        
+        Returns
+        =======
+        None
+        """
+        self.amino_acid_composition = pd.DataFrame()
+        self.dipeptide_composition = pd.DataFrame()
+        self.tripeptide_composition = pd.DataFrame()
+        self.gravy = pd.DataFrame()
+        self.aromaticity = pd.DataFrame()
+        self.instability_index = pd.DataFrame()
+        self.isoelectric_point = pd.DataFrame()
+        self.molecular_weight = pd.DataFrame()
+        self.charge_distribution = pd.DataFrame()
+        self.hydrophobic_polar_charged_composition = pd.DataFrame()
+        self.secondary_structure_propensity = pd.DataFrame()
+        self.kmer_composition = pd.DataFrame()
+        self.reduced_alphabet_composition = pd.DataFrame()
+        self.motif_composition = pd.DataFrame()
+        self.amino_acid_pair_composition = pd.DataFrame()
+        self.aliphatic_index = pd.DataFrame()
+        self.extinction_coefficient = pd.DataFrame()
+        self.boman_index = pd.DataFrame()
+        self.aggregation_propensity = pd.DataFrame()
+        self.hydrophobic_moment = pd.DataFrame()
+        self.shannon_entropy = pd.DataFrame()
+        self.moreaubroto_autocorrelation = pd.DataFrame()
+        self.moran_autocorrelation = pd.DataFrame()
+        self.geary_autocorrelation = pd.DataFrame()
+        self.ctd = pd.DataFrame()
+        self.ctd_composition = pd.DataFrame()
+        self.ctd_transition = pd.DataFrame()
+        self.ctd_distribution = pd.DataFrame()
+        self.conjoint_triad = pd.DataFrame()
+        self.sequence_order_coupling_number = pd.DataFrame()
+        self.quasi_sequence_order = pd.DataFrame()
+        self.pseudo_amino_acid_composition = pd.DataFrame()
+        self.amphiphilic_pseudo_amino_acid_composition = pd.DataFrame()
+        self.all_descriptors = pd.DataFrame()
+
+    def clear_cache(self) -> None:
+        """
+        Clear cached descriptor metadata to free memory.
+        Useful after major descriptor calculations or when memory is constrained.
+        
+        Parameters
+        ==========
+        None
+        
+        Returns
+        =======
+        None
+        """
+        if hasattr(self.descriptor_feature_count, 'cache_clear'):
+            self.descriptor_feature_count.fget.cache_clear()
+
+    def get_descriptor_columns(self, descriptor: str) -> List[str]:
+        """
+        Get list of column names for a specific descriptor.
+        
+        Parameters
+        ==========
+        :descriptor: str
+            Name of the descriptor (e.g., 'amino_acid_composition')
+        
+        Returns
+        =======
+        :List[str]
+            List of column names in the descriptor DataFrame
+        
+        Raises
+        ======
+        :InvalidDescriptorError
+            If descriptor name is invalid
+        :ValueError
+            If descriptor has not been calculated yet
+        """
+        # Validate descriptor name
+        self.validate_descriptors(descriptor)
+        
+        # Get the descriptor dataframe attribute
+        desc_attr = getattr(self, descriptor, None)
+        
+        if desc_attr is None or desc_attr.empty:
+            raise ValueError(f"Descriptor '{descriptor}' has not been calculated yet. "
+                           f"Call get_{descriptor}() first.")
+        
+        return desc_attr.columns.tolist()
+
+    def __repr__(self) -> str:
+        return f'<Descriptor: {self}>'
+
+    def __len__(self) -> int:
         return len(self.all_descriptors)
 
-    def __shape__(self):
+    def __shape__(self) -> Tuple[int, int]:
         return self.all_descriptors.shape
 
-    def __sizeof__(self):
+    def __sizeof__(self) -> int:
         """ Get size of all_descriptors object that stores all descriptor values. """
         return self.all_descriptors.__sizeof__()
+
+class DescriptorError(Exception):
+    """Base exception for descriptor operations."""
+    pass
+
+
+class InvalidSequenceError(DescriptorError):
+    """Raised when sequence contains invalid amino acids."""
+    pass
+
+
+class DescriptorConfigError(DescriptorError):
+    """Raised when config file is invalid or malformed."""
+    pass
+
+
+class InvalidDescriptorError(DescriptorError):
+    """Raised when requesting non-existent descriptor."""
+    pass

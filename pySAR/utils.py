@@ -3,7 +3,6 @@
 ################################################################################
 
 import pandas as pd
-pd.options.mode.chained_assignment = None  #stop pandas warnings, default='warn'
 import numpy as np
 import os
 import csv
@@ -44,7 +43,7 @@ class Map(dict):
     [1] https://stackoverflow.com/questions/2352181/how-to-use-a-dot-to-access-members-of-dictionary
     """
     def __init__(self, *args, **kwargs):
-        super(Map, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         for arg in args:
             if (isinstance(arg, dict)):
                 for k, v in arg.items():
@@ -61,14 +60,14 @@ class Map(dict):
         self.__setitem__(key, value)
 
     def __setitem__(self, key, value):
-        super(Map, self).__setitem__(key, value)
+        super().__setitem__(key, value)
         self.__dict__.update({key: value})
 
     def __delattr__(self, item):
         self.__delitem__(item)
 
     def __delitem__(self, key):
-        super(Map, self).__delitem__(key)
+        super().__delitem__(key)
         del self.__dict__[key]
 
 def valid_sequence(sequences):
@@ -96,8 +95,8 @@ def valid_sequence(sequences):
     Usage
     -----
     seq = ["ACDEF", "GHIKLM", "ABCDE"]
-    seq_check = valid_sequences[seq]
-    #{'Sequence #2: (B at index #1)'}
+    seq_check = valid_sequence(seq)
+    #{'Sequence #3': '(B at index #2)'}
     """
     #if input is string, cast to a list so it is iterable
     if (isinstance(sequences, str)):
@@ -114,14 +113,11 @@ def valid_sequence(sequences):
         for aa in range(0, len(sequences[seq])):
             if (sequences[seq][aa] not in valid_amino_acids):
                 invalid_indices.append(
-                    {'Sequence #' + str(seq+1) : '(' + str(sequences[seq][aa]) + ' at index #' + str(aa) + ')'})
+                    {f'Sequence #{seq+1}': f'({sequences[seq][aa]} at index #{aa})'})
 
     #if no invalid values found in sequences return None, else return list of
     #dicts containing invalid index and invalid values
-    if (invalid_indices == []):
-        return None
-    else:
-        return invalid_indices
+    return invalid_indices or None
 
 def remove_gaps(sequences):
     """
@@ -141,30 +137,17 @@ def remove_gaps(sequences):
     :protein_seqs: np.ndarray
         returns the same inputted protein sequence(s) but with any gaps ('-') removed.
     """
-    #bool needed to ensure correct output format if input is str
-    is_string=False   
+    #string input: remove gaps and return as string
+    if isinstance(sequences, str):
+        return sequences.replace("-", "")
 
-    #convert single string into 1 element list
-    if (isinstance(sequences, str)):
-      is_string = True
-      sequences = [sequences]     
+    #pd.Series input: process each element independently using vectorised str.replace
+    if isinstance(sequences, pd.Series):
+        return sequences.str.replace("-", "", regex=False).reset_index(drop=True)
 
-    #concatenate multiple sequences into 1 iterable list
-    if (isinstance(sequences, list) and len(sequences) > 1):
-      sequences = [''.join(sequences)]
-
-    #iterate through sequences, removing any gaps ('-')
-    for row in range(0, len(sequences)):
-        try:
-            sequences[row] = sequences[row].replace("-", "")
-        except:
-            raise TypeError('Error removing gaps from sequences at index {}.'.format(row))
-
-    #if input was str then join list of sequences into one str
-    if (is_string):
-       sequences = ''.join(sequences)
-
-    return sequences
+    #list/array input: treat as single sequence of chars — join after removing gap chars
+    cleaned = ''.join(str(c) for c in sequences if str(c) != '-')
+    return [cleaned]
 
 def flatten(array):
     """
@@ -189,14 +172,13 @@ def flatten(array):
         return array
 
     #create flatten lambda function
-    flatten = lambda array: [item for sublist in array for item in sublist]
+    _flatten = lambda array: [item for sublist in array for item in sublist]
 
     #flatten array/list
     try:
-        flattened_array = flatten(array)
-    except:
-        raise TypeError('Error flattening array of type: {} and size {}.'.
-            format(type(array), len(array)))
+        flattened_array = _flatten(array)
+    except (TypeError, ValueError):
+        raise TypeError(f'Error flattening array of type: {type(array)} and size {len(array)}.')
 
     #if input is a numpy array then reshape to 1D numpy array else return list
     if (isinstance(array,np.ndarray)):
@@ -224,15 +206,36 @@ def zero_padding(sequences):
     if (len(sequences) == 1):
         return sequences
 
+    is_series = isinstance(sequences, pd.Series)
+    is_ndarray = isinstance(sequences, np.ndarray)
+
     #get maximum length of all sequences
     max_len = len(max(sequences, key=len))
 
-    #iterate through all sequences, padding with 0's to max_len
-    for s in range(0, len(sequences)):
-        if (len(sequences[s]) < max_len):
-            sequences[s]+= str(0) * (max_len - len(sequences[s]))
+    #check if any sequence is shorter than max_len
+    seq_at = lambda i: sequences.iloc[i] if is_series else sequences[i]
+    if not any(len(seq_at(s)) < max_len for s in range(len(sequences))):
+        return sequences
 
-    return sequences
+    #determine element type to choose padding strategy
+    first_elem = seq_at(0)
+    if isinstance(first_elem, str):
+        #string sequences: pad with '0' character
+        if is_series:
+            return sequences.str.ljust(max_len, '0')
+        seqs_list = list(sequences)
+        for s in range(len(seqs_list)):
+            if len(seqs_list[s]) < max_len:
+                seqs_list[s] = seqs_list[s].ljust(max_len, '0')
+        return np.array(seqs_list, dtype=sequences.dtype) if is_ndarray else seqs_list
+    else:
+        #list/array sequences: extend shorter sequences with zeros
+        seqs_list = [list(s) for s in sequences]
+        for s in range(len(seqs_list)):
+            diff = max_len - len(seqs_list[s])
+            if diff > 0:
+                seqs_list[s] = seqs_list[s] + [0] * diff
+        return np.array(seqs_list, dtype=object) if is_ndarray else seqs_list
 
 def save_results(results, file_name, output_folder=""):
     """
@@ -256,12 +259,12 @@ def save_results(results, file_name, output_folder=""):
     if (os.path.splitext(file_name)[1] == ""):
         file_name = file_name + '.csv'
 
-    #set output folder to default if input param empty or None
-    if (output_folder == "" or output_folder == None):
+    #set output folder to default (already timestamped) or append timestamp to custom folder
+    if not output_folder:
         output_folder = OUTPUT_FOLDER
     else:
-        output_folder = output_folder + "_" + CURRENT_DATETIME
-    
+        output_folder = output_folder + '_' + CURRENT_DATETIME
+
     #create output folder if it doesn't exist
     if not (os.path.isdir(output_folder)):
         os.makedirs(output_folder)
@@ -277,4 +280,4 @@ def save_results(results, file_name, output_folder=""):
         results.reset_index(drop=True, inplace=True)
         results.to_csv(os.path.join(output_folder, file_name))
     else:
-        raise TypeError('Results object must be of type: dict, pd.Series or pd.DataFrame, got object of type {}.'.format(type(results)))
+        raise TypeError(f'Results object must be of type: dict, pd.Series or pd.DataFrame, got object of type {type(results)}.')

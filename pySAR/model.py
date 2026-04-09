@@ -4,22 +4,23 @@
 
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
-from sklearn.linear_model import Lasso, LinearRegression, Ridge, SGDRegressor
+from sklearn.linear_model import Lasso, LinearRegression, Ridge, SGDRegressor, ElasticNet
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRegressor, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRegressor, GradientBoostingRegressor, ExtraTreesRegressor, HistGradientBoostingRegressor
+from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.metrics._scorer import _SCORERS
-from sklearn.exceptions import UndefinedMetricWarning
-from sklearn.feature_selection import SelectKBest, chi2, VarianceThreshold, RFE, SelectFromModel, SequentialFeatureSelector
+from sklearn.metrics import get_scorer_names
+from sklearn.feature_selection import SelectKBest, f_regression, VarianceThreshold, RFE, SelectFromModel, SequentialFeatureSelector
 from difflib import get_close_matches
 from copy import deepcopy
 import os
 import pickle
 import pandas as pd
 import numpy as np
-np.seterr(divide='ignore', invalid='ignore') #ignore divide by 0 error
+# np.seterr is intentionally NOT set globally; divide/invalid warnings are suppressed
+# locally via np.errstate() at the call sites where they are expected.
 
 from .evaluate import Evaluate
 
@@ -27,10 +28,11 @@ class Model():
     """
     Class for building, fitting and training a various range of predictive
     regression models and all their related methods and attributes. The 
-    model class supports the following regression algoriths: PLS Regression,
+    model class supports the following regression algorithms: PLS Regression,
     Random Forest, AdaBoost, Bagging, Decision Tree, GradientBoost, Linear
-    Regression, Lasso, Ridge, Support Vector Regression, Stochastic Gradient
-    Descent and K Nearest Neighbours (KNN).
+    Regression, Lasso, Ridge, ElasticNet, Support Vector Regression, Stochastic
+    Gradient Descent, K Nearest Neighbours (KNN), Extra Trees, Histogram-based
+    Gradient Boosting and Gaussian Process Regression.
 
     Once a model object has been built and fitted to the training data and 
     labels, it can then be used for predicting the sought activity/fitness
@@ -54,12 +56,12 @@ class Model():
         input parameters for each model: https://scikit-learn.org/stable/index.html.
     :test_split: float (default=0.2)
         proportion of the test data to use for building model, default of 0.2 is 
-        reccomended, meaning 80% of the data used for training and 20% for testing.
+        recommended, meaning 80% of the data used for training and 20% for testing.
 
     Methods
     =======
     get_model():
-        build model using inputtted parameters.
+        build model using inputted parameters.
     train_test_split(scale=True, test_split=0.2, random_state=None, shuffle=True):
         get train-test split of dataset.
     fit():
@@ -78,7 +80,37 @@ class Model():
         in model. Supported feature selection methods include SelectKBest, chi2, 
         VarianceThreshold, RFE, SelectFromModel and SequentialFeatureSelector.
     """
-    def __init__(self, X, Y, algorithm, parameters={}, test_split=0.2):
+    MODEL_CONSTRUCTORS = {
+        'plsregression': PLSRegression,
+        'randomforestregressor': RandomForestRegressor,
+        'adaboostregressor': AdaBoostRegressor,
+        'baggingregressor': BaggingRegressor,
+        'decisiontreeregressor': DecisionTreeRegressor,
+        'linearregression': LinearRegression,
+        'lasso': Lasso,
+        'ridge': Ridge,
+        'sgd': SGDRegressor,
+        'stochasticgradientdescent': SGDRegressor,
+        'gbr': GradientBoostingRegressor,
+        'gradientboost': GradientBoostingRegressor,
+        'gradientboostingregressor': GradientBoostingRegressor,
+        'svr': SVR,
+        'supportvectorregression': SVR,
+        'knn': KNeighborsRegressor,
+        'kneighborsregressor': KNeighborsRegressor,
+        'knearestneighbors': KNeighborsRegressor,
+        'elasticnet': ElasticNet,
+        'extratreesregressor': ExtraTreesRegressor,
+        'extratrees': ExtraTreesRegressor,
+        'histgradientboostingregressor': HistGradientBoostingRegressor,
+        'histgradientboosting': HistGradientBoostingRegressor,
+        'hgbr': HistGradientBoostingRegressor,
+        'gaussianprocessregressor': GaussianProcessRegressor,
+        'gaussianprocess': GaussianProcessRegressor,
+        'gpr': GaussianProcessRegressor,
+    }
+
+    def __init__(self, X, Y, algorithm, parameters=None, test_split=0.2):
 
         self.algorithm = algorithm
         self.test_split = test_split
@@ -86,20 +118,24 @@ class Model():
         self.Y = Y
 
         #if no model parameters input, then set to {} meaning default models' parameters are used
-        if (parameters == [] or parameters == ""):
+        if parameters is None or parameters == [] or parameters == "":
             self.parameters = {}
         else:
             self.parameters = parameters
 
         #list of valid models available to use for this class
         self.valid_models = ['plsregression', 'randomforestregressor', 'adaboostregressor',\
-                            'baggingregressor', 'decisiontreeregressor', 'gbr', 'gradientboostingregressor', 
-                            'linearregression', 'lasso', 'ridge', 'svr', 'supportvectorregression', 'sgd',
-                            'stochasticgradientdescent', 'kneighborsregressor', 'knearestneighbors', 'knn']
+                            'baggingregressor', 'decisiontreeregressor', 'gbr',
+                            'gradientboostingregressor', 'linearregression', 'lasso', 'ridge',
+                            'svr', 'supportvectorregression', 'sgd', 'stochasticgradientdescent',
+                            'kneighborsregressor', 'knearestneighbors', 'knn', 'elasticnet',
+                            'extratreesregressor', 'extratrees', 'histgradientboostingregressor',
+                            'histgradientboosting', 'hgbr', 'gaussianprocessregressor',
+                            'gaussianprocess', 'gpr']
 
         #raise error if algorithm parameter isnt string type
         if not(isinstance(self.algorithm, str)):
-            raise TypeError("Algorithm input parameter must be a string, got type {}.".format(type(self.algorithm)))
+            raise TypeError(f"Algorithm input parameter must be a string, got type {type(self.algorithm)}.")
 
         #get closest match of valid model from the input algorithm parameter value using difflib
         model_matches = get_close_matches(self.algorithm.lower().strip(),[item.lower().strip() \
@@ -109,8 +145,7 @@ class Model():
         if (model_matches!=[]):
             self.algorithm = model_matches[0]
         else:
-            raise ValueError('Input algorithm {} not found in list of available valid models\n{}.'.format(
-                    self.algorithm, self.valid_models))
+            raise ValueError(f'Input algorithm {self.algorithm} not found in list of available valid models\n{self.valid_models}.')
 
         #create instance of algorithm object using its sklearn constructor
         self.model = self.get_model()
@@ -120,7 +155,7 @@ class Model():
 
     def get_model(self):
         """
-        Create instance of model type specifed by input 'algorithm' argument. If
+        Create instance of model type specified by input 'algorithm' argument. If
         input 'parameters' = {} then default parameters of sklearn model are used, else set
         the parameters of the model to the values specified in the 'parameters' input.
 
@@ -133,142 +168,18 @@ class Model():
         :model: sklearn.model
             instantiated regression model with default or user-specified parameters.
         """
-        parameters = {}
-        #use if/elif statements to get matching model specified by user in algorithm attribute
-        if (self.algorithm.lower().strip() == 'plsregression'):
-
-            #get parameters of sklearn model and check that user inputted
-            #parameters are available in the model, only use those that are valid
-            for k,v in PLSRegression().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-            
-            #use default model parameters if user input parameters is empty {}, else
-            #use user-specified parameters
-            if (parameters != {} or parameters != []):
-                model = PLSRegression(**self.parameters)
-            else:
-                model = PLSRegression()
-
-        elif (self.algorithm.lower().strip() == 'randomforestregressor'):
-
-            for k,v in RandomForestRegressor().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = RandomForestRegressor(**self.parameters)
-            else:
-                model = RandomForestRegressor()
-
-        elif (self.algorithm.lower().strip() == 'adaboostregressor'):
-
-            for k,v in AdaBoostRegressor().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-            if (parameters != {} or parameters != []):
-                model = AdaBoostRegressor(**self.parameters)
-            else:
-                model = AdaBoostRegressor()
-
-        elif (self.algorithm.lower().strip() == 'baggingregressor'):
-
-            for k,v in BaggingRegressor().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = BaggingRegressor(**self.parameters)
-            else:
-                model = BaggingRegressor()
-
-        elif (self.algorithm.lower().strip() == 'decisiontreeregressor'):
-
-            for k,v in DecisionTreeRegressor().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = DecisionTreeRegressor(**self.parameters)
-            else:
-                model = DecisionTreeRegressor()
-
-        elif (self.algorithm.lower().strip() == 'linearregression'):
-
-            for k,v in LinearRegression().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = LinearRegression(**self.parameters)
-            else:
-                model = LinearRegression()
-
-        elif (self.algorithm.lower().strip() == 'lasso'):
-
-            for k,v in Lasso().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = Lasso(**self.parameters)
-            else:
-                model = Lasso()
-
-        elif (self.algorithm.lower().strip() == 'ridge'):
-
-            for k,v in Ridge().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = Ridge(**self.parameters)
-            else:
-                model = Ridge()
-
-        elif (self.algorithm.lower().strip() == 'sgd' or \
-            self.algorithm.lower().strip() == 'stochasticgradientdescent'):
-
-            for k,v in SGDRegressor().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = SGDRegressor(**self.parameters)
-            else:
-                model = SGDRegressor()
-
-        elif (self.algorithm.lower().strip() == 'gbr' or \
-            self.algorithm.lower().strip() == 'gradientboost' or \
-            self.algorithm.lower().strip() == 'gradientboostingregressor'):
-
-            for k,v in GradientBoostingRegressor().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = GradientBoostingRegressor(**self.parameters)
-            else:
-                model = GradientBoostingRegressor()
-
-        elif (self.algorithm.lower().strip() == 'svr' or \
-            self.algorithm.lower().strip() == 'supportvectorregression'):
-
-            for k,v in SVR().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = SVR(**self.parameters)
-            else:
-                model = SVR()
-
-        elif (self.algorithm.lower().strip() == 'knn' or \
-           self.algorithm.lower().strip() == 'kneighborsregressor' or \
-           self.algorithm.lower().strip() == 'knearestneighbors'):
-
-            for k,v in KNeighborsRegressor().__dict__.items(): 
-                if (k in list(self.parameters.keys())): parameters[k] = self.parameters[k]
-
-            if (parameters != {} or parameters != []):
-                model = KNeighborsRegressor(**self.parameters)
-            else:
-                model = KNeighborsRegressor()
-        #no matching valid algorithm/model found
-        else:
+        constructor = self.MODEL_CONSTRUCTORS.get(self.algorithm.lower().strip())
+        if constructor is None:
             raise ValueError('Input Algorithm {} not found in available valid models:\n{}'.
                 format(self.algorithm, self.valid_models))
 
-        return model
+        valid_parameter_names = set(constructor().get_params().keys())
+        parameters = {
+            key: value for key, value in self.parameters.items()
+            if key in valid_parameter_names
+        }
+
+        return constructor(**parameters) if parameters else constructor()
 
     def train_test_split(self, test_split=0.2, scale=True, random_state=None, shuffle=True):
         """
@@ -300,14 +211,17 @@ class Model():
             raise ValueError('X and Y input parameters must be of the same length - X: {}, Y: {}.'.
                 format(len(self.X), len(self.Y)))
 
-        #reshape input arrays to 2D arrays
-        if (self.X.ndim != 2):
-            self.X = np.reshape(self.X, (-1,1))
-        if (self.Y.ndim != 2):
-            if (isinstance(self.Y, pd.Series)):
-                self.Y = np.reshape(self.Y.values, (-1,1))
-            else:
-                self.Y = np.reshape(self.Y, (-1,1))
+        #reshape input arrays to 2D arrays without mutating the original attributes
+        X_values = self.X.values if isinstance(self.X, (pd.DataFrame, pd.Series)) else self.X
+        Y_values = self.Y.values if isinstance(self.Y, (pd.DataFrame, pd.Series)) else self.Y
+
+        X_values = np.asarray(X_values)
+        Y_values = np.asarray(Y_values)
+
+        if (X_values.ndim != 2):
+            X_values = np.reshape(X_values, (-1,1))
+        if (Y_values.ndim != 2):
+            Y_values = np.reshape(Y_values, (-1,1))
 
         #if invalid test size input then set to default 0.2
         if (test_split <= 0 or test_split >=1):
@@ -316,13 +230,15 @@ class Model():
         #setting test_split attribute
         self.test_split = test_split     
 
-        #scale training data X, if scale=True
-        if (scale):
-            self.X = StandardScaler().fit_transform(self.X)
-
         #split X and Y into training and test data
-        X_train, X_test, Y_train, Y_test = train_test_split(self.X, self.Y,
+        X_train, X_test, Y_train, Y_test = train_test_split(X_values, Y_values,
             test_size=test_split, random_state=random_state, shuffle=shuffle)
+
+        #scale training data X after splitting to avoid test-set leakage
+        if (scale):
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_train)
+            X_test = scaler.transform(X_test)
 
         #set X and Y attributes
         self.X_train = X_train
@@ -378,10 +294,14 @@ class Model():
         Returns
         =======
         None
+
+        Security
+        ========
+        Models are serialized using pickle. Never load pickle files from untrusted
+        sources; deserialization of malicious data can execute arbitrary code.
         """
         #append pickle file extension if not present in filename
-        if (os.path.splitext(model_name)[1] == "" and 
-            os.path.splitext(model_name)[1] != "pkl"):
+        if (os.path.splitext(model_name)[1].lower() != ".pkl"):
             model_name = model_name + ".pkl"
         
         #set save path to folder + filename
@@ -392,16 +312,16 @@ class Model():
             with open(save_path, 'wb') as file:
                 pickle.dump(self.model, file)
         except (pickle.PickleError):
-            print("Error pickling model with path: {}.".format(save_path))
+            print(f"Error pickling model with path: {save_path}.")
 
-    def hyperparameter_tuning(self, param_grid={}, metric='r2', cv=5, n_jobs=None, verbose=2):
+    def hyperparameter_tuning(self, param_grid=None, metric='r2', cv=5, n_jobs=None, verbose=2):
         """
-        Hyperparamter tuning of model to find its optimal arrangment of parameters
+        Hyperparameter tuning of model to find its optimal arrangement of parameters
         using a Grid Search.
 
         Parameters
         ==========
-        :param_grid: dict (default={})
+        :param_grid: dict (default=None)
             dictionary/grid of selected models' parameters and the potential values of each
             that you want to tune.
         :metric: str (default=r2)
@@ -422,24 +342,33 @@ class Model():
         =======
         None
         """
+        #raise error if train_test_split() hasn't been called yet
+        if not hasattr(self, 'X_train') or self.X_train is None:
+            raise RuntimeError(
+                'train_test_split() must be called before hyperparameter_tuning().'
+            )
+
+        #default to empty dict if not provided
+        if param_grid is None:
+            param_grid = {}
+
         #input 'param_grid' parameter must be a dict, if not raise error
         if not (isinstance(param_grid, dict)):
-            raise TypeError('param_grid argument must be of type dict, got type {}.'.format(type(param_grid)))
+            raise TypeError(f'param_grid argument must be of type dict, got type {type(param_grid)}.')
 
         #input metric must be in available scoring metrics, if not raise error
-        if (metric not in sorted(_SCORERS.keys())):
-            raise UndefinedMetricWarning('Invalid scoring metric {} not in list of available Sklearn Scoring Metrics:\n{}.'\
-                .format(metric, _SCORERS.keys()))
+        valid_scorers = sorted(get_scorer_names())
+        if (metric not in valid_scorers):
+            raise ValueError(
+                f"Invalid scoring metric {metric} not in list of available Sklearn Scoring Metrics:\n{valid_scorers}."
+            )
 
         #cv must be of type int and be between 5 and 10, if not then default of 5 is used
-        if not ((isinstance(cv, int)) or (cv<5 or cv>10)):
+        if not isinstance(cv, int) or cv < 5 or cv > 10:
             cv = 5
 
-        #iterate through all parameter names to check if they are correct for model,
-        #if parameter not found in model params then delete from dictionary
-        for p in list(param_grid.keys()):
-            if (p not in (list(self.model.get_params().keys()))):
-                del param_grid[p]
+        #copy to avoid mutating caller's dict; filter out parameter names invalid for this model
+        param_grid = {p: v for p, v in param_grid.items() if p in self.model.get_params()}
 
         #create deep copy of model
         model_copy = deepcopy(self.model)
@@ -451,36 +380,31 @@ class Model():
         #fit X and Y to best model found in grid search
         grid_result = grid_search.fit(self.X_train, self.Y_train)
 
-        #get best grid search metics values
-        mean_test = grid_result.cv_results_['mean_test_score']
-        std_test = grid_result.cv_results_['std_test_score']
-        params = grid_result.cv_results_['params']
-
         #predict values of unseen test data using best found model
         best_model_pred = grid_result.predict(self.X_test)
         
         #create instance of Evaluate class and calculate metrics from best model
-        eval = Evaluate(self.Y_test,best_model_pred)
+        evaluation = Evaluate(self.Y_test,best_model_pred)
         
         #print out results of grid search
         print('\n#############################################################')
-        print('################### Hyperparamter Results ###################')
+        print('################### Hyperparameter Results ###################')
         print('#############################################################\n')
 
         print('######################### Parameters ########################\n')
-        print('# Best Params: {}'.format(grid_result.best_params_))
-        print('# Model Type: {}'.format(repr(self)))
-        print('# Scoring Metric: {}'.format(metric))
-        print('# Number of CV folds: {}'.format(cv))
-        print('# Test Split: {}\n'.format(self.test_split))
+        print(f'# Best Params: {grid_result.best_params_}')
+        print(f'# Model Type: {repr(self)}')
+        print(f'# Scoring Metric: {metric}')
+        print(f'# Number of CV folds: {cv}')
+        print(f'# Test Split: {self.test_split}\n')
 
         print('######################### Metrics ###########################\n')
-        print('# Best Score (R2): {}'.format(grid_result.best_score_))
-        print('# RMSE: {} '.format(eval.rmse))
-        print('# MSE: {} '.format(eval.mse))
-        print('# MAE: {}'.format(eval.mae))
-        print('# RPD: {}'.format(eval.rpd))
-        print('# Explained Variance: {}\n'.format(eval.explained_var))
+        print(f'# Best Score (R2): {grid_result.best_score_}')
+        print(f'# RMSE: {evaluation.rmse} ')
+        print(f'# MSE: {evaluation.mse} ')
+        print(f'# MAE: {evaluation.mae}')
+        print(f'# RPD: {evaluation.rpd}')
+        print(f'# Explained Variance: {evaluation.explained_var}\n')
         print('##############################################################')
         
         self.grid_result = grid_result
@@ -498,7 +422,7 @@ class Model():
         :True/False: bool
             true if model (self.model) has been fitted, false if not.
         """
-        return (self.model_fit != None)
+        return (self.model_fit is not None)
 
     def feature_selection(self, method=""):
         """
@@ -527,22 +451,26 @@ class Model():
         #get closest valid feature selection method
         feature_matches = get_close_matches(method.lower().strip(), [item.lower().strip() \
             for item in valid_feature_selection], cutoff=0.6)
+        selected_method = feature_matches[0] if feature_matches else "selectkbest"
 
         #apply feature selection method according to input parameter
-        if (feature_matches == 'selectkbest'):
-            X_new = SelectKBest(chi2, k=1).fit_transform(self.X, self.Y)
-        elif (feature_matches == "variancethreshold"):
+        if (selected_method == 'selectkbest'):
+            X_new = SelectKBest(f_regression, k=1).fit_transform(self.X, self.Y)
+        elif (selected_method == "variancethreshold"):
             X_new = VarianceThreshold(1).fit_transform(self.X, self.Y)
-        elif (feature_matches == "chi2"):
-            X_new = chi2().fit_transform(self.X, self.Y)
-        elif (feature_matches == "rfe"):
-            X_new = RFE(self.model, n_features_to_select=5, step=1)
-        elif (feature_matches == "sequentialfeatureselector"):
-            X_new = SequentialFeatureSelector(self.model, n_features_to_select=3)
-        elif (feature_matches == "selectfrommodel"):
-            X_new = SelectFromModel(estimator=self.model())
+        elif (selected_method == "chi2"):
+            X_new = SelectKBest(f_regression, k=2).fit_transform(self.X, self.Y)
+        elif (selected_method == "rfe"):
+            selector = RFE(self.model, n_features_to_select=5, step=1)
+            X_new = selector.fit_transform(self.X, self.Y)
+        elif (selected_method == "sequentialfeatureselector"):
+            selector = SequentialFeatureSelector(self.model, n_features_to_select=3)
+            X_new = selector.fit_transform(self.X, self.Y)
+        elif (selected_method == "selectfrommodel"):
+            selector = SelectFromModel(estimator=deepcopy(self.model))
+            X_new = selector.fit_transform(self.X, self.Y)
         else:
-            X_new = SelectKBest(chi2, k=2).fit_transform(self.X, self.Y)
+            X_new = SelectKBest(f_regression, k=2).fit_transform(self.X, self.Y)
 
         return X_new
         
@@ -612,17 +540,11 @@ class Model():
     def model_fit(self,val):
         self._model_fit = val
 
-    @property
-    def valid_models(self):
-        return self._valid_models
-
-    @valid_models.setter
-    def valid_models(self,val):
-        self._valid_models = val
-
     def __str__(self):
-        return "Model of type {} using parameters {}, model has been fitted = {}.".format(
-            type(self.model).__name__, self.parameters, self.model_fitted())
+        return (
+            f"Model of type {type(self.model).__name__} using parameters {self.parameters}, "
+            f"model has been fitted = {self.model_fitted()}."
+        )
 
     def __repr__(self):
         """ Object representation of class instance. """

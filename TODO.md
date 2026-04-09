@@ -276,3 +276,67 @@ To Do List:
 - [X] Update aaindex version on readme.
 - [X] Add elapsed time for each case study - calculating protein descriptors on demo.
 - [ ] readthedocs(https://github.com/MartinThoma/propy3/tree/master).
+- [ ] Fix tableofcontents links in readme.
+- [ ] Parameter typing https://docs.python.org/3/library/typing.html
+- [ ] Update workflows
+- [ ] Double check spelling using code-spell-checker extension
+- [ ] https://academic.oup.com/bioinformatics/article/40/4/btae157/7632735?utm_source=chatgpt.com, https://www.science.org/doi/10.1126/sciadv.adr2641?utm_source=chatgpt.com, https://pubmed.ncbi.nlm.nih.gov/38138586/?utm_source=chatgpt.com: target of Optimal Growth Temperature (OGT) for millions of sequences.
+- [ ] Datasets of continuous regressive mutant sequence datasets: https://huggingface.co/datasets/AI4Protein/VenusMutHub
+- [ ] https://pmc.ncbi.nlm.nih.gov/articles/PMC9678803/?utm_source=chatgpt.com
+- [ ] https://leojklarner.github.io/gauche/notebooks/protein_fitness_prediction_ssk_gp.html?utm_source=chatgpt.com
+- [ ] Create front-end where a property can be selected, a protein input and then a suggested continious value spit out.
+- [ ] Add DOI badge: [![DOI](https://img.shields.io/badge/DOI-10.1016%2Fj.jbi.2022.104016-blue)](https://doi.org/10.1016/j.jbi.2022.104016)
+- [ ] Implement MLflow
+- [ ] Update to pyproject.toml
+- [ ] Parameter typing
+- [ ] Add more verbose error messages
+- [ ] Add LRU caching
+- [ ] Enhacne tqdm loop
+- [ ] Spell check
+- [ ] Standardise all function docstrings
+- [ ] Add new parameter to config called aai_indices
+- [X] For any print statements , change .format to f ""
+- [ ] Go over main readme
+- [ ] New dataset: https://huggingface.co/datasets/SaProtHub/Dataset-GB1-fitness
+- [ ] Implement new descriptors made in the protpy package:
+- [ ] Include the notebook examples in the repo.
+Additional Sequence-Based Descriptors for pySAR
+Here are descriptors that can be calculated directly from primary sequence (no 3D structure needed):
+
+Composition-Based Descriptors
+GRAVY (Grand Average of Hydropathy) - Overall hydrophobicity of sequence
+Aromaticity - Fraction of aromatic amino acids (Phe, Trp, Tyr)
+Instability Index - Protein stability prediction from sequence
+Isoelectric Point (pI) - Theoretical pH at zero net charge
+Molecular Weight - Total mass from amino acid composition
+Charge Distribution - Positive/negative charge patterns along sequence
+Amino Acid Grouping Descriptors
+Hydrophobic/Polar/Charged Composition - Grouped property frequencies
+Reduced Alphabet Composition - 2-6 letter reduced AA alphabets
+Secondary Structure Propensity - Helix/Sheet/Coil tendency from properties
+k-mer & Motif Descriptors
+k-mer Composition - Frequency of all k-length subsequences (flexible k value)
+Motif-based Features - Presence/absence of known functional motifs (regex patterns)
+Amino Acid Pair Composition - Extended dipeptide analysis with physicochemical grouping
+Entropy & Information-Based Descriptors
+Shannon Entropy - Sequence complexity/information content
+Renyi Entropy - Alternative complexity measure
+Relative Entropy - Comparison to background amino acid frequencies
+Position-Specific Entropy - Entropy at each residue position
+Advanced Sequence Order Descriptors
+Wavelet Coefficients - Discrete wavelet transform of hydropathy profile
+Fourier Descriptors - Frequency-domain features from sequence properties
+Autocorrelation with Custom Properties - Correlation of custom AA properties
+Gap-distance dependent features - Residue properties at varying distances
+Signal Processing Descriptors
+Hydropathy Profile Analysis - Kyte-Doolittle plot features
+Secondary Structure Prediction (SSP) - Propensity scores (DSSP/STRIDE rules)
+Disorder Propensity - Prediction of intrinsically disordered regions
+Classification-Focused Descriptors
+Grouped Composition Features - Hydrophobic/Hydrophilic/Aromatic grouping
+Amino Acid Index Database (AAindex) - Any of 500+ published AA properties
+Custom Property Profiles - User-defined amino acid properties
+Sequence Motif & Pattern Descriptors
+Repeat Detection - Homopolymer runs, tandem repeats
+Domain-like Patterns - Zinc finger, helix-turn-helix, etc. scoring
+Post-translational Modification Sites - Phosphorylation, glycosylation, etc.

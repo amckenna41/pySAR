@@ -2,24 +2,18 @@
 #################             Model Module Tests               #################
 ################################################################################
 
+import os
+import tempfile
 import unittest
 import sklearn
 import numpy as np
 import shutil
-#### Suppress Sklearn warnings ####
-import warnings
-# def warn(*args, **kwargs):
-#     pass
-# warnings.warn = warn
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-from sklearn.cross_decomposition import PLSRegression
-from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRegressor
-from sklearn.linear_model import Lasso
-from sklearn.svm import SVR
-from sklearn.exceptions import UndefinedMetricWarning
+from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
 
-from pySAR.model import *
+from pySAR.model import Model
 
+# @unittest.skip("")
 class ModelTests(unittest.TestCase):
     """
     Test suite for testing model module and functionality 
@@ -46,22 +40,24 @@ class ModelTests(unittest.TestCase):
     """
     def setUp(self):
         """ Create dummy data. """
-        self.dummy_X = np.random.ranf(size=100)
-        self.dummy_X_2D = np.random.ranf((100, 50)) #50 sequences 
-        self.dummy_X_2 = np.random.ranf(size=50)
-        self.dummy_Y = np.random.randint(10, size=100)
-        self.dummy_Y_2 = np.random.randint(20, size=50)
-        self.dummy_Y_2D = np.random.ranf((50,1)) #50 sequences 
+        self.rng = np.random.default_rng(42)
+        self.dummy_X = self.rng.random(100)
+        self.dummy_X_2D = self.rng.random((100, 50)) #50 sequences 
+        self.dummy_X_2 = self.rng.random(50)
+        self.dummy_Y = self.rng.integers(0, 10, size=100)
+        self.dummy_Y_2 = self.rng.integers(0, 20, size=50)
+        self.dummy_Y_2D = self.rng.random((50, 1)) #50 sequences 
 
         #test model folder
-        self.test_folder = os.path.join('tests', 'test_model_output') 
-        os.mkdir(self.test_folder)
+        self.test_folder = tempfile.mkdtemp(prefix='test_model_output_')
 
     def test_model(self):
         """ Test Case to check each model type & its associated parameters & attributes. """
         test_models = ['PLSRegression', 'RandomForestRegressor', 'AdaBoostRegressor',\
                             'BaggingRegressor', 'DecisionTreeRegressor', 'LinearRegression',\
-                            'Lasso', 'SVR', 'KNeighborsRegressor', 'GradientBoostingRegressor', 'Ridge']
+                            'Lasso', 'SVR', 'KNeighborsRegressor', 'GradientBoostingRegressor', 'Ridge',\
+                            'ElasticNet', 'ExtraTreesRegressor', 'HistGradientBoostingRegressor',\
+                            'GaussianProcessRegressor']
 
         #iterate through all available algorithms/models and test each
         for test_mod in range(0, len(test_models)):
@@ -70,21 +66,21 @@ class ModelTests(unittest.TestCase):
 #1.)
             #checking model object is of the correct sklearn model datatype
             self.assertEqual(type(model.model).__name__, test_models[test_mod],
-                'Model type is not correct, expected {}, got {}.'.format(test_models[test_mod], type(model.model).__name__))
+                f'Model type is not correct, expected {test_models[test_mod]}, got {type(model.model).__name__}.')
 #2.)        #assert that model has not been fitted
             self.assertFalse(model.model_fitted(), 'Model should not be fitted on initialisation.')
 #3.)        #verify that parameters input param = {} meaning the default params for the model are used
             self.assertEqual(model.parameters, {},
-                'Default Parameters attribute should be an empty dict, but got {}.'.format(model.parameters))
+                f'Default Parameters attribute should be an empty dict, but got {model.parameters}.')
 #4.)        #verify test split attribute is 0.2, its default value
             self.assertEqual(model.test_split, 0.2,
-                'Default test split attribute should be 0.2, but got {}.'.format(model.test_split))
+                f'Default test split attribute should be 0.2, but got {model.test_split}.')
 #5.)        #verify that input model type is a valid model for the class
             self.assertTrue(model.algorithm in [item.lower() for item in model.valid_models],
-                'Input algorithm {} not in available algorithms:\n{}.'.format(model.algorithm, model.valid_models))
+                f'Input algorithm {model.algorithm} not in available algorithms:\n{model.valid_models}.')
 #6.)        #verify repr representation of model object is correct
             self.assertEqual(repr(model), test_models[test_mod],
-                'Repr function expected to be {}, but got {}.'.format(test_models[test_mod], repr(model)))
+                f'Repr function expected to be {test_models[test_mod]}, but got {repr(model)}.')
 #7.)        #verify algorithm is a regression
             self.assertTrue(sklearn.base.is_regressor(model.model), 'Model type should be a sklearn regressor.')
 #8.)           
@@ -97,110 +93,109 @@ class ModelTests(unittest.TestCase):
     def test_model_input_closeness(self):
         """ Test case for testing the algorithm closeness function used to get the
             closest available algorithm to the algorithm input into the class. """
-#1.)
-        model = Model(self.dummy_X, self.dummy_Y, 'plsreg')
-        self.assertEqual(model.algorithm, "plsregression", "Expected algorithm to be plsregression, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "PLSRegression", "Expected representation of model object to be PLSRegression, got {}.".format(repr(model)))
-#2.)
-        model = Model(self.dummy_X, self.dummy_Y, 'randomfor')
-        self.assertEqual(model.algorithm, "randomforestregressor", "Expected algorithm to be randomforestregressor, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "RandomForestRegressor", "Expected representation of model object to be RandomForestRegressor, got {}.".format(repr(model)))
-#3.)
-        model = Model(self.dummy_X, self.dummy_Y, 'adaboo')
-        self.assertEqual(model.algorithm, "adaboostregressor", "Expected algorithm to be adaboostregressor, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "AdaBoostRegressor", "Expected representation of model object to be AdaBoostRegressor, got {}.".format(repr(model)))
-#4.)
-        model = Model(self.dummy_X, self.dummy_Y, 'bagging')
-        self.assertEqual(model.algorithm, "baggingregressor", "Expected algorithm to be baggingregressor, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "BaggingRegressor", "Expected representation of model object to be BaggingRegressor, got {}.".format(repr(model)))
-#5.)
-        model = Model(self.dummy_X, self.dummy_Y, 'decisiontree')
-        self.assertEqual(model.algorithm, "decisiontreeregressor", "Expected algorithm to be decisiontreeregressor, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "DecisionTreeRegressor", "Expected representation of model object to be DecisionTreeRegressor, got {}.".format(repr(model)))
-#6.)
-        model = Model(self.dummy_X, self.dummy_Y, 'linear')
-        self.assertEqual(model.algorithm, "linearregression", "Expected algorithm to be linearregression, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "LinearRegression", "Expected representation of model object to be LinearRegression, got {}.".format(repr(model)))
-#7.)
-        model = Model(self.dummy_X, self.dummy_Y, 'lass')
-        self.assertEqual(model.algorithm, "lasso", "Expected algorithm to be lasso, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "Lasso", "Expected representation of model object to be Lasso, got {}.".format(repr(model)))
-#8.)
-        model = Model(self.dummy_X, self.dummy_Y, 'kneighbors')
-        self.assertEqual(model.algorithm, "knearestneighbors", "Expected algorithm to be knearestneighbors, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "KNeighborsRegressor", "Expected representation of model object to be KNeighborsRegressor, got {}.".format(repr(model)))
-#9.)
-        model = Model(self.dummy_X, self.dummy_Y, 'sv')
-        self.assertEqual(model.algorithm, "svr", "Expected algorithm to be svr, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "SVR", "Expected representation of model object to be SVR, got {}.".format(repr(model)))
-#10.)
-        model = Model(self.dummy_X, self.dummy_Y, 'rid')
-        self.assertEqual(model.algorithm, "ridge", "Expected algorithm to be ridge, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "Ridge", "Expected representation of model object to be Ridge, got {}.".format(repr(model)))
-#11.)
-        model = Model(self.dummy_X, self.dummy_Y, 'gbr')
-        self.assertEqual(model.algorithm, "gbr", "Expected algorithm to be gbr, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "GradientBoostingRegressor", "Expected representation of model object to be GradientBoostingRegressor, got {}.".format(repr(model)))
-#12.)
-        model = Model(self.dummy_X, self.dummy_Y, 'sg')
-        self.assertEqual(model.algorithm, "sgd", "Expected algorithm to be sgd, got {}.".format(model.algorithm))
-        self.assertEqual(repr(model), "SGDRegressor", "Expected representation of model object to be SGDRegressor, got {}.".format(repr(model)))
+        aliases = [
+            ('plsreg', 'plsregression', 'PLSRegression'),
+            ('randomfor', 'randomforestregressor', 'RandomForestRegressor'),
+            ('adaboo', 'adaboostregressor', 'AdaBoostRegressor'),
+            ('bagging', 'baggingregressor', 'BaggingRegressor'),
+            ('decisiontree', 'decisiontreeregressor', 'DecisionTreeRegressor'),
+            ('linear', 'linearregression', 'LinearRegression'),
+            ('lass', 'lasso', 'Lasso'),
+            ('kneighbors', 'knearestneighbors', 'KNeighborsRegressor'),
+            ('sv', 'svr', 'SVR'),
+            ('rid', 'ridge', 'Ridge'),
+            ('gbr', 'gbr', 'GradientBoostingRegressor'),
+            ('sg', 'sgd', 'SGDRegressor'),
+            ('elasticnet', 'elasticnet', 'ElasticNet'),
+            ('extratrees', 'extratrees', 'ExtraTreesRegressor'),
+            ('hgbr', 'hgbr', 'HistGradientBoostingRegressor'),
+            ('gpr', 'gpr', 'GaussianProcessRegressor'),
+        ]
+
+        for input_name, expected_algorithm, expected_repr in aliases:
+            with self.subTest(alias=input_name):
+                model = Model(self.dummy_X, self.dummy_Y, input_name)
+                self.assertEqual(
+                    model.algorithm,
+                    expected_algorithm,
+                    f"Expected algorithm to be {expected_algorithm}, got {model.algorithm}.")
+                self.assertEqual(
+                    repr(model),
+                    expected_repr,
+                    f"Expected representation of model object to be {expected_repr}, got {repr(model)}.")
 #13.)
         with self.assertRaises(ValueError, msg='Value Error raised, invalid model/algorithm name given.'):
             Model(self.dummy_X, self.dummy_Y, 'abcdefg')
+        with self.assertRaises(ValueError, msg='Value Error raised, invalid model/algorithm name given.'):
             Model(self.dummy_X, self.dummy_Y, 'notamodel')
+        with self.assertRaises(ValueError, msg='Value Error raised, invalid model/algorithm name given.'):
             Model(self.dummy_X, self.dummy_Y, '123')
+        with self.assertRaises(ValueError, msg='Value Error raised, invalid model/algorithm name given.'):
             Model(self.dummy_X, self.dummy_Y, 'blahblahblah')
 #14.)
         with self.assertRaises(TypeError, msg="Type Error raised, input must be of type string."):
             Model(self.dummy_X, self.dummy_Y, 12345)
+        with self.assertRaises(TypeError, msg="Type Error raised, input must be of type string."):
             Model(self.dummy_X, self.dummy_Y, 5.60)
+        with self.assertRaises(TypeError, msg="Type Error raised, input must be of type string."):
             Model(self.dummy_X, self.dummy_Y, False)
 
     def test_train_test_split(self):
         """ Testing splitting up dataset into training and test data. """
 #1.)
         model = Model(self.dummy_X_2D, self.dummy_Y, 'plsreg')
+        original_x = self.dummy_X_2D.copy()
+        original_y = self.dummy_Y.copy()
         X_train, X_test, Y_train, Y_test = model.train_test_split()
 
-        self.assertTrue(len(X_train) == 80, "Expected 80 rows in training data, got {}.".format(len(X_train)))
-        self.assertTrue(len(Y_train) == 80, "Expected 80 rows in training data labels, got {}.".format(len(Y_train)))
-        self.assertTrue(len(X_test) == 20, "Expected 20 rows in test data, got {}.".format(len(X_test)))
-        self.assertTrue(len(Y_test) == 20, "Expected 20 rows in test data labels, got {}.".format(len(Y_test)))
+        self.assertEqual(len(X_train), 80, f"Expected 80 rows in training data, got {len(X_train)}.")
+        self.assertEqual(len(Y_train), 80, f"Expected 80 rows in training data labels, got {len(Y_train)}.")
+        self.assertEqual(len(X_test), 20, f"Expected 20 rows in test data, got {len(X_test)}.")
+        self.assertEqual(len(Y_test), 20, f"Expected 20 rows in test data labels, got {len(Y_test)}.")
 
         self.assertIsInstance(X_train, np.ndarray, "X_train training data expected to be a numpy array.")
         self.assertIsInstance(Y_train, np.ndarray, "Y_train training data labels expected to be a numpy array.")
         self.assertIsInstance(X_test, np.ndarray, "X_test test data expected to be a numpy array.")
         self.assertIsInstance(Y_test, np.ndarray, "Y_test test data labels expected to be a numpy array.")
+        self.assertTrue(np.array_equal(model.X, original_x), "Model.X should not be mutated by train_test_split.")
+        self.assertTrue(np.array_equal(model.Y, original_y), "Model.Y should not be mutated by train_test_split.")
 #2.)
         model = Model(self.dummy_X_2, self.dummy_Y_2, 'adaboost')
         X_train, X_test, Y_train, Y_test = model.train_test_split(test_split=0.5)
 
-        self.assertTrue(len(X_train) == 25, "Expected 25 rows in training data, got {}.".format(len(X_train)))
-        self.assertTrue(len(Y_train) == 25, "Expected 25 rows in training data labels, got {}.".format(len(Y_train)))
-        self.assertTrue(len(X_test) == 25, "Expected 25 rows in test data, got {}.".format(len(X_test)))
-        self.assertTrue(len(Y_test) == 25, "Expected 25 rows in test data labels, got {}.".format(len(Y_test)))
+        self.assertEqual(len(X_train), 25, f"Expected 25 rows in training data, got {len(X_train)}.")
+        self.assertEqual(len(Y_train), 25, f"Expected 25 rows in training data labels, got {len(Y_train)}.")
+        self.assertEqual(len(X_test), 25, f"Expected 25 rows in test data, got {len(X_test)}.")
+        self.assertEqual(len(Y_test), 25, f"Expected 25 rows in test data labels, got {len(Y_test)}.")
 
         self.assertIsInstance(X_train, np.ndarray, "X_train training data expected to be a numpy array.")
         self.assertIsInstance(Y_train, np.ndarray, "Y_train training data labels expected to be a numpy array.")
         self.assertIsInstance(X_test, np.ndarray, "X_test test data expected to be a numpy array.")
         self.assertIsInstance(Y_test, np.ndarray, "Y_test test data labels expected to be a numpy array.")
+        unscaled_model = Model(self.dummy_X_2, self.dummy_Y_2, 'adaboost')
+        X_train_unscaled, X_test_unscaled, _, _ = unscaled_model.train_test_split(test_split=0.5, scale=False, random_state=0)
+        scaled_model = Model(self.dummy_X_2, self.dummy_Y_2, 'adaboost')
+        X_train_scaled, X_test_scaled, _, _ = scaled_model.train_test_split(test_split=0.5, scale=True, random_state=0)
+        self.assertFalse(np.allclose(X_train_unscaled, X_train_scaled),
+            "Scaled and unscaled training data should differ when scale=True.")
+        self.assertFalse(np.allclose(X_test_unscaled, X_test_scaled),
+            "Scaled and unscaled test data should differ when scale=True.")
 #3.)
         model = Model(self.dummy_X_2, self.dummy_Y_2, 'bagging')
         X_train, X_test, Y_train, Y_test = model.train_test_split(test_split=1234) #if test_split <0 or >1 then use 0.2 default
 
-        self.assertTrue(len(X_train) == 40, "Expected 40 rows in training data, got {}.".format(len(X_train)))
-        self.assertTrue(len(Y_train) == 40, "Expected 40 rows in training data labels, got {}.".format(len(Y_train)))
-        self.assertTrue(len(X_test) == 10, "Expected 10 rows in test data, got {}.".format(len(X_test)))
-        self.assertTrue(len(Y_test) == 10, "Expected 10 rows in test data labels, got {}.".format(len(Y_test)))
+        self.assertEqual(len(X_train), 40, f"Expected 40 rows in training data, got {len(X_train)}.")
+        self.assertEqual(len(Y_train), 40, f"Expected 40 rows in training data labels, got {len(Y_train)}.")
+        self.assertEqual(len(X_test), 10, f"Expected 10 rows in test data, got {len(X_test)}.")
+        self.assertEqual(len(Y_test), 10, f"Expected 10 rows in test data labels, got {len(Y_test)}.")
 
         self.assertIsInstance(X_train, np.ndarray, "X_train training data expected to be a numpy array.")
         self.assertIsInstance(Y_train, np.ndarray, "Y_train training data labels expected to be a numpy array.")
         self.assertIsInstance(X_test, np.ndarray, "X_test test data expected to be a numpy array.")
         self.assertIsInstance(Y_test, np.ndarray, "Y_test test data labels expected to be a numpy array.")
 #4.)
-        model = Model(self.dummy_X_2, self.dummy_Y, 'plsreg')
-        with self.assertRaises(ValueError, msg='Value Error raised, invalid test_split type input.'):
+        model = Model(self.dummy_X_2, self.dummy_Y_2, 'plsreg')
+        with self.assertRaises(TypeError, msg='Type Error raised, invalid test_split type input.'):
             model.train_test_split(test_split="ABCD")
 
     def test_predict(self):
@@ -240,70 +235,68 @@ class ModelTests(unittest.TestCase):
 
         self.assertTrue(os.path.isfile(os.path.join(self.test_folder, 'test_model2.pkl')), 
             "Expected model pickle to be saved to test folder.")
+#3.)
+        model = Model(self.dummy_X_2, self.dummy_Y_2, 'ridge')
+        X_train, X_test, Y_train, Y_test = model.train_test_split()
+        model.fit()
+        model.save(self.test_folder, 'test_model3')
+
+        self.assertTrue(os.path.isfile(os.path.join(self.test_folder, 'test_model3.pkl')), 
+            "Expected .pkl extension to be appended when missing.")
 
     def test_parameters(self):
         """ Testing parameters of Model class for specified algorithm match that of the sklearn 
             models' parameters. """
 #1.)
-        #create instance of PLS model using Model class & creating instance
-        #using SKlearn libary, comparing if the parameters of both instances are equal
         pls_parameters = {"n_components": 20, "scale": False, "max_iter": 200}
         model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="PlsRegression", parameters=pls_parameters)
-        pls_model = PLSRegression(n_components=20, scale="svd", max_iter=200)
-
-        for k, v in model.model.get_params().items():
-            self.assertIn(k, list(pls_model.get_params()), 
-                "Parameter {} not found in list of available parameters:\n{}.".format(k, list(pls_model.get_params())))
+        self.assertEqual(model.model.get_params()["n_components"], 20)
+        self.assertEqual(model.model.get_params()["scale"], False)
+        self.assertEqual(model.model.get_params()["max_iter"], 200)
 #2.)
         rf_parameters = {"n_estimators": 200, "max_depth": 50, "min_samples_split": 10}
         model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="RandomForest", parameters=rf_parameters)
-        rf_model = RandomForestRegressor(n_estimators=200, max_depth=50, min_samples_split=10)
-
-        for k, v in model.model.get_params().items():
-            self.assertIn(k, list(rf_model.get_params()),
-                "Parameter {} not found in list of available parameters:\n{}.".format(k, list(rf_model.get_params())))
+        self.assertEqual(model.model.get_params()["n_estimators"], 200)
+        self.assertEqual(model.model.get_params()["max_depth"], 50)
+        self.assertEqual(model.model.get_params()["min_samples_split"], 10)
 #3.)
         knn_parameters = {"n_neighbors": 10, "weights": "distance", "algorithm": "ball_tree"}
         model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="KNN", parameters=knn_parameters)
-        knn_model = KNeighborsRegressor(n_neighbors=10, weights='distance', algorithm="kd_tree")
-
-        for k, v in model.model.get_params().items():
-            self.assertIn(k, list(knn_model.get_params()),
-                "Parameter {} not found in list of available parameters:\n{}.".format(k, list(knn_model.get_params())))
+        self.assertEqual(model.model.get_params()["n_neighbors"], 10)
+        self.assertEqual(model.model.get_params()["weights"], "distance")
+        self.assertEqual(model.model.get_params()["algorithm"], "ball_tree")
 #4.)
         svr_parameters = {"kernel": "poly", "degree": 5, "coef0": 1}
         model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="SVR",parameters=svr_parameters)
-        svr_model = SVR(kernel='poly', degree=5, coef0=1)
-
-        for k, v in model.model.get_params().items():
-            self.assertIn(k, list(svr_model.get_params()),
-                "Parameter {} not found in list of available parameters:\n{}.".format(k, list(svr_model.get_params())))
+        self.assertEqual(model.model.get_params()["kernel"], "poly")
+        self.assertEqual(model.model.get_params()["degree"], 5)
+        self.assertEqual(model.model.get_params()["coef0"], 1)
 #5.)
         ada_parameters = {"n_estimators": 150, "learning_rate": 1.2, "loss": "square"}
         model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="AdaBoost", parameters=ada_parameters)
-        ada_model = AdaBoostRegressor(n_estimators=150, learning_rate=1.2, loss="square")
-
-        for k, v in model.model.get_params().items():
-            self.assertIn(k, list(ada_model.get_params()),
-                "Parameter {} not found in list of available parameters:\n{}.".format(k, list(ada_model.get_params())))
+        self.assertEqual(model.model.get_params()["n_estimators"], 150)
+        self.assertEqual(model.model.get_params()["learning_rate"], 1.2)
+        self.assertEqual(model.model.get_params()["loss"], "square")
 #6.)
         bagging_parameters = {"n_estimators": 50, "max_samples": 1.5, "max_features": 2}
         model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="Bagging", parameters=bagging_parameters)
-        bagging_model = BaggingRegressor(n_estimators=50, max_samples=1.5, max_features="square")
-
-        for k, v in model.model.get_params().items():
-            self.assertIn(k, list(bagging_model.get_params()),
-                "Parameter {} not found in list of available parameters:\n{}.".format(k, list(bagging_model.get_params())))
+        self.assertEqual(model.model.get_params()["n_estimators"], 50)
+        self.assertEqual(model.model.get_params()["max_samples"], 1.5)
+        self.assertEqual(model.model.get_params()["max_features"], 2)
 #7.)
         lasso_parameters = {"alpha": 1.5, "max_iter": 500, "tol": 0.004}
         model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="lasso", parameters=lasso_parameters)
-        lasso_model = Lasso(alpha=1.5, max_iter=500, tol=0.004)
+        self.assertEqual(model.model.get_params()["alpha"], 1.5)
+        self.assertEqual(model.model.get_params()["max_iter"], 500)
+        self.assertEqual(model.model.get_params()["tol"], 0.004)
+#8.)
+        filtered_parameters = {"n_components": 2, "invalid_parameter": 999}
+        model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="plsreg", parameters=filtered_parameters)
+        self.assertEqual(model.model.get_params()["n_components"], 2)
+        self.assertNotIn("invalid_parameter", model.model.get_params(),
+            "Invalid parameters should be filtered out before model construction.")
 
-        for k, v in model.model.get_params().items():
-            self.assertIn(k, list(lasso_model.get_params()),
-                "Parameter {} not found in list of available parameters:\n{}.".format(k, list(lasso_model.get_params())))
-
-    def test_hyperparamter_tuning(self):
+    def test_hyperparameter_tuning(self):
         """ Testing hyperparamter tuning functionality. """
 #1.)
         model = Model(self.dummy_X, self.dummy_Y, algorithm="adaboost")
@@ -312,20 +305,20 @@ class ModelTests(unittest.TestCase):
         param_grid = {'n_estimators': [50,100,150], 'learning_rate': [0.5,0.75,1], 'loss': ['linear','exponential']}
         model.hyperparameter_tuning(metric="neg_root_mean_squared_error", param_grid=param_grid, verbose=0, cv=10)
         
-        self.assertEqual(str(type(model.grid_result)), "<class 'sklearn.model_selection._search.GridSearchCV'>", 
-            "Expected grid result to be of type sklearn.model_selection._search, got {}.".format(type(model.grid_result)))
+        self.assertIsInstance(model.grid_result, GridSearchCV,
+            f"Expected grid result to be GridSearchCV, got {type(model.grid_result)}.")
         self.assertEqual(model.grid_result.cv, 10, 
-            "Expected there to be 10 cross-validation folds, got {}.".format(model.grid_result.cv))
+            f"Expected there to be 10 cross-validation folds, got {model.grid_result.cv}.")
         self.assertEqual(model.grid_result.error_score, 0, 
-            "Expected the error score to be 0, got {}.".format(model.grid_result.error_score))
+            f"Expected the error score to be 0, got {model.grid_result.error_score}.")
         self.assertEqual(model.grid_result.scoring, 'neg_root_mean_squared_error', 
-            "Expected the scoring metric to be neg_root_mean_squared_error, got {}.".format(model.grid_result.scoring))
+            f"Expected the scoring metric to be neg_root_mean_squared_error, got {model.grid_result.scoring}.")
         self.assertEqual(model.grid_result.verbose, 0, 
-            "Expected the verbosity to be 0, got {}.".format(model.grid_result.verbose))
+            f"Expected the verbosity to be 0, got {model.grid_result.verbose}.")
         self.assertEqual(model.grid_result.param_grid, param_grid, 
-            "Expected the parameter grid to be an empty dict, got {}.".format(model.grid_result.param_grid))
-        self.assertEqual(str(type(model.grid_result.estimator)), "<class 'sklearn.ensemble._weight_boosting.AdaBoostRegressor'>", 
-            "Expected the estimator to be an AdaBoostRegressor, got {}.".format(str(type(model.grid_result.estimator))))
+            f"Expected the parameter grid to be an empty dict, got {model.grid_result.param_grid}.")
+        self.assertIsInstance(model.grid_result.estimator, AdaBoostRegressor,
+            f"Expected the estimator to be an AdaBoostRegressor, got {type(model.grid_result.estimator)}.")
 #2.)
         model = Model(self.dummy_X_2, self.dummy_Y_2, algorithm="randomforest")
         X_train, X_test, Y_train, Y_test = model.train_test_split(test_split=0.2)
@@ -333,32 +326,75 @@ class ModelTests(unittest.TestCase):
         param_grid = {'max_depth': [2,3,4], 'n_estimators': [100,200,250], 'criterion': ['squared_error', 'absolute_error']}
         model.hyperparameter_tuning(param_grid=param_grid, verbose=0, cv=5)
         
-        self.assertEqual(str(type(model.grid_result)), "<class 'sklearn.model_selection._search.GridSearchCV'>", 
-            "Expected grid result to be of type sklearn.model_selection._search, got {}.".format(type(model.grid_result)))
+        self.assertIsInstance(model.grid_result, GridSearchCV,
+            f"Expected grid result to be GridSearchCV, got {type(model.grid_result)}.")
         self.assertEqual(model.grid_result.cv, 5, 
-            "Expected there to be 5 cross-validation folds, got {}.".format(model.grid_result.cv))
+            f"Expected there to be 5 cross-validation folds, got {model.grid_result.cv}.")
         self.assertEqual(model.grid_result.error_score, 0, 
-            "Expected the error score to be 0, got {}.".format(model.grid_result.error_score))
+            f"Expected the error score to be 0, got {model.grid_result.error_score}.")
         self.assertEqual(model.grid_result.scoring, 'r2', 
-            "Expected the scoring metric to be r2, got {}.".format(model.grid_result.scoring))
+            f"Expected the scoring metric to be r2, got {model.grid_result.scoring}.")
         self.assertEqual(model.grid_result.verbose, 0, 
-            "Expected the verbosity to be 0, got {}.".format(model.grid_result.verbose))
+            f"Expected the verbosity to be 0, got {model.grid_result.verbose}.")
         self.assertEqual(model.grid_result.param_grid, param_grid, 
-            "Expected the parameter grid to be an empty dict, got {}.".format(model.grid_result.param_grid))
-        self.assertEqual(str(type(model.grid_result.estimator)), "<class 'sklearn.ensemble._forest.RandomForestRegressor'>", 
-            "Expected the estimator to be an RandomForestRegressor, got {}.".format(str(type(model.grid_result.estimator))))
+            f"Expected the parameter grid to be an empty dict, got {model.grid_result.param_grid}.")
+        self.assertIsInstance(model.grid_result.estimator, RandomForestRegressor,
+            f"Expected the estimator to be a RandomForestRegressor, got {type(model.grid_result.estimator)}.")
 #3.)
-        with self.assertRaises(UndefinedMetricWarning):
+        with self.assertRaises(ValueError):
             model.hyperparameter_tuning(metric="invalid_metric", verbose=0, cv=10)
+        with self.assertRaises(ValueError):
             model.hyperparameter_tuning(metric="R2", verbose=0, cv=5)
 #4.)
         with self.assertRaises(TypeError):
-            model.hyperparameter_tuning(parameters='wrongType')
-            model.hyperparameter_tuning(parameters=123)
+            model.hyperparameter_tuning(param_grid='wrongType')
+        with self.assertRaises(TypeError):
+            model.hyperparameter_tuning(param_grid=123)
 
     def test_feature_selection(self):
         """ Testing Feature Selection functionality. """ 
-        pass
+        feature_X = self.rng.random((30, 6)) * 10
+        feature_Y = self.rng.integers(1, 5, size=30)
+
+#1.)
+        model = Model(feature_X, feature_Y, 'randomforest')
+        selected = model.feature_selection("selectkbest")
+        self.assertIsInstance(selected, np.ndarray, "Feature selection output should be numpy array.")
+        self.assertEqual(selected.shape, (30, 1), "SelectKBest should return 1 selected feature.")
+#2.)
+        variance_selected = model.feature_selection("variancethreshold")
+        self.assertIsInstance(variance_selected, np.ndarray, "VarianceThreshold output should be numpy array.")
+        self.assertEqual(variance_selected.shape[0], 30, "Feature selection should preserve row count.")
+#3.)
+        chi2_selected = model.feature_selection("chi2")
+        self.assertEqual(chi2_selected.shape, (30, 2), "chi2 branch should return 2 selected features.")
+#4.)
+        rfe_selected = model.feature_selection("rfe")
+        self.assertEqual(rfe_selected.shape, (30, 5), "RFE should return 5 selected features.")
+#5.)
+        select_from_model_selected = model.feature_selection("selectfrommodel")
+        self.assertEqual(select_from_model_selected.shape[0], 30, "SelectFromModel should preserve row count.")
+#6.)
+        fallback_selected = model.feature_selection("unknown_method_name")
+        self.assertEqual(fallback_selected.shape, (30, 1), "Unknown methods should fall back to SelectKBest with 1 feature.")
+
+    def test_invalid_model_usage(self):
+        """ Testing model error behavior when called out of sequence. """
+        model = Model(self.dummy_X_2, self.dummy_Y_2, 'knn')
+
+        with self.assertRaises(AttributeError, msg='Predict before fit should raise AttributeError.'):
+            model.predict()
+
+        with self.assertRaises(AttributeError, msg='Fit before train_test_split should raise AttributeError.'):
+            model.fit()
+
+    def test_hyperparameter_tuning_before_train_test_split_raises(self):
+        """ hyperparameter_tuning() called before train_test_split() should raise RuntimeError. """
+        model = Model(self.dummy_X_2D, self.dummy_Y, 'randomforest')
+        param_grid = {'n_estimators': [50, 100]}
+        with self.assertRaises(RuntimeError,
+                msg='RuntimeError expected when hyperparameter_tuning called before train_test_split.'):
+            model.hyperparameter_tuning(param_grid=param_grid, verbose=0)
     
     def tearDown(self):
         """ Delete any temp data used for tests. """

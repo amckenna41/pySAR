@@ -5,16 +5,16 @@
 import pandas as pd
 import numpy as np
 import os
+import warnings
 from difflib import get_close_matches
 import json
-from json import JSONDecodeError
 import textwrap
 
 from aaindex import aaindex1
 from .model import Model
 from .pyDSP import PyDSP
 from .evaluate import Evaluate
-from .utils import *
+from .utils import Map, valid_sequence, remove_gaps, zero_padding, save_results
 from .plots import plot_reg
 from .descriptors import Descriptors
 
@@ -22,7 +22,7 @@ class PySAR():
     """
     The PySAR class is the main class for the pySAR software. The class allows for
     the encoding of protein sequences via a plethora of techniques, mainly via AAI 
-    Indices and or strucutrual, biochemical and physiochemical protein descriptors that are 
+    Indices and or structural, biochemical and physicochemical protein descriptors that are 
     then used as features in the building of predictive regression ML models created to map the 
     protein sequences to a sought-after activity/fitness value (activity attribute), this is 
     known as a Sequence Activity Relationship (SAR) or Sequence Function Relationship (SFR). 
@@ -37,7 +37,7 @@ class PySAR():
     or descriptors and then passes these through a pipeline to get the required numerical 
     encoding of the respective sequences. The calculated encodings of the sequences are 
     used as features in the building of the predictive ML models that will then predict the 
-    acitivty values for new unseen protein sequences. After the encoding process, 
+    activity values for new unseen protein sequences. After the encoding process, 
     various metrics will be captured and stored in a local output folder according to the 
     OUTPUT_FOLDER global var as well as a regression plot showing how well the model, 
     and the selected protein feature attributes, fit to the test data of unseen protein 
@@ -88,30 +88,33 @@ class PySAR():
     """
     def __init__(self, config_file="", **kwargs):
 
-        self.config_file = config_file
-        self.kwargs = locals()['kwargs'] #get any keyword argument variables of class
+        self.kwargs = kwargs  # keyword arguments override config parameters
         self.config_parameters = {}
 
         config_filepath = ""
-    
+
+        #open json config file and read in parameters
+        if not isinstance(config_file, str):
+            raise TypeError(f'JSON config file must be a filepath of type string, got type {type(config_file)}.')
+
         #append extension if only filename input
         if (os.path.splitext(config_file)[1] == ''):
             config_file = config_file + '.json' 
-        
-        #open json config file and read in parameters
-        if not (isinstance(config_file, str) or config_file is None):
-            raise TypeError('JSON config file must be a filepath of type string, got type {}.'.format(type(config_file)))
+
+        #set class config file after normalization
+        self.config_file = config_file
+
         if (os.path.isfile(self.config_file)):
             config_filepath = self.config_file
         elif (os.path.isfile(os.path.join('config', self.config_file))):
             config_filepath = os.path.join('config', self.config_file)
         else:
-            raise OSError('JSON config file {} not found at path: {}.'.format(self.config_file, config_filepath))
+            raise OSError(f'JSON config file {self.config_file} not found at path: {config_filepath}.')
         try:
             with open(config_filepath) as f:
                 self.config_parameters = json.load(f)
-        except:
-            raise JSONDecodeError('Error parsing config JSON file: {}.'.format(config_filepath))
+        except json.JSONDecodeError as exc:
+            raise ValueError(f'Error parsing config JSON file: {config_filepath}.') from exc
 
         #create instance of Map class so parameters can be accessed via dot notation
         self.config_parameters = Map(self.config_parameters)
@@ -141,7 +144,7 @@ class PySAR():
         self.filter_type = self.kwargs.get('filter_type') if 'filter_type' in self.kwargs else self.config_parameters.pyDSP["filter"]["type"]
 
         #set use_dsp variable to true if any of the DSP parameters passed in as kwargs
-        if (('spectrum' or 'window_type' or 'filter_type') in self.kwargs):
+        if any(k in self.kwargs for k in ('spectrum', 'window_type', 'filter_type')):
             self.use_dsp = True
 
         #import and read dataset
@@ -181,14 +184,14 @@ class PySAR():
         """
         #read in dataset csv if found in path, if not raise error
         if not (os.path.isfile(self.dataset)):
-            raise OSError('Dataset filepath is not correct: {}.'.format(self.dataset))
+            raise OSError(f'Dataset filepath is not correct: {self.dataset}.')
 
         #read in dataset csv
         try:
             data = pd.read_csv(self.dataset, sep=",", header=0)
             return data
-        except:
-            raise IOError('Error opening dataset file: {}.'.format(self.dataset))
+        except Exception as e:
+            raise OSError(f'Error opening dataset file: {self.dataset}.') from e
 
     def preprocessing(self):
         """
@@ -211,8 +214,7 @@ class PySAR():
         if (sequence_col_matches != []):
             self.sequence_col = sequence_col_matches[0]
         else:
-            raise ValueError('Sequence column ({}) not present in dataset columns:\n{}.'.
-                format(self.sequence_col, self.data.columns))
+            raise ValueError(f'Sequence column ({self.sequence_col}) not present in dataset columns:\n{self.data.columns}.')
 
         #remove any gaps found in sequences in dataset
         self.sequences = remove_gaps(self.sequences)
@@ -220,7 +222,7 @@ class PySAR():
         #verify no invalid amino acids found in sequences, if so then raise error
         invalid_seqs = valid_sequence(self.sequences)
         if (invalid_seqs != None):
-            raise ValueError('Invalid amino acids found in protein sequence dataset: {}.'.format(invalid_seqs))
+            raise ValueError(f'Invalid amino acids found in protein sequence dataset: {invalid_seqs}.')
 
         #get closest match for activity column name in dataset
         activity_matches = get_close_matches(self.activity_col, self.data.columns, cutoff=0.6)
@@ -229,12 +231,23 @@ class PySAR():
         if (activity_matches != []):
             self.activity_col = activity_matches[0]
         else:
-            raise ValueError('Activity column ({}) not present in dataset columns:\n{}.'.
-                format(self.activity_col,list(self.data.columns)))
+            raise ValueError(f'Activity column ({self.activity_col}) not present in dataset columns:\n{list(self.data.columns)}.')
 
         #remove any +/- infinity values or any Null/NAN's from activity values
-        self.data[self.activity_col].replace([np.inf, -np.inf], np.nan)
-        self.data[self.activity_col].fillna(0, inplace=True)
+        nan_count = self.data[self.activity_col].replace([np.inf, -np.inf], np.nan).isna().sum()
+        if nan_count > 0:
+            warnings.warn(
+                f'{nan_count} missing/infinite activity value(s) in column "{self.activity_col}" '
+                f'replaced with 0. Consider reviewing or dropping these rows.',
+                UserWarning, stacklevel=2
+            )
+        self.data[self.activity_col] = (
+            self.data[self.activity_col]
+            .replace([np.inf, -np.inf], np.nan)
+            .fillna(0)
+        )
+        #refresh self.activity to reflect the updated (NaN-replaced) column
+        self.activity = self.data[self.activity_col]
 
     def get_aai_encoding(self, aai_indices=None):
         """ 
@@ -258,11 +271,11 @@ class PySAR():
         """
         #validate AAI indices are present in the input parameter, if not raise error
         if (aai_indices == None or aai_indices == ""):
-            raise ValueError('AAI indices input parameter cannot be None or empty: {}.'.format(aai_indices))
+            raise ValueError(f'AAI indices input parameter cannot be None or empty: {aai_indices}.')
 
         #check input indices is of correct type (str/list), if not raise type error
         if (not isinstance(aai_indices, str) and (not isinstance(aai_indices, list))):
-            raise TypeError("Input indices parameter must be a string or list, got {}.".format(type(aai_indices)))
+            raise TypeError(f"Input indices parameter must be a string or list, got {type(aai_indices)}.")
 
         #cast index string to list, split multiple indices using comma
         if (isinstance(aai_indices, str)):
@@ -340,11 +353,11 @@ class PySAR():
         """
         #validate AAI indices are present in the input parameter
         if (aai_indices == None or aai_indices == "" or aai_indices == []):
-            raise ValueError('AAI indices input parameter cannot be None or empty: {}.'.format(aai_indices))
+            raise ValueError(f'AAI indices input parameter cannot be None or empty: {aai_indices}.')
 
         #check input indices is of correct type (str/list), if not raise type error
         if ((not isinstance(aai_indices, str)) and (not isinstance(aai_indices, list))):
-            raise TypeError("Input indices parameter must be a string or list, got {}.".format(type(aai_indices)))
+            raise TypeError(f"Input indices parameter must be a string or list, got {type(aai_indices)}.")
 
         self.aai_indices = aai_indices
 
@@ -373,9 +386,8 @@ class PySAR():
             if (self.use_dsp):
                 #if input spectrum is none or empty, raise error.
                 if (self.spectrum == None or self.spectrum == ""):
-                    raise ValueError('Spectrum cannot be None or empty: {}.'.format(self.spectrum))
+                    raise ValueError(f'Spectrum cannot be None or empty: {self.spectrum}.')
                 pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
-                pyDSP.encode_sequences()
                 X = pd.DataFrame(pyDSP.spectrum_encoding) #set training data to FFT spectrum encoding
             else:
                 X = pd.DataFrame(encoded_seqs)  #no DSP applied to encoded sequences
@@ -406,7 +418,7 @@ class PySAR():
         Y_pred = self.model.predict()
 
         #create instance of Evaluate class which will get all the evaluation metrics
-        eval = Evaluate(Y_test, Y_pred)
+        evaluation = Evaluate(Y_test, Y_pred)
 
         #get categories for all indices in self.aai_indices
         index_cat = []
@@ -421,7 +433,7 @@ class PySAR():
 
         #create output dataframe, set first row to attribute/metric values
         aai_df = pd.DataFrame(columns=['Index', 'Category', 'R2', 'RMSE', 'MSE', 'MAE', 'RPD', 'Explained Variance'])
-        aai_df.loc[0] = [', '.join(self.aai_indices), str(index_cat).strip(), eval.r2, eval.rmse, eval.mse, eval.mae, eval.rpd, eval.explained_var]
+        aai_df.loc[0] = [', '.join(self.aai_indices), str(index_cat).strip(), evaluation.r2, evaluation.rmse, evaluation.mse, evaluation.mae, evaluation.rpd, evaluation.explained_var]
 
         #convert index and category from default Object type -> String datatypes
         aai_df['Index'] = aai_df['Index'].astype(pd.StringDtype())
@@ -432,13 +444,10 @@ class PySAR():
             self.output_results(aai_df)
 
         #plot regression plot for predictive model
-        plot_reg(Y_test, Y_pred, eval.r2, output_folder, show_plot)
+        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot)
 
         #save results of encoding to output folder specified by input param
         save_results(aai_df, 'aai_results', output_folder=output_folder)
-        
-        #reset aai_indices instance variable
-        #self.aai_indices = ""
 
         return aai_df
 
@@ -463,11 +472,11 @@ class PySAR():
         """
         #raise error if no descriptors specified in input
         if (descriptors == None or descriptors == "" or descriptors == []): 
-            raise ValueError('Descriptors input parameter cannot be None or empty: {}.'.format(descriptors))
+            raise ValueError(f'Descriptors input parameter cannot be None or empty: {descriptors}.')
         
         #check input descriptor is of correct type str or list, if not raise type error
         if (not isinstance(descriptors, str) and (not isinstance(descriptors, list))):
-            raise TypeError("Input descriptor parameter must be a str or list, got {}.".format(type(descriptors)))
+            raise TypeError(f"Input descriptor parameter must be a str or list, got {type(descriptors)}.")
 
         #cast descriptors parameter to a list if it is a str by creating comma seperated list
         if (isinstance(descriptors, str)):
@@ -476,8 +485,8 @@ class PySAR():
         #remove any leading or trailing whitespace from descriptors
         descriptors = [de.strip() for de in descriptors]
 
-        #create instance of Descriptors class using data in instance variable, config file and any kwargs
-        descr = Descriptors(self.config_file, protein_seqs=self.sequences, **self.kwargs)
+        #reuse cached Descriptors instance created in __init__
+        descr = self.descriptor
         
         #store list of correct descriptor names from ones user input using the difflib library
         temp_descriptors = []
@@ -488,9 +497,9 @@ class PySAR():
         for de in range(0, len(descriptors)):
             desc_matches = get_close_matches(descriptors[de],
                 descr.valid_descriptors, cutoff=0.6)
+            if (desc_matches == []):
+                raise ValueError(f'No approximate descriptor found from one input: {de}.')
             descriptors[de] = desc_matches[0]
-            if (descriptors[de] == []):
-                raise ValueError('No approximate descriptor found from one input: {}.'.format(de))
             temp_descriptors.append(desc_matches[0])
         
         #initialise temp lists and DF to store encoded descriptor values
@@ -503,7 +512,7 @@ class PySAR():
             encoded_desc_temp = descr.get_descriptor_encoding(descriptors[d])
             #raise value error if descriptor is empty/None
             if (encoded_desc_temp.empty):
-                raise ValueError('Descriptor cannot be empty or None: {}.'.format(descriptors[d]))
+                raise ValueError(f'Descriptor cannot be empty or None: {descriptors[d]}.')
             encoded_desc_vals.append(encoded_desc_temp) #append to array of all descriptor values
             encoded_desc_temp = pd.DataFrame()   #reset to empty dataframe for next iteration
 
@@ -516,7 +525,7 @@ class PySAR():
         """
         
         Full pipeline for encoding the protein sequences in the dataset using protein 
-        physiochemical, biochemical and or structural descriptors, using the Descriptors 
+        physicochemical, biochemical and or structural descriptors, using the Descriptors 
         class and custom-built protpy package, and build predictive ML regression model 
         from the descriptor feature/training data. This model is then used to calculate
         the activity/fitness value of unseen test sequences. If multiple descriptors input 
@@ -543,11 +552,11 @@ class PySAR():
         """
         #raise error if no descriptor specified in input
         if (descriptors == None or descriptors == ""):
-            raise ValueError('Descriptors input parameter cannot be None or empty: {}.'.format(descriptors))
+            raise ValueError(f'Descriptors input parameter cannot be None or empty: {descriptors}.')
 
         #check input descriptor is of correct type (str or list), if not raise type error
         if (not (isinstance(descriptors, str))) and (not (isinstance(descriptors, list))):
-            raise TypeError("Input descriptor parameter must be a string or list, got {}.".format(type(descriptors)))
+            raise TypeError(f"Input descriptor parameter must be a string or list, got {type(descriptors)}.")
 
         #set class attribute        
         self.descriptors = descriptors
@@ -563,8 +572,8 @@ class PySAR():
         #sort list of descriptors into alphabetical order
         self.descriptors.sort()
 
-        #create instance of Descriptors class using data in instance variable and any kwargs
-        descr = Descriptors(self.config_file, protein_seqs=self.sequences, **self.kwargs)
+        #reuse cached Descriptors instance created in __init__
+        descr = self.descriptor
 
         #pandas dataframe to store all output results
         desc_df = pd.DataFrame(columns=['Descriptor', 'Group', 'R2', 'RMSE', 'MSE', 'MAE', 'RPD', 'Explained Variance'])
@@ -605,7 +614,7 @@ class PySAR():
         Y_pred = self.model.predict()
 
         #create instance of Evaluate class which will get all the evaluation metrics
-        eval = Evaluate(Y_test, Y_pred)
+        evaluation = Evaluate(Y_test, Y_pred)
 
         #get groups for all descriptors in self.desciptors, put multiple descriptor groups into comma seperated list
         if (isinstance(self.descriptors, list)):
@@ -617,7 +626,7 @@ class PySAR():
             desc_group = descr.descriptor_groups[self.descriptors]
 
         #add metric values to output dataframe
-        desc_df.loc[0] = [', '.join(self.descriptors), desc_group, eval.r2, eval.rmse, eval.mse, eval.mae, eval.rpd, eval.explained_var]
+        desc_df.loc[0] = [', '.join(self.descriptors), desc_group, evaluation.r2, evaluation.rmse, evaluation.mse, evaluation.mae, evaluation.rpd, evaluation.explained_var]
 
         #convert Descriptor and Group from default Object type -> String datatypes
         desc_df['Descriptor'] = desc_df['Descriptor'].astype(pd.StringDtype())
@@ -632,7 +641,7 @@ class PySAR():
             self.output_results(desc_df)
 
         #plot regression plot for predictive model
-        plot_reg(Y_test, Y_pred, eval.r2, output_folder, show_plot)
+        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot)
 
         #save results of encoding to output folder
         save_results(desc_df, 'desc_results', output_folder=output_folder)
@@ -644,7 +653,7 @@ class PySAR():
 
     def encode_aai_descriptor(self, aai_indices=None, descriptors=None, show_plot=False, print_results=True, output_folder=""):
         """
-        Encode using both AAI indices and the physiochemical/structural descriptors from
+        Encode using both AAI indices and the physicochemical/structural descriptors from
         the get_aai_encoding() and get_descriptor_encoding() functions. The two outputs 
         from the individual encoding strategies, previously described above, will be 
         concatenated together and used in the building of a predictive regression ML 
@@ -726,10 +735,10 @@ class PySAR():
 
         #if AAI indices encoding is empty, raise error
         if (aai_encoding_df.empty):
-            raise ValueError('AAI Indices encoding cannot be empty or None: {}.'.format(aai_indices))
+            raise ValueError(f'AAI Indices encoding cannot be empty or None: {aai_indices}.')
 
-        #create instance of Descriptors class using data in instance variable and any kwargs
-        descr = Descriptors(self.config_file, protein_seqs=self.sequences, **self.kwargs)
+        #reuse cached Descriptors instance from __init__
+        descr = self.descriptor
 
         #dataframe to store the encodings for the descriptors
         descriptor_encoding_df = pd.DataFrame()
@@ -774,7 +783,7 @@ class PySAR():
         Y_pred = self.model.predict()
 
         #create instance of Evaluate class which will get all the evaluation metrics
-        eval = Evaluate(Y_test, Y_pred)
+        evaluation = Evaluate(Y_test, Y_pred)
 
         #get categories for all indices in self.aai_indices
         index_cat = []
@@ -797,8 +806,8 @@ class PySAR():
             desc_group = descr.descriptor_groups[self.descriptors]
 
         #set output dataframe columns
-        aai_desc_df.loc[0] = [', '.join(self.aai_indices), str(index_cat).strip(), ', '.join(self.descriptors), str(desc_group), eval.r2, 
-            eval.rmse, eval.mse, eval.mae, eval.rpd, eval.explained_var]
+        aai_desc_df.loc[0] = [', '.join(self.aai_indices), str(index_cat).strip(), ', '.join(self.descriptors), str(desc_group), evaluation.r2, 
+            evaluation.rmse, evaluation.mse, evaluation.mae, evaluation.rpd, evaluation.explained_var]
 
         #convert Index, Category, Descriptor and Group from default Object type -> String datatypes
         # aai_desc_df['Index'] = aai_desc_df['Index'].astype(pd.StringDtype())
@@ -812,7 +821,7 @@ class PySAR():
             self.output_results(aai_desc_df)
 
         #plot regression plot for predictive model
-        plot_reg(Y_test, Y_pred, eval.r2, output_folder, show_plot)
+        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot)
 
         #save results of encoding to output folder
         save_results(aai_desc_df, 'aai_desc_results', output_folder=output_folder)
@@ -846,13 +855,13 @@ class PySAR():
             print(textwrap.fill('# Descriptors: {}'.format(', '.join(self.descriptors)), line_length))
         print('# Configuration File: {}\n# Dataset: {}\n# Number of Sequences/Sequence Length: {} x {} \
             \n# Target Activity: {}'.format(os.path.basename(self.config_file), self.dataset, self.num_seqs, self.sequence_length, self.activity_col))
-        print("# Algorithm: {}".format(repr(self.model)))
+        print(f"# Algorithm: {repr(self.model)}")
         if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
             # print('# Model Parameters: {}'.format("\n\t".join(tw.wrap(', '.join(temp_model_parameters.model.get_params())))))        
-            print(textwrap.fill('# Model Parameters: {}'.format(self.model.model.get_params()), line_length))
+            print(textwrap.fill(f'# Model Parameters: {self.model.model.get_params()}', line_length))
         else:
-            print(textwrap.fill('# Model Parameters: {}'.format(self.model_parameters), line_length))
-        print('# Test Split: {}\n# Feature Space: {}'.format(self.test_split, self.feature_space))
+            print(textwrap.fill(f'# Model Parameters: {self.model_parameters}', line_length))
+        print(f'# Test Split: {self.test_split}\n# Feature Space: {self.feature_space}')
 
         print('\n##########################################################################################')
         print('######################################## Results #########################################\n')

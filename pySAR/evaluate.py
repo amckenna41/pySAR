@@ -4,14 +4,14 @@
 
 import numpy as np
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, \
-    explained_variance_score, max_error, mean_poisson_deviance
+    explained_variance_score, max_error
 
 class Evaluate():
     """
     An instance of the Evaluate class will calculate various metric values for
     the inputted observed (Y_true) and predicted (Y_pred) arrays, storing the
     results in the class attributes. The class supports metrics: R2, RMSE, MSE,
-    MAE, RPD, Explained Variance, Max Error and Mean Poisson Deviance.
+    MAE, RPD, Explained Variance and Max Error.
 
     Parameters
     ==========
@@ -20,12 +20,29 @@ class Evaluate():
     :Y_pred: np.ndarray
         array of predicted activity/fitness values.
 
+    Attributes
+    ==========
+    :r2: float
+        R2 (coefficient of determination) score.
+    :rmse: float
+        Root Mean Square Error score.
+    :mse: float
+        Mean Square Error score.
+    :mae: float
+        Mean Absolute Error score.
+    :rpd: float
+        Ratio of Performance to Deviation. Returns np.inf if MSE is 0.
+    :explained_var: float
+        Explained Variance score.
+    :max_error: float
+        Maximum residual error.
+
     Methods
     =======
     r2_(multioutput='uniform_average'):
         calculate R2 score.
     rmse_(multioutput='uniform_average'):
-        calculate RMSE value
+        calculate RMSE value.
     mse_(multioutput='uniform_average'):
         calculate MSE value.
     mae_(multioutput='uniform_average'):
@@ -35,9 +52,16 @@ class Evaluate():
     explained_var_(multioutput='uniform_average'):
         calculate explained variance.
     max_error_():
-        calculate max errror.
-    mean_poisson_deviance_():
-        calculate mean poisson deviance.
+        calculate max error.
+
+    Raises
+    ======
+    :ValueError:
+        if Y_true or Y_pred contain NaN values.
+    :ValueError:
+        if Y_true or Y_pred contain infinite values.
+    :ValueError:
+        if Y_true and Y_pred are not the same shape after reshaping.
     """
     def __init__(self, Y_true, Y_pred):
 
@@ -45,11 +69,17 @@ class Evaluate():
         self.Y_true = np.array(Y_true).reshape((-1,1))
         self.Y_pred = np.array(Y_pred).reshape((-1,1))
 
+        #validate inputs contain no NaN or infinite values
+        if np.any(np.isnan(self.Y_true)) or np.any(np.isnan(self.Y_pred)):
+            raise ValueError('Y_true and Y_pred must not contain NaN values.')
+        if np.any(np.isinf(self.Y_true)) or np.any(np.isinf(self.Y_pred)):
+            raise ValueError('Y_true and Y_pred must not contain infinite values.')
+
         #validate that predicted and observed input arrays are of the same length,
         #if not same shape then raise error
         if (self.Y_true.shape != self.Y_pred.shape):
-            raise ValueError('Observed and predicted values must be of the same shape,\
-                Y_true = {} & Y_pred = {}.'.format(Y_true.shape, Y_pred.shape))
+            raise ValueError(f'Observed and predicted values must be of the same shape, '
+                f'Y_true = {self.Y_true.shape} & Y_pred = {self.Y_pred.shape}.')
 
         #calculate all metric values for inputs
         self.r2 = self.r2_()
@@ -59,7 +89,6 @@ class Evaluate():
         self.rpd = self.rpd_()
         self.explained_var = self.explained_var_()
         self.max_error = self.max_error_()
-        # self.mean_poisson_deviance = self.mean_poisson_deviance_()
 
     def r2_(self, multioutput='uniform_average'):
         """
@@ -116,7 +145,7 @@ class Evaluate():
         :rmse: float
             RMSE score for observed and predicted values.
         """
-        return mean_squared_error(self.Y_true, self.Y_pred, squared=False, multioutput=multioutput)
+        return np.sqrt(mean_squared_error(self.Y_true, self.Y_pred, multioutput=multioutput))
 
     def mae_(self, multioutput='uniform_average'):
         """
@@ -155,7 +184,8 @@ class Evaluate():
         :rpd: float
             the RPD score for the model.
         """
-        return self.Y_true.std() / np.sqrt(self.mse_())
+        mse = self.mse_()
+        return self.Y_true.std() / np.sqrt(mse) if mse > 0 else np.inf
 
     def explained_var_(self, multioutput='uniform_average'):
         """
@@ -187,33 +217,15 @@ class Evaluate():
         Returns
         =======
         :max_error: float
-            A positive floating point value of the maximal residueal error 
+            A positive floating point value of the maximal residual error 
             (the best value is 0.0).
         """
         return float(max_error(self.Y_true, self.Y_pred))
 
-    def mean_poisson_deviance_(self):
-        """
-        Calculate Mean Poisson deviance regression loss between observed and 
-        predicted values.
-
-        Parameters
-        ==========
-        None
-        
-        Returns
-        =======
-        :mean_poisson_deviance: float
-            A non-negative floating point value (the best value is 0.0).
-        """
-        return mean_poisson_deviance(self.Y_true, self.Y_pred)
-
     def __repr__(self):
-        return "<Evaluate(Y_true: {} Y_pred: {})>.".format(
-            self.Y_true.shape, self.Y_pred.shape)
+        return f"<Evaluate(Y_true: {self.Y_true.shape} Y_pred: {self.Y_pred.shape})>."
 
     def __str__(self):
-        return "Instance of Evaluate Class with attribute values: \
-                R2: {}, RMSE: {}, MSE: {}, MAE: {}, RPD: {}, Explained Variance: {},\
-                    Max Error: {}.".format(self.r2, self.rmse, self.mse, self.mae, 
-                    self.rpd, self.explained_var, self.max_error)
+        return f"Instance of Evaluate Class with attribute values: \
+                R2: {self.r2}, RMSE: {self.rmse}, MSE: {self.mse}, MAE: {self.mae}, RPD: {self.rpd}, Explained Variance: {self.explained_var},\
+                    Max Error: {self.max_error}."

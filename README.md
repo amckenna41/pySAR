@@ -5,7 +5,6 @@
 # pySAR - Python Sequence Activity Relationship #
 [![PyPI](https://img.shields.io/pypi/v/pySAR)](https://pypi.org/project/pySAR/)
 [![pytest](https://github.com/amckenna41/pySAR/workflows/Building%20and%20Testing/badge.svg)](https://github.com/amckenna41/pySAR/actions?query=workflowBuilding%20and%20Testing)
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/amckenna41/pySAR/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/amckenna41/pySAR/tree/master)
 [![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
 [![PythonV](https://img.shields.io/pypi/pyversions/pySAR?logo=2)](https://pypi.org/project/pySAR/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
@@ -20,13 +19,15 @@
 
 `pySAR` is a Python library for analysing Sequence Activity Relationships (SARs)/Sequence Function Relationships (SFRs) of protein sequences. 
 
-* The published research article is available [here][article].
-* A quick Colab notebook demo of `pySAR` is available [here][demo]. 
-* A **Medium** article that dives deeper into SARs and the `pySAR` software itself is available [here][medium].
+* 📖 The published research article is available [here][article].
+* 🌍 A front-end app for `pySAR` is available [here][frontend] (coming soon).
+* 💻 A quick Colab notebook demo of `pySAR` is available [here][demo]. 
+* 📰 A **Medium** article that dives deeper into SARs and the `pySAR` software itself is available [here][medium].
 
 Table of Contents
 =================
   * [Introduction](#Introduction)
+  * [Background](#background)
   * [Requirements](#requirements)
   * [Installation](#installation)
   * [Usage](#usage)
@@ -39,7 +40,7 @@ Table of Contents
 
 Research Article
 ================
-The research article that accompanied this software is titled: "Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors" and was published in the Journal of Biomedical Informatics and is available [here][article] [[1]](#references).
+The research article that accompanied this software is titled: [Machine Learning Based Predictive Model for the Analysis of Sequence Activity Relationships Using Protein Spectra and Protein Descriptors][article] and was published in the Journal of Biomedical Informatics[[1]](#references).
 
 How to cite
 ===========
@@ -47,28 +48,35 @@ How to cite
 
 Introduction
 ============
-`pySAR` is a Python library for analysing Sequence Activity Relationships (SARs)/Sequence Function Relationships (SFRs) of protein sequences. `pySAR` offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features. The software uses physiochemical and biochemical features from the Amino Acid Index (AAI) database [[2]](#references), as well as allowing for the calculation of a range of structural, physiochemical and biochemical protein descriptors, via the custom-built [`protpy`][protpy] package.
+`pySAR` is a Python library for analysing **Sequence Activity Relationships (SARs)/Sequence Function Relationships** (SFRs) of protein sequences. `pySAR` offers extensive and verbose functionalities that allow you to numerically encode a dataset of protein sequences using a large abundance of available methodologies and features, supporting **400,000+ different encoding strategies**. The software uses physicochemical and biochemical features from the Amino Acid Index (AAI) database [[2]](#references) via the custom-built [`aaindex`][aaindex] package, as well as allowing for the calculation of a range of structural, physicochemical and biochemical protein descriptors via the custom-built [`protpy`][protpy] package.
 
-After finding the optimal technique and feature set at which to numerically encode your dataset of sequences, `pySAR` can then be used to build a predictive regression ML model with the training data being that of the encoded protein sequences, and training labels being the in vitro experimentally pre-calculated activity values for each protein sequence. This model maps a set of protein sequences to the sought-after activity value, being able to accurately predict the activity/fitness value of new unseen sequences. The use-case for the software is within the field of Protein Engineering, Directed Evolution and or Drug Discovery, where a user has a set of in vitro experimentally determined activity/fitness values for a library of mutant protein sequences and wants to computationally predict the sought activity value for a selection of mutated unseen sequences, in the aim of finding the best sequence that minimises/maximises their activity value. <br>
+After finding the optimal technique and feature set at which to numerically encode your dataset of sequences, `pySAR` can then be used to build a **predictive regression ML model** with the training data being that of the encoded protein sequences, and the training labels being the in vitro experimentally pre-calculated activity values for each protein sequence. This model maps a set of protein sequences to the sought-after activity value, being able to accurately predict the activity/fitness value of new unseen sequences. The use-case for the software is within the field of **Protein Engineering**, **Directed Evolution** and or **Drug Discovery**, where a user has a set of in vitro experimentally determined activity/fitness values for a library of **mutant protein sequences** and wants to computationally predict the sought activity value for a selection of mutated unseen sequences, in the aim of finding the best sequence that minimises/maximises their activity value. <br>
 
-In the published [research][article], the sought activity/fitness characteristic is the thermostability of proteins from a recombination library designed from parental cytochrome P450's. This thermostability is measured using the T50 metric (temperature at which 50% of a protein is irreversibly denatured after 10 mins of incubation, ranging from 39.2 to 64.4 degrees C), which we want to maximise [[1]](#references).
+In the published [research][article], the sought activity/fitness characteristic is the **thermostability** of proteins from a recombination library designed from parental cytochrome P450's. This thermostability is measured using the T50 metric (temperature at which 50% of a protein is irreversibly denatured after 10 mins of incubation, ranging from 39.2 to 64.4 degrees C), which we want to maximise [[1]](#references).
 
-Two additional <strong>custom-built</strong> softwares were created alongside `pySAR` - [`aaindex`][aaindex] and [`protpy`][protpy]. The `aaindex` software package is used for parsing the amino acid index which is a database of numerical indices representing various physicochemical and biochemical properties of amino acids and pairs of amino acids [[2]](#references). `protpy` is used for calculating a series of protein physiochemical, biochemical and structural protein descriptors. Both of these software packages are integrated into `pySAR` but can also be used individually for their respective purposes. 
+Two additional <strong>custom-built</strong> softwares were created alongside `pySAR` - [`aaindex`][aaindex] and [`protpy`][protpy]. The `aaindex` software package is used for parsing the amino acid index which is a database of numerical indices representing various physicochemical and biochemical properties of amino acids and pairs of amino acids [[2]](#references). `protpy` is used for calculating a series of protein physicochemical, biochemical and structural protein descriptors. Both of these software packages are integrated into `pySAR` but can also be used individually for their respective purposes. 
 
-**A quick Colab notebook demo of `pySAR` is available [here][demo]. There is also a Medium article that dives deeper into SARs and the `pySAR` software itself, available [here][medium].** 
+Background
+==========
+Accurately establishing the connection between a protein sequence and its function remains a focal point within the fields of proteomics, protein engineering and drug discovery. There has been a continued drive to build accurate and reliable predictive models via Machine Learning (ML) that allow for the virtual screening of many protein mutant sequences, measuring the relationship between sequence and 'fitness' or 'activity' — commonly known as a Sequence-Activity-Relationship (SAR) or Sequence-Function-Relationship (SFR). Due to the cost and impracticality of experimentally measuring these activity/fitness values for large libraries of mutant sequences, it is of great benefit to accelerate and automate this process computationally.
+
+An important preliminary stage in the building of these predictive models is the numerical encoding of the chosen protein sequences, as sequences and their constituent amino acids cannot be directly passed into ML models. `pySAR` primarily focuses on encoding strategies involving the Amino Acid Index database and a variety of sequence-derived physicochemical and biochemical descriptors. Taking into account the various combinations of features and descriptors, `pySAR` supports **400,000+ different encoding strategies**.
+
+[Directed Evolution (DE)][directed_evolution] is a prominent real-world use-case: a methodology for protein engineering that mimics natural selection, optimising a protein through iterative rounds of mutagenesis, selection, and amplification. `pySAR` can support such workflows by computationally predicting which mutant sequences are most likely to yield the desired activity value — reducing the burden of wet-lab experimentation.
 
 Requirements
 ============
-* [Python][python] >= 3.8
-* [aaindex][aaindex] >= 1.1.2
-* [protpy][protpy] >= 1.2.0
-* [numpy][numpy] >= 1.24.2
-* [pandas][pandas] >= 1.5.3
-* [scikit-learn][sklearn] >= 1.2.1
-* [scipy][scipy] >= 1.10.1
-* [tqdm][tqdm] >= 4.65.0
-* [matplotlib][matplotlib] >= 3.6.2
-* [seaborn][seaborn] >= 0.12.2
+* [python][python] >= 3.8
+* [aaindex][aaindex] >= 1.2.0
+* [protpy][protpy] >= 1.3.0
+* [numpy][numpy] >= 1.21
+* [pandas][pandas] >= 1.3
+* [scikit-learn][sklearn] >= 1.0
+* [scipy][scipy] >= 1.7
+* [delayed][delayed] >= 0.11
+* [tqdm][tqdm] >= 4.60
+* [matplotlib][matplotlib] >= 3.4
+* [seaborn][seaborn] >= 0.11
 
 Installation
 ============
@@ -81,13 +89,13 @@ pip3 install pysar --upgrade
 Installation from source:
 ```bash
 git clone -b master https://github.com/amckenna41/pySAR.git
-python3 setup.py install
 cd pySAR
+pip3 install .
 ```
 
 Usage
 =====
-### Confile File
+### Config File
 `pySAR` works mainly via JSON configuration files. There are many different customisable parameters for the functionalities in `pySAR` including the metaparameters of some of the available protein descriptors, all Digital Signal Processing (DSP) parameters in the `pyDSP` module, the type of regression model to use and parameters specific to the dataset - a description of each parameter is available on the [CONFIG.md][config] file. 
 
 These config files offer a more straightforward way of making any changes to the `pySAR` pipeline. The names of **All** the parameters as listed in the example config files must remain unchanged, only the value of each parameter should be changed, any parameters not being used can be set to <em>null</em>. Additionally, you can pass in the individual parameter names and values to the `pySAR` and `Encoding` classes when numerically encoding the protein sequences via **kwargs**. An example of the config file used in my research project ([thermostability.json](https://github.com/amckenna41/pySAR/blob/master/config/thermostability.json)), with most of the available parameters, can be seen below and in the example config file - [CONFIG.md][config].
@@ -133,16 +141,16 @@ These config files offer a more straightforward way of making any changes to the
       }
   }
 ```
-### Examples
+
+### Examples...
 
 <details><summary><b>Encoding protein sequences using all 566 AAIndex indices:</b></summary><br>
-Encoding protein sequences in dataset using all 566 indices in the AAI1 database. Each sequence encoded via an index in the AAI can be passed through an additional step where its protein spectra can be generated following an FFT. pySAR supports generation of the power, imaginary, real or absolute spectra as well as other DSP functionalities including windowing and filter functions. <br>
+Encoding protein sequences in dataset using all <b>566 indices</b> in the <b>AAI1 database</b>. Each sequence encoded via an index in the AAI can be passed through an additional step where its protein spectra can be generated following an <b>FFT</b>. pySAR supports generation of the power, imaginary, real or absolute spectra as well as other DSP functionalities including windowing and filter functions.
 
-In the example below, the encoded sequences will be used to generate a imaginary protein spectra with a blackman window function applied. This will then be used as feature data to build a predictive regression ML model that can be used for accurate prediction of the sought activity value (thermostability) of unseen protein sequences. The encoding class also takes the JSON config file as input which will have all the required parameter values. The output results will show the calculated metric values for each index in the AAI when measuring predicted vs observed activity values for the unseen test sequences.<br>
+In the example below, the encoded sequences will be used to generate a **imaginary protein spectra** with a **blackman** window function applied. This will then be used as feature data to build a predictive regression ML model that can be used for accurate prediction of the sought activity value (**thermostability**) of unseen protein sequences. The encoding class also takes the **JSON config file** as input which will have all the required parameter values. The output results will show the calculated metric values for each index in the AAI when measuring predicted vs observed activity values for the unseen test sequences.<br>
 
 ```python
-#import encoding module
-from pySAR.encoding import *
+from pySAR.encoding import Encoding
 
 '''thermostability.json
 {
@@ -174,23 +182,22 @@ encoding = Encoding(config_file='thermostability.json')
 aai_encoding = encoding.aai_encoding()
 
 ```
-Output results showing AAI index and its category as well as all the associated metric values for each predictive model. From the results below we can determine that the **CHOP780206** index in the AAI has the highest predictability (R2 score) for our chosen dataset (thermostability) and this generated model can be used for predicting the thermostability of new unseen sequences:
+Output results showing AAI index and its category as well as all the associated metric values for each predictive model. From the results below we can determine that the **CHOP780206** index in the AAI has the highest predictability (**R2 score**) for our chosen dataset (thermostability) and this generated model can be used for predicting the thermostability of new unseen sequences:
 
-|    | Index      | Category   |       R2 |    RMSE |     MSE |     RPD |     MAE |   Explained Var |
-|---:|:-----------|:-----------|---------:|--------:|--------:|--------:|--------:|----------------:|
-|  0 | CHOP780206 | secondary_struct | 0.62737  | 3.85619 | 14.8702 | 1.63818 | 3.16755 |        0.713467 |
-|  1 | QIAN880131 | secondary_struct | 0.626689 | 3.90576 | 15.255  | 1.63668 | 3.09849 |        0.631582 |
-|  2 | QIAN880118 | secondary_struct | 0.625156 | 3.99581 | 15.9665 | 1.63333 | 3.32038 |        0.625897 |
-|  3 | PRAM900104 | secondary_struct | 0.615866 | 3.90389 | 15.2403 | 1.61346 | 3.24906 |        0.617799 |
-| .. | .......... | .......... | ........ | ....... | ....... | ....... | ....... | ............... |
+|    | Index      | Category   |       R2 |    RMSE |     MSE |     RPD |     MAE |   Explained Variance |
+|---:|:-----------|:-----------|---------:|--------:|--------:|--------:|--------:|---------------------:|
+|  0 | CHOP780206 | secondary_struct | 0.62737  | 3.85619 | 14.8702 | 1.63818 | 3.16755 |             0.713467 |
+|  1 | QIAN880131 | secondary_struct | 0.626689 | 3.90576 | 15.255  | 1.63668 | 3.09849 |             0.631582 |
+|  2 | QIAN880118 | secondary_struct | 0.625156 | 3.99581 | 15.9665 | 1.63333 | 3.32038 |             0.625897 |
+|  3 | PRAM900104 | secondary_struct | 0.615866 | 3.90389 | 15.2403 | 1.61346 | 3.24906 |             0.617799 |
+| .. | .......... | .......... | ........ | ....... | ....... | ....... | ....... |          ........... |
 </details>
 
 <details><summary><b>Encoding using list of 4 AAI indices, with no DSP functionalities:</summary></b><br>
-This method follows a similar procedure as the previous step, except 4 indices from the AAI are being specifically input into the function, with the encoded sequence output being concatenated together and used as feature data to build the predictive PLSRegression model with its default parameters. The config parameter <em> use_dsp </em> tells the function to not generate the protein spectra or apply any additional DSP processing to the sequences.<br>
+This method follows a similar procedure as the previous step, except <b>4 indices</b> from the AAI are being specifically input into the function, with the encoded sequence output being concatenated together and used as feature data to build the predictive <b>PLSRegression</b> model with its default parameters. The config parameter <em> use_dsp </em> tells the function to not generate the protein spectra or apply any additional DSP processing to the sequences.<br>
 
 ```python
-#import encoding module
-from pySAR.encoding import *
+from pySAR.encoding import Encoding
 
 '''thermostability.json
 {
@@ -219,23 +226,22 @@ encoding = Encoding(config_file='thermostability.json')
 aai_encoding = encoding.aai_encoding(aai_indices=["PONP800102","RICJ880102","ROBB760107","KARS160113"])
 
 ```
-Output DataFrame showing the 4 predictive models built using the PLS algorithm, with the 4 indices from the AAI. From the results below we can determine that the **PONP800102** index in the AAI has the highest predictability (R2 score) for our chosen dataset (thermostability) and this generated model can be used for predicting the thermostability of unseen sequences:
+Output DataFrame showing the 4 predictive models built using the PLS algorithm, with the 4 indices from the AAI. From the results below we can determine that the **PONP800102** index in the AAI has the highest predictability (<b>R2 score</b>) for our chosen dataset (<b>thermostability</b>) and this generated model can be used for predicting the thermostability of unseen sequences:
 
-|    | Index      | Category    |       R2 |    RMSE |      MSE |     RPD |     MAE |   Explained Var |
-|---:|:-----------|:------------|---------:|--------:|---------:|--------:|--------:|----------------:|
-|  0 | PONP800102 | hydrophobic | 0.74726  | 3.0817  |  9.49688 | 1.98913 | 2.63742 |        0.751032 |
-|  1 | ROBB760107 | secondary_struct  | 0.666527 | 3.19801 | 10.2273  | 1.73169 | 2.50305 |        0.668255 |
-|  2 | RICJ880102 | secondary_struct  | 0.568067 | 3.83976 | 14.7438  | 1.52157 | 3.01342 |        0.568274 |
-|  3 | KARS160113 | meta        | 0.544129 | 4.04266 | 16.3431  | 1.48108 | 3.26047 |        0.544693 |
+|    | Index      | Category    |       R2 |    RMSE |      MSE |     RPD |     MAE |   Explained Variance |
+|---:|:-----------|:------------|---------:|--------:|---------:|--------:|--------:|---------------------:|
+|  0 | PONP800102 | hydrophobic | 0.74726  | 3.0817  |  9.49688 | 1.98913 | 2.63742 |             0.751032 |
+|  1 | ROBB760107 | secondary_struct  | 0.666527 | 3.19801 | 10.2273  | 1.73169 | 2.50305 |             0.668255 |
+|  2 | RICJ880102 | secondary_struct  | 0.568067 | 3.83976 | 14.7438  | 1.52157 | 3.01342 |             0.568274 |
+|  3 | KARS160113 | meta        | 0.544129 | 4.04266 | 16.3431  | 1.48108 | 3.26047 |             0.544693 |
 
 </details>
 
 <details><summary><b>Encoding protein sequences using all available protein descriptors:</summary></b><br>
-Calculate the protein descriptor values for a dataset of protein sequences from the 15 available descriptors in the <em>descriptors</em> module. Use each descriptor as a feature set in the building of the predictive ML models used to predict the activity value of unseen sequences. By default, the function will look for a csv file pointed to by the <em>"descriptors_csv"</em> parameter in the config file that contains the pre-calculated descriptor values for a dataset. If file is not found then all descriptor values will be calculated for the dataset using the <em>descriptors</em> module and custom-built <i>protpy</i> package.
+Calculate the protein descriptor values for a dataset of protein sequences from the 33 available descriptors in the <em>descriptors</em> module. Use each descriptor as a <b>feature set</b> in the building of the predictive ML models used to predict the <b>activity</b> value of unseen sequences. By default, the function will look for a csv file pointed to by the <em>"descriptors_csv"</em> parameter in the config file that contains the pre-calculated descriptor values for a dataset. If file is not found then all descriptor values will be calculated for the dataset using the <em>descriptors</em> module and custom-built <i>protpy</i> package.
 
 ```python
-#import encoding module
-from pySAR.encoding import *
+from pySAR.encoding import Encoding
 
 '''thermostability.json
 {
@@ -273,23 +279,22 @@ encoding = Encoding(config_file='thermostability.json')
 # models and storing into desc_results_df DataFrame
 desc_results_df = encoding.descriptor_encoding()
 ```
-Output results showing the protein descriptor and its group as well as all the associated metric values for each predictive model. From the results below we can determine that the **CTD Distribution** descriptor has the highest predictability (R2 score) for our chosen dataset (thermostability) and this generated model can be used for predicting the thermostability of unseen sequences:
+Output results showing the protein descriptor and its group as well as all the associated metric values for each predictive model. From the results below we can determine that the **CTD Distribution** descriptor has the highest predictability (<b>R2 score</b>) for our chosen dataset (thermostability) and this generated model can be used for predicting the thermostability of unseen sequences:
 
-|    | Descriptor              | Group           |       R2 |    RMSE |     MSE |     RPD |     MAE |   Explained Var |
-|---:|:------------------------|:----------------|---------:|--------:|--------:|--------:|--------:|----------------:|
-|  0 | ctd_d           | CTD             | 0.721885 | 3.26159 | 10.638  | 1.89621 | 2.60679 |        0.727389 |
-|  1 | geary_autocorrelation  | Autocorrelation | 0.648121 | 3.67418 | 13.4996 | 1.68579 | 2.82868 |        0.666745 |
-|  2 | tripeptide_composition | Composition     | 0.616577 | 3.3979  | 11.5457 | 1.61496 | 2.53736 |        0.675571 |
-|  3 | amino_acid_composition         | Composition     | 0.612824 | 3.37447 | 11.3871 | 1.60711 | 2.79698 |        0.643864 |
-|  4 | ......                  | ......          | ......   | ......  | ......  | ......  | ......  |        ......   |
+|    | Descriptor              | Group           |       R2 |    RMSE |     MSE |     RPD |     MAE |   Explained Variance |
+|---:|:------------------------|:----------------|---------:|--------:|--------:|--------:|--------:|---------------------:|
+|  0 | ctd_d           | CTD             | 0.721885 | 3.26159 | 10.638  | 1.89621 | 2.60679 |             0.727389 |
+|  1 | geary_autocorrelation  | Autocorrelation | 0.648121 | 3.67418 | 13.4996 | 1.68579 | 2.82868 |             0.666745 |
+|  2 | tripeptide_composition | Composition     | 0.616577 | 3.3979  | 11.5457 | 1.61496 | 2.53736 |             0.675571 |
+|  3 | amino_acid_composition         | Composition     | 0.612824 | 3.37447 | 11.3871 | 1.60711 | 2.79698 |             0.643864 |
+|  4 | ......                  | ......          | ......   | ......  | ......  | ......  | ......  |          ......      |
 </details>
 
 <details><summary><b>Encoding using AAI + protein descriptors:</summary></b><br>
-Encoding protein sequences in the dataset using ALL 566 indices in the AAI database combined with ALL available protein descriptors. All 566 indices can be used in concatenation with 1, 2 or 3 descriptors. At each iteration the encoded sequences generated from the indices from the AAI will be combined with the feature set generated from the dataset's descriptor values and used to build a predictive regression ML model that can be used for the accurate prediction of the sought activity/fitness value of unseen protein sequences. The output results will show the calculated metric values when measuring predicted vs observed activity values for the test sequences.<br>
+Encoding protein sequences in the dataset using <b>ALL 566 indices</b> in the AAI database combined with <b>ALL available protein descriptors</b>. All 566 indices can be used in concatenation with 1, 2 or 3 descriptors. At each iteration the encoded sequences generated from the indices from the AAI will be combined with the <b>feature set</b> generated from the dataset's descriptor values and used to build a predictive regression ML model that can be used for the accurate prediction of the sought <b>activity/fitness</b> value of unseen protein sequences. The output results will show the calculated metric values when measuring predicted vs observed activity values for the test sequences.<br>
 
 ```python
-#import encoding module
-from pySAR.encoding import *
+from pySAR.encoding import Encoding
 
 '''thermostability.json
 {
@@ -336,7 +341,7 @@ encoding = Encoding('thermostability.json')
 aai_desc_results_df = encoding.aai_descriptor_encoding()
 ```
 
-Output results showing AAI index and its category, the protein descriptor and its group as well as all output metric values for each predictive model. From the results below we can determine that the **ARGP820103** index in concatenation with the **Conjoint Triad** descriptor has the highest predictability (R2 score) for our chosen dataset (thermostability) and this generated model can be used for predicting the thermostability of unseen sequences:
+Output results showing AAI index and its category, the protein descriptor and its group as well as all output metric values for each predictive model. From the results below we can determine that the **ARGP820103** index in concatenation with the **Conjoint Triad** descriptor has the highest predictability (<b>R2 score</b>) for our chosen dataset (<b>thermostability</b>) and this generated model can be used for predicting the thermostability of unseen sequences:
 
 |    | Index      | Category    | Descriptor                 | Descriptor Group     |       R2 |    RMSE |
 |---:|:-----------|:------------|:---------------------------|:---------------------|---------:|--------:|
@@ -347,12 +352,12 @@ Output results showing AAI index and its category, the protein descriptor and it
 |  4 | .....      | .....       | .....                      | .....                | .....    | .....   |
 </details>
 
+
 <details><summary><b>Building predictive model from subset of AAI and protein descriptors:</summary></b><br>
-The below code will build a PLSRegression model using the AAI index <b>CIDH920105</b> and the <b>amino acid composition</b> descriptor. The index is passed through a DSP pipeline and is transformed into its informational protein spectra using the <b>power spectra</b>, with a hamming window function applied to the output of the FFT. The concatenated features from the AAI index and the descriptor will be used as the feature data in building the PLS ML model. This model is then used to access its predictability by testing on test unseen sequences. The output results will show the calculated metric values when measuring predicted vs observed activity values for the test sequences.<br>
+The below code will build a <b>PLSRegression model</b> using the AAI index <b>CIDH920105</b> and the <b>amino acid composition</b> descriptor. The index is passed through a DSP pipeline and is transformed into its <b>informational protein spectra</b> using the <b>power spectra</b>, with a <b>hamming window</b> function applied to the output of the FFT. The concatenated features from the AAI index and the descriptor will be used as the feature data in building the PLS ML model. This model is then used to access its <b>predictability</b> by testing on test unseen sequences. The output results will show the calculated metric values when measuring <b>predicted vs observed activity values</b> for the test sequences.<br>
 
 ```python
-#import pySAR module
-from pySAR.pySAR import *
+from pySAR.pySAR import PySAR
 
 '''thermostability.json
 {
@@ -431,8 +436,7 @@ Output results showing AAI index and its category, the protein descriptor and it
 The individual protein descriptor values for the dataset of protein sequences can be calculated using the custom-built <b>protpy</b> package via the <i>descriptor</i> module. The full list of descriptors can be seen via the function <i>all_descriptors_list()</i> as well as on the <b>protpy</b> repo homepage. 
 
 ```python
-#import descriptors class
-from pySAR.descriptors import *  
+from pySAR.descriptors import Descriptors
 
 #create instance of descriptors class
 desc = Descriptors(config_file="thermostability.json")
@@ -446,7 +450,7 @@ geary_autocorrelation = desc.get_geary_autocorrelation()
 </details>
 
 <details><summary><b>Calculate and export all protein descriptors:</summary></b><br>
-Prior to evaluating the various available properties and features at which to encode a set of protein sequences, it is reccomened that you pre-calculate all the available descriptors in one go, saving them to a csv for later that <i>pySAR</i> will then import from. Output values are stored in a csv set by the <i>descriptors_csv</i> config parameter (the name of the exported csv via the <i>descriptors_export_filename</i> parameter can also be passed into the function). Output will be of the shape N x M, where N is the number of protein sequences in the dataset and M is the total number of features calculated from all 15 descriptors which varies depending on some descriptor-specific metaparameters. For example, using the thermostability dataset, the output will be 261 x 9714. <br>
+Prior to evaluating the various available properties and features at which to encode a set of protein sequences, it is reccomened that you pre-calculate all the available descriptors in one go, saving them to a csv for later that <i>pySAR</i> will then import from. Output values are stored in a csv set by the <i>descriptors_csv</i> config parameter (the name of the exported csv via the <i>descriptors_export_filename</i> parameter can also be passed into the function). Output will be of the shape N x M, where N is the number of protein sequences in the dataset and M is the total number of features calculated from all 33 descriptors which varies depending on some descriptor-specific metaparameters. For example, using the thermostability dataset, the output will be 261 x 10572. <br>
 
 ```python
 '''thermostability.json
@@ -479,7 +483,7 @@ Prior to evaluating the various available properties and features at which to en
 }
 '''
 #import descriptors class
-from pySAR.descriptors import *  
+from pySAR.descriptors import Descriptors
 
 #create instance of descriptors class
 desc = Descriptors(config_file="thermostability.json")
@@ -500,7 +504,7 @@ description = aaindex1['CHOP780206'].description #get record's description
 refs = aaindex1['CHOP780206'].references     #get record's references 
 category = aaindex1['CHOP780206'].category #get record's category
 notes = aaindex1['CHOP780206'].notes #get record's notes
-correllation_coefficient = aaindex1['CHOP780206'].correllation_coefficient #get record's correllation_coefficient
+correlation_coefficients = aaindex1['CHOP780206'].correlation_coefficients #get record's correlation coefficients
 pmid = aaindex1['CHOP780206'].pmid #get record's pmid
 values = aaindex1['CHOP780206'].values  #get amino acid values from record
 
@@ -511,17 +515,117 @@ records = aaindex1.search("hydrophobicity") #get all records with hydrophobicity
 ```
 </details>
 
+<details><summary><b>Parallel encoding across all AAI indices using n_jobs:</b></summary><br>
+Setting <code>n_jobs</code> to a value greater than 1 distributes model-building across multiple CPU cores.  Pass <code>n_jobs=-1</code> to use all available cores. This applies to all three encoding methods and can significantly reduce wall-clock time when evaluating hundreds of indices or descriptor combinations.<br>
+
+```python
+from pySAR.encoding import Encoding, SortKey
+
+encoding = Encoding(config_file='thermostability.json')
+
+# build 566 AAI models in parallel using all CPU cores, sorted by RMSE
+aai_results = encoding.aai_encoding(n_jobs=-1, sort_by=SortKey.RMSE)
+
+# build all descriptor models in parallel using 4 workers
+desc_results = encoding.descriptor_encoding(n_jobs=4)
+
+# build AAI + descriptor models in parallel - can be many thousands of models
+aai_desc_results = encoding.aai_descriptor_encoding(n_jobs=-1, max_models=1000)
+```
+For reproducible parallel runs, pass `random_state` to seed the ML models:
+
+```python
+aai_results = encoding.aai_encoding(n_jobs=-1, random_state=42)
+```
+</details>
+
+<details><summary><b>Resuming a partially-completed encoding run:</b></summary><br>
+Long encoding jobs (e.g. all 566 AAI indices or thousands of AAI+descriptor combinations) can be interrupted and resumed without re-running completed models. Enable checkpointing by passing <code>resume=True</code> and a path for the checkpoint file via <code>resume_file</code>. On the first run a checkpoint CSV is written after each batch; subsequent runs with the same file skip already-completed keys and append the new results.<br>
+
+```python
+from pySAR.encoding import Encoding
+
+encoding = Encoding(config_file='thermostability.json')
+
+# first run - starts from scratch and saves progress to checkpoint.csv after each index
+aai_results = encoding.aai_encoding(
+    resume=True,
+    resume_file='aai_checkpoint.csv',
+    n_jobs=4
+)
+
+# later run (e.g. after an interruption) - skips completed indices automatically
+aai_results = encoding.aai_encoding(
+    resume=True,
+    resume_file='aai_checkpoint.csv',
+    n_jobs=4
+)
+```
+The same pattern works for `descriptor_encoding` and `aai_descriptor_encoding`:
+
+```python
+aai_desc_results = encoding.aai_descriptor_encoding(
+    resume=True,
+    resume_file='aai_desc_checkpoint.csv',
+    n_jobs=-1
+)
+```
+</details>
+
+<details><summary><b>Using descriptor validation and utility methods:</b></summary><br>
+The <code>Descriptors</code> class exposes several utility methods for validating inputs, inspecting descriptor metadata and managing internal state. These can be used independently of the main encoding workflow.<br>
+
+```python
+from pySAR.descriptors import Descriptors, DescriptorType
+from pySAR.descriptors import InvalidDescriptorError, InvalidSequenceError
+
+desc = Descriptors(config_file='thermostability.json')
+
+# validate a list of descriptor names - raises InvalidDescriptorError for unknown names
+valid_descs = desc.validate_descriptors(['amino_acid_composition', 'dipeptide_composition'])
+
+# validate sequences in the loaded dataset - raises InvalidSequenceError for non-canonical amino acids
+desc.validate_sequences()
+
+# retrieve metadata (feature count, group, and parameters) for a descriptor
+info = desc.get_descriptor_info('amino_acid_composition')
+print(info)
+# {'name': 'amino_acid_composition', 'group': 'Composition', 'feature_count': 20, 'parameters': {}}
+
+# get the total number of features produced by the current descriptor configuration (per descriptor)
+total_features = desc.descriptor_feature_count  # cached property; returns dict of {name: count}
+
+# get the list of output column names for a specific descriptor (must be calculated first)
+desc.get_amino_acid_composition()  # calculate it first
+cols = desc.get_descriptor_columns('amino_acid_composition')
+
+# reset all descriptor DataFrames back to empty (useful before re-calculation workflows)
+desc.reset_descriptors()
+
+# clear the internal feature-count cache (e.g. after changing descriptor metaparameters)
+desc.clear_cache()
+```
+
+Use the `DescriptorType` enum to filter or identify descriptor families:
+
+```python
+from pySAR.descriptors import DescriptorType
+
+# enum members: COMPOSITION, AUTOCORRELATION, SEQUENCE_ORDER, PSEUDO_AA, CTD, CONJOINT_TRIAD
+print(DescriptorType.COMPOSITION.value)   # 'composition'
+```
+</details>
+
 Directories and Files
 =====================
 * `/config` - configuration files for the example datasets that `pySAR` has been tested with, as well as the thermostability.json config file that was used in the research. These config files should be used as a template for future datasets used with `pySAR`.
-* `/data` - data files used in the research proejct including the thermostability dataset, config file and pre-calculated protein descriptors.
-* `/docs` - documentation for `pySAR` (pending).
+* `/data` - data files used in the research project including the thermostability dataset, config file and pre-calculated protein descriptors.
+* `/docs` - Sphinx documentation source for `pySAR`, including `conf.py`, `index.rst`, `usage.rst`, `api.rst` and `contributing.rst`.
 * `/example_datasets` - example datasets used for the building and testing of `pySAR`, including the thermostability dataset used in the research. The format of these datasets should be used as a template for future datasets used with `pySAR`.
 * `/images` - all images used throughout the repo.
 * `/pySAR` - source code for `pySAR` software.
 * `/tests` - unit and integration tests for `pySAR`.
-* `pySAR_research.pdf` - published research article.
-* `pySAR_research.pptx` - powerpoint demo of the software development process of pySAR.
+* `pyproject.toml` - package build metadata and dependency specification (PEP 517/518).
 * `CONFIG.md` - example markdown file describing each of the available parameters in the config files.
 
 Issues
@@ -531,7 +635,7 @@ Any issues, errors or bugs can be raised via the [Issues](https://github.com/amc
 Contact
 =======
 If you have any questions or comments, please contact amckenna41@qub.ac.uk or raise an issue on the [Issues][Issues] tab. <br><br>
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/adam-mckenna-7a5b22151/)
+<!-- [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/adam-mckenna-7a5b22151/) -->
 
 License
 =======
@@ -566,6 +670,7 @@ DOI: 10.1021/acs.jcim.0c00073 <br><br>
 [tqdm]: https://tqdm.github.io/
 [seaborn]: https://seaborn.pydata.org/
 [matplotlib]: https://matplotlib.org/
+[delayed]: https://pypi.org/project/delayed/
 [PyPi]: https://pypi.org/project/pysar/
 [article]: https://www.sciencedirect.com/science/article/abs/pii/S1532046422000326
 [pdf]: https://github.com/amckenna41/pySAR/blob/master/pySAR_research.pdf
@@ -575,3 +680,4 @@ DOI: 10.1021/acs.jcim.0c00073 <br><br>
 [license]: https://github.com/amckenna41/pySAR/blob/master/LICENSE
 [config]: https://github.com/amckenna41/pySAR/blob/master/CONFIG.md
 [medium]: https://ajmckenna69.medium.com/pysar-a3de9f71733f
+[directed_evolution]: https://en.wikipedia.org/wiki/Directed_evolution_(protein_engineering)

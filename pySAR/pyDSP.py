@@ -5,19 +5,18 @@
 import numpy as np
 from difflib import get_close_matches
 import inspect
+import os
 from scipy.signal import savgol_filter, medfilt, lfilter, hilbert
 from scipy.signal.windows import blackman, hann, hamming, bartlett, blackmanharris, \
      kaiser, gaussian, barthann, bohman, chebwin, cosine, exponential, boxcar, \
         flattop, nuttall, parzen, tukey, triang
 try:
-    from scipy.fftpack import fft
-except:
+    from scipy.fft import fft
+except ImportError:
     from numpy.fft import fft
 import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
 import json
-from json import JSONDecodeError
-from .utils import *
+from .utils import Map, zero_padding
 
 class PyDSP():
     """
@@ -30,7 +29,7 @@ class PyDSP():
     encoded protein sequences (encoded via amino acid property values from records in the AAI), 
     various informational protein spectra can be generated, including the power, real, imaginary and 
     absolute spectra. Prior to the FFT, a window function can be applied to the sequences 
-    which is a mathmatical function that applies a weighting to each discrete time series sample 
+    which is a mathematical function that applies a weighting to each discrete time series sample 
     in a finite set. By default, no window function is applied; although the function 
     can also accept the blackman, blackmanharris, bartlett, gaussia, bartlett, barthann, bohman, 
     chebwin, cosine, exponential, flattop, hann, boxcar, nuttall, parzen, triang and tukey windows.
@@ -71,7 +70,7 @@ class PyDSP():
     pre_processing():
         complete required pre-processing steps before DSP functionality/pipeline.
     encode_sequences():
-        calculate FFT and various informational spectra of protein seqeuences.
+        calculate FFT and various informational spectra of protein sequences.
     inverse_fft():
         calculate inverse FFT of protein sequences.
     consensus_freq():
@@ -91,21 +90,26 @@ class PyDSP():
         if not (isinstance(config_file, str) or (isinstance(config_file, dict)) or (config_file is None)):
             raise TypeError('JSON config must be a filepath of type string or a dict of parameters, got type {}.'.
                 format(type(config_file)))
-        if (isinstance(config_file, str) and os.path.isfile(self.config_file)):
+
+        # support config passed as dict, filepath, or omitted (kwargs can still define DSP params)
+        if isinstance(config_file, dict):
+            self.config_parameters = config_file
+        elif config_file in (None, ""):
+            self.config_parameters = {}
+        elif (isinstance(config_file, str) and os.path.isfile(self.config_file)):
             config_filepath = self.config_file
         elif (isinstance(config_file, str) and os.path.isfile(os.path.join('config', self.config_file))):
             config_filepath = os.path.join('config', self.config_file)
-        elif (isinstance(config_file, dict)):
-            self.config_parameters = config_file
         else:
-            raise OSError('JSON config file not found at path: {}.'.format(config_filepath))
-        if (isinstance(config_file, str)):
+            raise OSError(f'JSON config file not found at path: {config_filepath}.')
+
+        if config_filepath:
             try:
                 #open config file and parse parameters 
                 with open(config_filepath) as f:
                     self.config_parameters = json.load(f)
-            except:
-                raise JSONDecodeError('Error parsing config JSON file: {}.'.format(config_filepath))
+            except json.JSONDecodeError as exc:
+                raise ValueError(f'Error parsing config JSON file: {config_filepath}.') from exc
 
         #create instance of Map class so parameters in config can be accessed via dot notation
         self.config_parameters = Map(self.config_parameters)
@@ -127,14 +131,23 @@ class PyDSP():
 
 
         #set pyDSP parameters from kwargs or json config - use_dsp, spectrum, window function, window filter
-        self.dsp_parameters = kwargs.get('dsp_parameters') if 'dsp_parameters' in kwargs else self.config_parameters.pyDSP
-        self.spectrum = kwargs.get('spectrum') if 'spectrum' in kwargs else self.dsp_parameters["spectrum"]
-        self.window_parameters = kwargs.get('window_parameters') if 'window_parameters' in kwargs else self.dsp_parameters["window"]
+        default_dsp_parameters = getattr(self.config_parameters, 'pyDSP', {}) or {}
+        self.dsp_parameters = kwargs.get('dsp_parameters') if 'dsp_parameters' in kwargs else default_dsp_parameters
+        if self.dsp_parameters is None:
+            self.dsp_parameters = {}
+
+        # allow spectrum-only usage when config is omitted, per class docstring
+        self.spectrum = kwargs.get('spectrum') if 'spectrum' in kwargs else self.dsp_parameters.get("spectrum")
+        self.window_parameters = kwargs.get('window_parameters') if 'window_parameters' in kwargs else self.dsp_parameters.get("window", {})
+        if self.window_parameters is None:
+            self.window_parameters = {}
         self.window = None
-        self.filter_parameters = kwargs.get('filter_parameters') if 'filter_parameters' in kwargs else self.dsp_parameters["filter"]
+        self.filter_parameters = kwargs.get('filter_parameters') if 'filter_parameters' in kwargs else self.dsp_parameters.get("filter", {})
+        if self.filter_parameters is None:
+            self.filter_parameters = {}
         self.filter = None
-        self.window_type = kwargs.get('window_type') if 'window_type' in kwargs else self.config_parameters.pyDSP["window"]["type"] 
-        self.filter_type = kwargs.get('filter_type') if 'filter_type' in kwargs else self.config_parameters.pyDSP["filter"]["type"]
+        self.window_type = kwargs.get('window_type') if 'window_type' in kwargs else self.window_parameters.get("type")
+        self.filter_type = kwargs.get('filter_type') if 'filter_type' in kwargs else self.filter_parameters.get("type")
 
         #pre-processing of encoded protein sequences
         self.pre_processing()
@@ -164,13 +177,8 @@ class PyDSP():
         self.num_seqs = self.protein_seqs.shape[0]
         self.signal_len = self.protein_seqs.shape[1]
 
-        #replace any positive or negative infinity or NAN values with 0
-        self.protein_seqs[self.protein_seqs == -np.inf] = 0
-        self.protein_seqs[self.protein_seqs == np.inf] = 0
-        self.protein_seqs[self.protein_seqs == np.nan] = 0
-
-        #replace any NAN's with 0's
-        self.protein_seqs = np.nan_to_num(self.protein_seqs)
+        #replace any positive/negative infinity or NAN values with 0
+        self.protein_seqs = np.nan_to_num(self.protein_seqs, nan=0.0, posinf=0.0, neginf=0.0)
 
         #initialise zeros array to store all protein spectra
         self.fft_power = np.zeros((self.num_seqs, self.signal_len))
@@ -185,19 +193,18 @@ class PyDSP():
                        'kaiser', 'barthann', 'bohman', 'chebwin', 'cosine', 'exponential',
                        'flattop', 'hann', 'boxcar', 'nuttall', 'parzen', 'triang', 'tukey']
 
-        #get appoximate spectrum type from input, raise error if spectrum None or invalid
+        #get approximate spectrum type from input, raise error if spectrum None or invalid
         if (self.spectrum == None):
             raise ValueError('Spectrum parameter cannot be empty of None.')
         else:
             #get closest correct spectra from user input, if no close match then raise error
             spectra_matches = (get_close_matches(self.spectrum, all_spectra, cutoff=0.4))
             if (spectra_matches == []):
-                raise ValueError('Invalid input spectrum type {}, not available in list of available spectra:\n{}.'
-                                 .format(self.spectrum, all_spectra))
+                raise ValueError(f'Invalid input spectrum type {self.spectrum}, not available in list of available spectra:\n{all_spectra}.')
             else:
                 self.spectrum = spectra_matches[0]   #closest match in array
 
-        #get appoximate window type from input, if None or invalid set window to 1 (no window)
+        #get approximate window type from input, if None or invalid set window to 1 (no window)
         if (self.window_type == None):
             self.window = 1       #window = 1 is the same as applying no window
         else:
@@ -205,7 +212,7 @@ class PyDSP():
             window_matches = (get_close_matches(self.window_type, all_windows, cutoff=0.6))
 
             #remove any null or None values from window parameters in config
-            self.window_parameters = {k: v for k, v in self.window_parameters.items() if v}
+            self.window_parameters = {k: v for k, v in (self.window_parameters or {}).items() if v is not None}
             window_parameters = {}
 
             #get window function specified by window input parameter, if no match then window = 1,
@@ -305,7 +312,7 @@ class PyDSP():
             else:
                 self.window = 1     #window = 1 is the same as applying no window
 
-        #get appoximate filter type from input
+        #get approximate filter type from input
         if ((self.filter_type != None) and (self.filter_type != "")):
             filter_matches = get_close_matches(self.filter_type, all_filters, cutoff=0.4)
         
@@ -356,13 +363,15 @@ class PyDSP():
           encoded_fft = np.zeros((self.signal_len), dtype=complex)
 
           #apply window function to Fourier array, multiple by 1 if using no window function
-          encoded_fft = fft(encoded_seq_copy[seq] * self.window)
+          with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=FutureWarning)
+            encoded_fft = fft(encoded_seq_copy[seq] * self.window)
           
           #apply filter to encoded sequences if filter_type not empty in config
           if ((self.filter_type != None) and (self.filter_type != "")):
 
             #remove any null or None values from filter parameters in config
-            self.filter_parameters = {k: v for k, v in self.filter_parameters.items() if v}
+            self.filter_parameters = {k: v for k, v in (self.filter_parameters or {}).items() if v is not None}
             filter_parameters = {}
 
             #set filter attribute according to approximate user input
@@ -377,7 +386,12 @@ class PyDSP():
             elif (self.filter_type == 'lfilter'):
                 for k, v in self.filter_parameters.items():
                     if (k in inspect.getfullargspec(lfilter).args): filter_parameters[k] = self.filter_parameters[k]
-                self.filter = lfilter(encoded_fft, **filter_parameters) 
+                b = filter_parameters.pop('b', None)
+                a = filter_parameters.pop('a', None)
+                if b is not None and a is not None:
+                    self.filter = lfilter(b, a, encoded_fft, **filter_parameters)
+                else:
+                    self.filter = None
             elif (self.filter_type == 'hilbert'):
                 for k, v in self.filter_parameters.items():
                     if (k in inspect.getfullargspec(hilbert).args): filter_parameters[k] = self.filter_parameters[k]
@@ -385,10 +399,14 @@ class PyDSP():
             else:
                 self.filter = None #no filter
 
-          #append transformation from current sequence seq to array of all transformed seqeunces
+            #apply filtered signal when available
+            if self.filter is not None:
+                encoded_fft = self.filter
+
+          #append transformation from current sequence seq to array of all transformed sequences
           encoded_dataset_fft[seq] = encoded_fft
 
-          #calcualte FFT frequencies   
+          #calculate FFT frequencies   
           freqs_fft = np.fft.fftfreq(encoded_fft.size)
 
           #append frequency from current sequence seq to array of all frequencies
@@ -447,9 +465,11 @@ class PyDSP():
         :CF: float
             consensus frequency found in array of frequencies.
         """
+        freqs = np.asarray(freqs)
+
         #raise error if more than one sequence passed into function
-        if (freqs.ndim == 2 and freqs.shape[1] != 2):
-            raise ValueError("Only one protein sequence should be passed into the function: {}.".format(freqs))
+        if freqs.ndim != 1:
+            raise ValueError(f"Only one protein sequence should be passed into the function: {freqs}.")
 
         # CF = PP/N ( peak position/length of largest protein in dataset)
         CF = (self.max_freq(freqs)[0])/self.num_seqs
@@ -471,9 +491,11 @@ class PyDSP():
         :max_FI: int
             index of maximum frequency.
         """
+        freqs = np.asarray(freqs)
+
         #raise error if more than one sequence passed into function
-        if (freqs.ndim == 2 and freqs.shape[1] != 2):
-            raise ValueError("Only one protein sequence should be passed into the function: {}.".format(freqs))
+        if freqs.ndim != 1:
+            raise ValueError(f"Only one protein sequence should be passed into the function: {freqs}.")
         
         max_F = max(freqs)
         max_FI = np.argmax(freqs)
@@ -554,7 +576,7 @@ class PyDSP():
         self._filter_type = val
 
     def __str__(self):
-        return "Instance of PyDSP class, using parameters: {}.".format(self.__dict__.keys())
+        return f"Instance of PyDSP class, using parameters: {self.__dict__.keys()}."
 
     def __repr__(self):
-        return ('<PyDSP: {}>.'.format(self))
+        return (f'<PyDSP: {self}>.')

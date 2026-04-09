@@ -1,0 +1,92 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PySAR"
+version = "2.5.0"
+description = "Analysing Sequence Activity Relationships (SARs) of protein sequences and their mutants using Machine Learning."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "AJ McKenna", email = "amckenna41@qub.ac.uk" }
+]
+maintainers = [
+    { name = "AJ McKenna", email = "amckenna41@qub.ac.uk" }
+]
+keywords = [
+    "bioinformatics",
+    "protein engineering",
+    "drug discovery",
+    "python",
+    "pypi",
+    "machine learning",
+    "directed evolution",
+    "sequence activity relationships",
+    "SAR",
+    "aaindex",
+    "protpy",
+    "protein descriptors"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Medical Science Apps."
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.21",
+    "pandas>=1.3",
+    "scipy>=1.7",
+    "delayed>=0.11",
+    "scikit-learn>=1.0",
+    "matplotlib>=3.4",
+    "seaborn>=0.11",
+    "tqdm>=4.60",
+    "aaindex>=1.2.0",
+    "protpy>=1.3.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/amckenna41/pySAR"
+Download = "https://github.com/amckenna41/pySAR/archive/refs/heads/main.zip"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-flake8",
+    "pytest-timeout"
+]
+docs = [
+    "sphinx"
+]
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.package-data]
+pySAR = ["py.typed"]
+
+[tool.setuptools.packages.find]
+exclude = ["*.tests", "*.tests.*", "tests.*", "tests", "Results"]
+
+[tool.pytest.ini_options]
+norecursedirs = "/docs/_build/*"
