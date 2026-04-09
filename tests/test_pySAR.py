@@ -251,8 +251,8 @@ class PySARTests(unittest.TestCase):
             f'Sequences not of correct type, expected {pd.Series}, got {type(test_seqs)}.')
         self.assertTrue(test_seqs[0].startswith("MTIKEMPQPK"),
             'Error in first seqeuence, expected it to start with MTIKEMPQPK.')
-        self.assertEqual(test_seqs.dtype, object,
-            f'Sequence object expected to be of dtype object, got {test_seqs.dtype}.')
+        self.assertTrue(pd.api.types.is_string_dtype(test_seqs),
+            f'Sequence Series expected to have a string dtype, got {test_seqs.dtype}.')
 #2.)
         test_pySAR_enantioselectivity = pysar.PySAR(config_file=self.all_config_files[1]) #enantioselectivity
         test_seqs = test_pySAR_enantioselectivity.sequences
@@ -263,8 +263,8 @@ class PySARTests(unittest.TestCase):
             f'Sequences not of correct type, expected {pd.Series}, got {type(test_seqs)}.')
         self.assertTrue(test_seqs[0].startswith("MSAPFAKF"),
             'Error in second seqeuence expected it to start with MSAPFAKF.')
-        self.assertEqual(test_seqs.dtype, object,
-            f'Sequence object expected to be of dtype object, got {test_seqs.dtype}.')
+        self.assertTrue(pd.api.types.is_string_dtype(test_seqs),
+            f'Sequence Series expected to have a string dtype, got {test_seqs.dtype}.')
 #3.)
         test_pySAR_absorption = pysar.PySAR(config_file=self.all_config_files[2]) #absorption
         test_seqs = test_pySAR_absorption.sequences
@@ -275,8 +275,8 @@ class PySARTests(unittest.TestCase):
             f'Sequences not of correct type, expected {pd.Series}, got {type(test_seqs)}.')
         self.assertTrue(test_seqs[0].startswith("MLMTVFSSAP"),
             'Error in third seqeuence expected it to start with MLMTVFSSAP.')
-        self.assertEqual(test_seqs.dtype, object,
-            f'Sequence object expected to be of dtype object, got {test_seqs.dtype}.')
+        self.assertTrue(pd.api.types.is_string_dtype(test_seqs),
+            f'Sequence Series expected to have a string dtype, got {test_seqs.dtype}.')
 #4.)
         test_pySAR_localization = pysar.PySAR(config_file=self.all_config_files[3]) #localization
         test_seqs = test_pySAR_localization.sequences
@@ -287,8 +287,8 @@ class PySARTests(unittest.TestCase):
             f'Sequences not of correct type, expected {pd.Series}, got {type(test_seqs)}.')
         self.assertTrue(test_seqs[0].startswith("MSRLVAASWL"),
             'Error in third seqeuence expected it to start with MSRLVAASWL.')
-        self.assertEqual(test_seqs.dtype, object,
-            f'Sequence object expected to be of dtype object, got {test_seqs.dtype}.')
+        self.assertTrue(pd.api.types.is_string_dtype(test_seqs),
+            f'Sequence Series expected to have a string dtype, got {test_seqs.dtype}.')
     
     def test_activity(self):
         """ Testing function that gets activity from dataset. """

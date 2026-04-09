@@ -24,5 +24,3 @@ formats:
 python:
    install:
    - requirements: docs/requirements.txt
-   - method: pip #install via pip
-     path: .
