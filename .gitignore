@@ -140,3 +140,5 @@ dmypy.json
 /pySAR_frontend
 
 FILE_CHECKLIST.md
+
+git_status_logs.txt

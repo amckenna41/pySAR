@@ -3,6 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pySAR)](https://pypi.org/project/pySAR/)
 [![Platforms](https://img.shields.io/badge/platforms-linux%2C%20macOS%2C%20Windows-green)](https://pypi.org/project/pySAR/)
 [![PythonV](https://img.shields.io/pypi/pyversions/pySAR?logo=2)](https://pypi.org/project/pySAR/)
+[![Documentation Status](https://readthedocs.org/projects/pysar/badge/?version=latest)](https://pysar.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 
 Usage

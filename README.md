@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/amckenna41/pySAR/master/images/pySAR.png" alt="pySARLogo" height="300" width="400"/>
+<img src="https://raw.githubusercontent.com/amckenna41/pySAR/master/images/pySAR.png" alt="pySARLogo" height="400" width="350"/>
 </p>
 
 # pySAR - Python Sequence Activity Relationship #
@@ -659,6 +659,10 @@ References
 Journal of Chemical Information and Modeling 2020 60 (6), 2773-2790
 DOI: 10.1021/acs.jcim.0c00073 <br><br>
 \[8\]: Medina-Ortiz, D., Contreras, S., Amado-Hinojosa, J., Torres-Almonacid, J., Asenjo, J. A., Navarrete, M., & Olivera-Nappa, Á. (2020). Combination of digital signal processing and assembled predictive models facilitates the rational design of proteins. ArXiv [Cs.CE]. <br>
+
+
+[<img src="https://img.shields.io/github/stars/amckenna41/pySAR?color=green&label=star%20it%20on%20GitHub" width="132" height="20" alt="Star it on GitHub">](https://github.com/amckenna41/pySAR)
+
 
 <a href="https://www.buymeacoffee.com/amckenna41" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
