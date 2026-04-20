@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 from difflib import get_close_matches
 import json
-from json import JSONDecodeError
 import itertools
 import time
 from tqdm import tqdm

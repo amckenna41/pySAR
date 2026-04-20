@@ -69,8 +69,8 @@ class PySARTests(unittest.TestCase):
     # @unittest.skip("Skipping metadata tests.")
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.5.0", 
-            f"pySAR version is not correct, expected 2.5.0, got {pysar_.__version__}.")
+        self.assertEqual(pysar_.__version__, "2.5.1", 
+            f"pySAR version is not correct, expected 2.5.1, got {pysar_.__version__}.")
         self.assertEqual(pysar_.__name__, "pySAR", 
             f"pySAR software name is not correct, expected pySAR, got {pysar_.__name__}.")
         self.assertEqual(pysar_.__author__, "AJ McKenna: https://github.com/amckenna41", 

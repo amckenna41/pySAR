@@ -75,7 +75,6 @@ Requirements
 * [pandas][pandas] >= 1.3
 * [scikit-learn][sklearn] >= 1.0
 * [scipy][scipy] >= 1.7
-* [delayed][delayed] >= 0.11
 * [tqdm][tqdm] >= 4.60
 * [matplotlib][matplotlib] >= 3.4
 * [seaborn][seaborn] >= 0.11
@@ -680,7 +679,6 @@ DOI: 10.1021/acs.jcim.0c00073 <br><br>
 [tqdm]: https://tqdm.github.io/
 [seaborn]: https://seaborn.pydata.org/
 [matplotlib]: https://matplotlib.org/
-[delayed]: https://pypi.org/project/delayed/
 [PyPi]: https://pypi.org/project/pysar/
 [article]: https://www.sciencedirect.com/science/article/abs/pii/S1532046422000326
 [pdf]: https://github.com/amckenna41/pySAR/blob/master/pySAR_research.pdf

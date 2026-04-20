@@ -184,8 +184,8 @@ class Evaluate():
         :rpd: float
             the RPD score for the model.
         """
-        mse = self.mse_()
-        return self.Y_true.std() / np.sqrt(mse) if mse > 0 else np.inf
+        # reuse already-computed self.mse to avoid a redundant sklearn call
+        return self.Y_true.std() / np.sqrt(self.mse) if self.mse > 0 else np.inf
 
     def explained_var_(self, multioutput='uniform_average'):
         """

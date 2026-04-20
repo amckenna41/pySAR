@@ -1,5 +1,27 @@
 # Changelog
 
+## v2.5.1 - April 2026
+
+### Changed
+- `pySAR/globals_.py`: removed redundant `global` keyword declarations at module level — `global` is only meaningful inside functions, not at module scope.
+- `pySAR/model.py`: `valid_models` list is now derived directly from `MODEL_CONSTRUCTORS.keys()` to eliminate duplication and prevent future sync issues.
+- `pySAR/model.py`: `hyperparameter_tuning()` now emits a `UserWarning` when an invalid `cv` value is supplied before defaulting to 5, rather than silently resetting.
+- `pySAR/pySAR.py`: replaced all `== None` / `!= None` comparisons with `is None` / `is not None` (PEP 8 E711).
+- `pySAR/pySAR.py`: `encode_descriptor()` validation now also rejects empty list input (`[]`), consistent with `encode_aai()` and `encode_aai_descriptor()`.
+- `pySAR/pySAR.py`: `encode_aai_descriptor()` validation now also rejects empty list input (`[]`) for both `aai_indices` and `descriptors`.
+- `pySAR/pySAR.py`: all four string columns in `encode_aai_descriptor()` now use `pd.StringDtype()` consistently (previously `Index` used the bare `"string"` alias).
+- `pySAR/evaluate.py`: `rpd_()` now reuses the already-computed `self.mse` attribute rather than calling `self.mse_()` a second time, avoiding a redundant `mean_squared_error` computation.
+- `pyproject.toml`, `pySAR/__init__.py`, `docs/conf.py`: version bumped from `2.5.0` to `2.5.1`.
+
+### Fixed
+- `pySAR/model.py`: `save()` was silently swallowing `pickle.PickleError` with a `print()` statement. It now re-raises as `RuntimeError` so callers are aware of serialisation failures.
+- `pySAR/pySAR.py`: removed leftover commented-out dead code `# aai_desc_df['Index'] = aai_desc_df['Index'].astype(pd.StringDtype())`.
+
+### Removed
+- `pySAR/descriptors.py`: removed unused `from json import JSONDecodeError` import — `json.JSONDecodeError` is accessed via the already-imported `json` module.
+- `pySAR/utils.py`: removed unused `flatten()` function — it was never imported or called anywhere in the package.
+- `pyproject.toml`, `README.md`, `docs/conf.py`, `PySAR.egg-info/`: removed `delayed` package dependency — it was listed as a requirement but never imported or used anywhere in the source code.
+
 ## v2.5.0 - April 2026
 
 ### Added

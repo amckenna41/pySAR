@@ -96,7 +96,7 @@ class ModelTests(unittest.TestCase):
         aliases = [
             ('plsreg', 'plsregression', 'PLSRegression'),
             ('randomfor', 'randomforestregressor', 'RandomForestRegressor'),
-            ('adaboo', 'adaboostregressor', 'AdaBoostRegressor'),
+            ('adaboost', 'adaboostregressor', 'AdaBoostRegressor'),
             ('bagging', 'baggingregressor', 'BaggingRegressor'),
             ('decisiontree', 'decisiontreeregressor', 'DecisionTreeRegressor'),
             ('linear', 'linearregression', 'LinearRegression'),
@@ -299,7 +299,7 @@ class ModelTests(unittest.TestCase):
     def test_hyperparameter_tuning(self):
         """ Testing hyperparamter tuning functionality. """
 #1.)
-        model = Model(self.dummy_X, self.dummy_Y, algorithm="adaboost")
+        model = Model(self.dummy_X, self.dummy_Y, algorithm="adaboostregressor")
         X_train, X_test, Y_train, Y_test = model.train_test_split(test_split=0.2)
         model.fit()
         param_grid = {'n_estimators': [50,100,150], 'learning_rate': [0.5,0.75,1], 'loss': ['linear','exponential']}

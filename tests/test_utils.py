@@ -24,8 +24,6 @@ class UtilsTest(unittest.TestCase):
         testing correct utils.valid_sequence functionality.
     test_remove_gaps:
         testing correct utils.remove_gaps functionality.
-    test_flatten:
-        testing correct utils.flatten functionality.
     test_zero_padding:
         testing correct utils.zero_padding functionality.
     test_save_results:
@@ -128,42 +126,6 @@ class UtilsTest(unittest.TestCase):
         self.assertEqual(len(seq4_test), 13, f"Expected length of output to be 13, got {len(seq4_test)}.")
         self.assertIsInstance(seq4_test, str, f"Expected output to be of type str, got {type(seq4_test)}.")
         self.assertNotIn('-', seq4_test, "Expected there to be no gaps (-) in the sequence.")
-
-    def test_flatten(self):
-        """ Test flatten utility function that flattens an array or list. """
-        seq1 = np.array([[1, 2, 3], [4, 5, 6]], np.int32)
-        seq2 = np.array([[1, 2, 3], [4, 5, 6],[7, 8, 9]], np.int32)
-        seq3 = np.random.randint(10,90,(4,5,2))
-        seq4 = ["A", "B", "C", "D", "E", "F"]
-        seq5 = "TUVWXYZ"
-#1.) 
-        flattened_array = utils.flatten(seq1)
-        self.assertEqual(flattened_array.shape, (6,1), f"Expected output shape to be (6,1), got {flattened_array.shape}.")
-        self.assertIsInstance(flattened_array, np.ndarray, f"Expected output to be of type np.ndarray, got {type(flattened_array)}.")
-        self.assertEqual(flattened_array.ndim, 2, f"Expected 2 output dimensions, got {flattened_array.ndim}.")
-        self.assertTrue((np.array([[1],[2],[3],[4],[5],[6]]) == flattened_array).all(),
-                        f"Output array doesn't match expected:\n{flattened_array}.")
-#2.)
-        flattened_array_2 = utils.flatten(seq2)
-        self.assertEqual(flattened_array_2.shape, (9,1), f"Expected output shape to be (9,1), got {flattened_array_2.shape}.")
-        self.assertIsInstance(flattened_array_2, np.ndarray, f"Expected output to be of type np.ndarray, got {type(flattened_array_2)}.")
-        self.assertEqual(flattened_array_2.ndim, 2, f"Expected 2 output dimensions, got {flattened_array_2.ndim}.")
-        self.assertTrue((np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9]]) == flattened_array_2).all(),
-                f"Output array doesn't match expected:\n{flattened_array_2}.")
-#3.)
-        flattened_array_3 = utils.flatten(seq3)
-        self.assertEqual(flattened_array_3.shape, (40,1), f"Expected output shape to be (40,1), got {flattened_array_3.shape}.")
-        self.assertIsInstance(flattened_array_3, np.ndarray, f"Expected output to be of type np.ndarray, got {type(flattened_array_3)}.")
-        self.assertEqual(flattened_array_3.ndim, 2, f"Expected 2 output dimensions, got {flattened_array_3.ndim}.")
-#4.)
-        flattened_array_4 = utils.flatten(seq4)
-        self.assertEqual(len(flattened_array_4), 6, f"Expected length of output to be 6, got {len(flattened_array_4)}.")
-        self.assertIsInstance(flattened_array_4, list, f"Expected output to be of type list, got {type(flattened_array_4)}.")
-        self.assertEqual(flattened_array_4, seq4, f"Output doesn't match expected sequence {seq4}.")
-#5.)
-        flattened_array_5 = utils.flatten(seq5)
-        self.assertEqual(flattened_array_5, seq5, f"Output doesn't match expected sequence {seq5}.")
-        self.assertIsInstance(flattened_array_5, str, f"Expected output to be of type string, got {type(flattened_array_5)}.")
 
     def test_zero_padding(self):
         """ Test zero padding utility function that pads an array or list with 0's. """

@@ -149,43 +149,6 @@ def remove_gaps(sequences):
     cleaned = ''.join(str(c) for c in sequences if str(c) != '-')
     return [cleaned]
 
-def flatten(array):
-    """
-    Lambda function for flattening list of lists or array of lists into one
-    1-dimensional array/list. Input must contain an array of arrays of the same
-    length. Input will be flattened into a 1-dimensional array of size (M * N, 1)
-    where M = len(array) and N = len(array[0]). The flattened output can then be
-    reshaped into the required shape and format.
-
-    Parameters
-    ==========
-    :array: np.ndarray/list
-        array of arrays or list of lists to be flattened.
-
-    Returns
-    =======
-    :flatten(array/list): np.ndarray/list
-        flattened 1-dimensional list or array.
-    """
-    #if input is a string then return input as cannot be flattened
-    if (isinstance(array, str)):
-        return array
-
-    #create flatten lambda function
-    _flatten = lambda array: [item for sublist in array for item in sublist]
-
-    #flatten array/list
-    try:
-        flattened_array = _flatten(array)
-    except (TypeError, ValueError):
-        raise TypeError(f'Error flattening array of type: {type(array)} and size {len(array)}.')
-
-    #if input is a numpy array then reshape to 1D numpy array else return list
-    if (isinstance(array,np.ndarray)):
-        return (np.array(flattened_array).reshape([-1, 1]))
-    else:
-        return flattened_array
-
 def zero_padding(sequences): 
     """ 
     Pad sequences in input array with 0's such that every sequence is of the same length

@@ -92,7 +92,6 @@ class Model():
         'sgd': SGDRegressor,
         'stochasticgradientdescent': SGDRegressor,
         'gbr': GradientBoostingRegressor,
-        'gradientboost': GradientBoostingRegressor,
         'gradientboostingregressor': GradientBoostingRegressor,
         'svr': SVR,
         'supportvectorregression': SVR,
@@ -123,15 +122,8 @@ class Model():
         else:
             self.parameters = parameters
 
-        #list of valid models available to use for this class
-        self.valid_models = ['plsregression', 'randomforestregressor', 'adaboostregressor',\
-                            'baggingregressor', 'decisiontreeregressor', 'gbr',
-                            'gradientboostingregressor', 'linearregression', 'lasso', 'ridge',
-                            'svr', 'supportvectorregression', 'sgd', 'stochasticgradientdescent',
-                            'kneighborsregressor', 'knearestneighbors', 'knn', 'elasticnet',
-                            'extratreesregressor', 'extratrees', 'histgradientboostingregressor',
-                            'histgradientboosting', 'hgbr', 'gaussianprocessregressor',
-                            'gaussianprocess', 'gpr']
+        #derive valid model names directly from MODEL_CONSTRUCTORS to avoid duplication and sync issues
+        self.valid_models = list(self.MODEL_CONSTRUCTORS.keys())
 
         #raise error if algorithm parameter isnt string type
         if not(isinstance(self.algorithm, str)):
@@ -311,8 +303,8 @@ class Model():
         try:
             with open(save_path, 'wb') as file:
                 pickle.dump(self.model, file)
-        except (pickle.PickleError):
-            print(f"Error pickling model with path: {save_path}.")
+        except pickle.PickleError as e:
+            raise RuntimeError(f"Error pickling model with path: {save_path}.") from e
 
     def hyperparameter_tuning(self, param_grid=None, metric='r2', cv=5, n_jobs=None, verbose=2):
         """
@@ -365,6 +357,8 @@ class Model():
 
         #cv must be of type int and be between 5 and 10, if not then default of 5 is used
         if not isinstance(cv, int) or cv < 5 or cv > 10:
+            import warnings
+            warnings.warn(f'Invalid cv value {cv!r}; must be an int between 5 and 10. Defaulting to 5.', UserWarning, stacklevel=2)
             cv = 5
 
         #copy to avoid mutating caller's dict; filter out parameter names invalid for this model

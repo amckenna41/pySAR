@@ -221,7 +221,7 @@ class PySAR():
 
         #verify no invalid amino acids found in sequences, if so then raise error
         invalid_seqs = valid_sequence(self.sequences)
-        if (invalid_seqs != None):
+        if invalid_seqs is not None:
             raise ValueError(f'Invalid amino acids found in protein sequence dataset: {invalid_seqs}.')
 
         #get closest match for activity column name in dataset
@@ -270,7 +270,7 @@ class PySAR():
             array of the encoded protein sequences in dataset via user input index/indices.
         """
         #validate AAI indices are present in the input parameter, if not raise error
-        if (aai_indices == None or aai_indices == ""):
+        if aai_indices is None or aai_indices == "":
             raise ValueError(f'AAI indices input parameter cannot be None or empty: {aai_indices}.')
 
         #check input indices is of correct type (str/list), if not raise type error
@@ -352,7 +352,7 @@ class PySAR():
             pandas Dataframe storing metrics and results of encoding.
         """
         #validate AAI indices are present in the input parameter
-        if (aai_indices == None or aai_indices == "" or aai_indices == []):
+        if aai_indices is None or aai_indices == "" or aai_indices == []:
             raise ValueError(f'AAI indices input parameter cannot be None or empty: {aai_indices}.')
 
         #check input indices is of correct type (str/list), if not raise type error
@@ -385,7 +385,7 @@ class PySAR():
             #else use the AAI indices encoding's themselves as the feature/training data (X)
             if (self.use_dsp):
                 #if input spectrum is none or empty, raise error.
-                if (self.spectrum == None or self.spectrum == ""):
+                if self.spectrum is None or self.spectrum == "":
                     raise ValueError(f'Spectrum cannot be None or empty: {self.spectrum}.')
                 pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
                 X = pd.DataFrame(pyDSP.spectrum_encoding) #set training data to FFT spectrum encoding
@@ -471,7 +471,7 @@ class PySAR():
             inputted descriptor(s).
         """
         #raise error if no descriptors specified in input
-        if (descriptors == None or descriptors == "" or descriptors == []): 
+        if descriptors is None or descriptors == "" or descriptors == []:
             raise ValueError(f'Descriptors input parameter cannot be None or empty: {descriptors}.')
         
         #check input descriptor is of correct type str or list, if not raise type error
@@ -551,7 +551,7 @@ class PySAR():
             pandas dataframe storing metrics and results of encoding.
         """
         #raise error if no descriptor specified in input
-        if (descriptors == None or descriptors == ""):
+        if descriptors is None or descriptors == "" or descriptors == []:
             raise ValueError(f'Descriptors input parameter cannot be None or empty: {descriptors}.')
 
         #check input descriptor is of correct type (str or list), if not raise type error
@@ -633,7 +633,7 @@ class PySAR():
         desc_df['Group'] = desc_df['Group'].astype(pd.StringDtype())
 
         #ensure aai indices attribute doesn't show up in output results
-        if (self.aai_indices != None):
+        if self.aai_indices is not None:
             self.aai_indices = None
 
         #print out results from encoding
@@ -684,8 +684,8 @@ class PySAR():
             pandas dataframe storing metrics and results of encoding.
         """
         #validate AAI indices and Descriptors are present in the input parameters, return error if either is None
-        if (descriptors == None or descriptors == "") or (aai_indices == None or aai_indices == ""):
-                raise ValueError('AAI Indices and Descriptor input parameters must not be empty or None.')
+        if (descriptors is None or descriptors in ("", [])) or (aai_indices is None or aai_indices in ("", [])):
+            raise ValueError('AAI Indices and Descriptor input parameters must not be empty or None.')
 
         #check input descriptor & indices are of correct type (str/list), if not raise type error
         if (not isinstance(aai_indices, str) and (not isinstance(aai_indices, list)) or \
@@ -810,8 +810,7 @@ class PySAR():
             evaluation.rmse, evaluation.mse, evaluation.mae, evaluation.rpd, evaluation.explained_var]
 
         #convert Index, Category, Descriptor and Group from default Object type -> String datatypes
-        # aai_desc_df['Index'] = aai_desc_df['Index'].astype(pd.StringDtype())
-        aai_desc_df['Index'] = aai_desc_df['Index'].astype("string")
+        aai_desc_df['Index'] = aai_desc_df['Index'].astype(pd.StringDtype())
         aai_desc_df['Category'] = aai_desc_df['Category'].astype(pd.StringDtype())
         aai_desc_df['Descriptor'] = aai_desc_df['Descriptor'].astype(pd.StringDtype())
         aai_desc_df['Group'] = aai_desc_df['Group'].astype(pd.StringDtype())
