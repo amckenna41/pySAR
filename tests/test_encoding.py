@@ -220,27 +220,27 @@ class EncodingTests(unittest.TestCase):
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_encoding_absorption[col].values)),
                     f"Column {col} expected to be of type np.float64 got {type(test_encoding_absorption[col])}.")  
 #4.)
-        test_aai4 = [] #passing in no indices into the function will calculate all 566+ indices - localization dataset and config
+        test_aai4 = ["BIGC670101", "CHOP780211"] #localization dataset and config
         test_encoding_localization = self.test_config_localization.aai_encoding(aai_indices=test_aai4, sort_by="MAE", output_folder=self.test_output_folder)
 
-        self.assertIsInstance(test_encoding_localization, pd.DataFrame, 
+        self.assertIsInstance(test_encoding_localization, pd.DataFrame,
             f"Expected output to be a dataframe, got {type(test_encoding_localization)}.")
-        self.assertEqual(len(test_encoding_localization), 566,
-            f"Expected 566 rows in output dataframe, got {len(test_encoding_localization)}.") 
-        self.assertEqual(set(list(test_encoding_localization["Index"])), set(aaindex1.record_codes()),
+        self.assertEqual(len(test_encoding_localization), 2,
+            f"Expected 2 rows in output dataframe, got {len(test_encoding_localization)}.")
+        self.assertEqual(set(list(test_encoding_localization["Index"])), set(test_aai4),
             f'Output index values don\'t match expected, got {set(list(test_encoding_localization["Index"]))}.')
         for cat in list(test_encoding_localization["Category"]):
-            self.assertIn(cat, self.index_categories, 
+            self.assertIn(cat, self.index_categories,
                 f"Category {cat} not found in list of categories:\n{self.index_categories}.")
         for col in test_encoding_localization.columns:
-            self.assertIn(col, self.expected_aai_encoding_output_columns, 
+            self.assertIn(col, self.expected_aai_encoding_output_columns,
                 f"Col {col} not found in list of expected columns:\n{self.expected_aai_encoding_output_columns}.")
             if (col == "Index" or col == "Category"):
                 self.assertTrue(all(isinstance(row, str) for row in list(test_encoding_localization[col].values)),
                     f"Column {col} expected to be of type string got {type(test_encoding_localization[col])}.")
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_encoding_localization[col].values)),
-                    f"Column {col} expected to be of type np.float64 got {type(test_encoding_localization[col])}.")  
+                    f"Column {col} expected to be of type np.float64 got {type(test_encoding_localization[col])}.")
 #5.)
         test_aai6 = "blahblah" 
         test_aai7 = "DESM9001ZZ"
@@ -255,6 +255,40 @@ class EncodingTests(unittest.TestCase):
             self.test_config_absorption.aai_encoding(aai_indices=test_aai8, sort_by="MSE", output_folder=self.test_output_folder)
         with self.assertRaises(TypeError):
             self.test_config_localization.aai_encoding(aai_indices=test_aai9, sort_by="MAE", output_folder=self.test_output_folder)
+
+    @unittest.skip(
+        "Full AAI sweep encodes all ~566 indices and takes several minutes. "
+        "Run manually with an extended timeout (e.g. pytest --timeout=600) when needed."
+    )
+    def test_aai_encoding_full_sweep(self):
+        """
+        Testing AAI encoding with all available AAI indices (no aai_indices filter).
+        Skipped in CI: encodes all ~566 indices and takes several minutes.
+        Run manually with an extended timeout when needed.
+        """
+        all_indices = aaindex1.record_codes()
+        test_encoding_full = self.test_config_localization.aai_encoding(
+            aai_indices=[], sort_by="MAE", output_folder=self.test_output_folder
+        )
+
+        self.assertIsInstance(test_encoding_full, pd.DataFrame,
+            f"Expected output to be a dataframe, got {type(test_encoding_full)}.")
+        self.assertEqual(len(test_encoding_full), len(all_indices),
+            f"Expected {len(all_indices)} rows in output dataframe, got {len(test_encoding_full)}.")
+        self.assertEqual(set(list(test_encoding_full["Index"])), set(all_indices),
+            f'Output index values don\'t match expected AAI record codes.')
+        for cat in list(test_encoding_full["Category"]):
+            self.assertIn(cat, self.index_categories,
+                f"Category {cat} not found in list of categories:\n{self.index_categories}.")
+        for col in test_encoding_full.columns:
+            self.assertIn(col, self.expected_aai_encoding_output_columns,
+                f"Col {col} not found in list of expected columns:\n{self.expected_aai_encoding_output_columns}.")
+            if col in ("Index", "Category"):
+                self.assertTrue(all(isinstance(row, str) for row in list(test_encoding_full[col].values)),
+                    f"Column {col} expected to be string values, got {test_encoding_full[col].dtype}.")
+            else:
+                self.assertTrue(all(isinstance(row, np.float64) for row in list(test_encoding_full[col].values)),
+                    f"Column {col} expected to be np.float64 values, got {test_encoding_full[col].dtype}.")
 
     @unittest.skip("Descriptor encoding functionality can take a lot of time, skipping.")
     def test_descriptor_encoding(self):

@@ -812,8 +812,7 @@ class Encoding(PySAR):
                 window_type=self.window_type,
                 filter_type=self.filter_type
             )
-            # Encode sequences using DSP and generate features
-            py_dsp.encode_sequences()
+            # PyDSP.__init__ calls encode_sequences() internally; spectrum_encoding is already set.
             features = pd.DataFrame(py_dsp.spectrum_encoding)
         else:
             features = pd.DataFrame(encoded_seqs)

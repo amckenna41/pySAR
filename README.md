@@ -20,8 +20,13 @@
 
 `pySAR` is a Python library for analysing Sequence Activity Relationships (SARs)/Sequence Function Relationships (SFRs) of protein sequences. 
 
+
+<h2 align="center">
+  The NEW front-end app for pySAR is available 
+  <a href="https://pysar-app.vercel.app/" target="_blank">here.</a>
+</h2>
+
 * 📖 The published research article is available [here][article].
-* 🌍 A front-end app for `pySAR` is available [here][frontend] (coming soon).
 * 💻 A quick Colab notebook demo of `pySAR` is available [here][demo]. 
 * 📰 A **Medium** article that dives deeper into SARs and the `pySAR` software itself is available [here][medium].
 
@@ -689,3 +694,4 @@ DOI: 10.1021/acs.jcim.0c00073 <br><br>
 [config]: https://github.com/amckenna41/pySAR/blob/master/CONFIG.md
 [medium]: https://ajmckenna69.medium.com/pysar-a3de9f71733f
 [directed_evolution]: https://en.wikipedia.org/wiki/Directed_evolution_(protein_engineering)
+[frontend]: https://pysar-app.vercel.app/

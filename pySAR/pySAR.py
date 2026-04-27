@@ -959,3 +959,13 @@ class PySAR():
 
     # def __repr__(self):
     #     return "<PySAR: {}>".format(self)
+
+    def __str__(self):
+        return (
+            f"Instance of PySAR class with attributes: Config: {os.path.basename(self.config_file)}, "
+            f"Dataset: {os.path.basename(self.dataset)}, Sequences: {self.num_seqs} x {self.sequence_length}, "
+            f"Activity: {self.activity_col}, Algorithm: {self.algorithm}, Test Split: {self.test_split}."
+        )
+
+    def __repr__(self):
+        return f"<PySAR: config={os.path.basename(self.config_file)!r}, algorithm={self.algorithm!r}>"

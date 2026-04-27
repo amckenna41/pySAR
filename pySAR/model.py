@@ -453,6 +453,9 @@ class Model():
         elif (selected_method == "variancethreshold"):
             X_new = VarianceThreshold(1).fit_transform(self.X, self.Y)
         elif (selected_method == "chi2"):
+            # chi2 is a classification scorer and requires non-negative features; f_regression
+            # is used here because this class is exclusively for regression tasks.
+            # The "chi2" label selects k=2 features (vs selectkbest's k=1) for a wider feature set.
             X_new = SelectKBest(f_regression, k=2).fit_transform(self.X, self.Y)
         elif (selected_method == "rfe"):
             selector = RFE(self.model, n_features_to_select=5, step=1)
@@ -464,7 +467,7 @@ class Model():
             selector = SelectFromModel(estimator=deepcopy(self.model))
             X_new = selector.fit_transform(self.X, self.Y)
         else:
-            X_new = SelectKBest(f_regression, k=2).fit_transform(self.X, self.Y)
+            X_new = SelectKBest(f_regression, k=1).fit_transform(self.X, self.Y)
 
         return X_new
         
