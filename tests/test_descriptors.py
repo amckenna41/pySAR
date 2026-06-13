@@ -87,6 +87,8 @@ class DescriptorTests(unittest.TestCase):
         testing correct Shannon entropy descriptor functionality.
     test_get_all_descriptors:
         testing correct functionality for calculating all descriptors for a dataset of sequences.
+    test_n_jobs_parallel:
+        testing parallel descriptor computation via the n_jobs parameter.
     test_get_descriptor_encoding:
         testing correct descriptor encoding functionality.
     """
@@ -1125,6 +1127,56 @@ class DescriptorTests(unittest.TestCase):
 
         self.assertIsInstance(all_descriptors, pd.DataFrame, f'Expected function output to be of type DataFrame, got {type(all_descriptors)}.')
         self.assertEqual(all_descriptors.shape, (261, 10572), f"Expected shape of output to be 261 x 10572, got {all_descriptors.shape}.")
+
+    def test_n_jobs_parallel(self):
+        """ Testing parallel descriptor computation via the n_jobs parameter.
+            Uses the smallest dataset (absorption, 81 seqs) for sequence-level comparison
+            and the pre-calculated thermostability descriptors for the get_all_descriptors path. """
+#1.)
+        #n_jobs defaults to 1
+        desc = descr.Descriptors(config_file=self.all_config_files[2])  # absorption - 81 seqs
+        self.assertEqual(desc.n_jobs, 1, f'Default n_jobs should be 1, got {desc.n_jobs}.')
+
+#2.)
+        #invalid/zero/negative n_jobs values are clamped to 1
+        desc_zero = descr.Descriptors(config_file=self.all_config_files[2], n_jobs=0)
+        self.assertEqual(desc_zero.n_jobs, 1, 'n_jobs=0 should be clamped to 1.')
+        desc_neg = descr.Descriptors(config_file=self.all_config_files[2], n_jobs=-4)
+        self.assertEqual(desc_neg.n_jobs, 1, 'Negative n_jobs should be clamped to 1.')
+
+#3.)
+        #parallel sequence-level computation (n_jobs>1) must produce numerically identical results
+        #to sequential computation (n_jobs=1) for the same descriptor
+        desc_seq = descr.Descriptors(config_file=self.all_config_files[2], n_jobs=1)
+        desc_par = descr.Descriptors(config_file=self.all_config_files[2], n_jobs=4)
+
+        aa_comp_seq = desc_seq.get_amino_acid_composition()
+        aa_comp_par = desc_par.get_amino_acid_composition()
+
+        self.assertTrue(aa_comp_seq.equals(aa_comp_par),
+            'Parallel and sequential amino acid composition results must be numerically identical.')
+        self.assertEqual(aa_comp_seq.shape, aa_comp_par.shape,
+            f'Shape mismatch: sequential {aa_comp_seq.shape} vs parallel {aa_comp_par.shape}.')
+        self.assertFalse(aa_comp_par.empty, 'Parallel output dataframe should not be empty.')
+        self.assertEqual(aa_comp_par.shape, (self.num_seqs[2], 20),
+            f'Parallel output should be {self.num_seqs[2]} x 20, got {aa_comp_par.shape}.')
+        self.assertTrue(aa_comp_par.any().isnull().sum() == 0,
+            'Parallel output should not contain any null values.')
+        self.assertTrue(np.isinf(aa_comp_par).values.sum() == 0,
+            'Parallel output should not contain any +/- infinity values.')
+
+#4.)
+        #n_jobs=4 via get_all_descriptors: use thermostability config (pre-calculated descriptors
+        #already loaded at init) so the parallel dispatch path runs without long recomputation
+        desc_all_par = descr.Descriptors(config_file=self.all_config_files[0], n_jobs=4)
+        all_desc_par = desc_all_par.get_all_descriptors()
+
+        self.assertIsInstance(all_desc_par, pd.DataFrame,
+            f'Expected DataFrame from parallel get_all_descriptors, got {type(all_desc_par)}.')
+        self.assertEqual(all_desc_par.shape, (self.num_seqs[0], 10572),
+            f'Expected shape ({self.num_seqs[0]}, 10572) from parallel run, got {all_desc_par.shape}.')
+        self.assertTrue(all_desc_par.any().isnull().sum() == 0,
+            'Parallel get_all_descriptors output should not contain any null values.')
 
     # @unittest.skip("Test case requires recalculating all descriptors which is redundant to the above tests") **
     def test_get_descriptor_encoding(self):

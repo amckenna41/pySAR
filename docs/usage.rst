@@ -119,7 +119,7 @@ A full configuration file looks like:
 Descriptor Encoding
 -------------------
 
-pySAR supports 36 protein descriptors via the ``Descriptors`` class. Descriptors are
+pySAR supports 33 protein descriptors via the ``Descriptors`` class. Descriptors are
 calculated using the `protpy <https://github.com/amckenna41/protpy>`_ package (>=1.3.0).
 
 **Initialising the Descriptors class:**
@@ -128,7 +128,11 @@ calculated using the `protpy <https://github.com/amckenna41/protpy>`_ package (>
 
    from pySAR.descriptors import Descriptors
 
+   # Single-threaded (default)
    desc = Descriptors(config_file="config/thermostability.json")
+
+   # Parallel computation across sequences and descriptor types
+   desc = Descriptors(config_file="config/thermostability.json", n_jobs=8)
 
 Composition Descriptors
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -409,6 +413,30 @@ To calculate all 33 descriptors at once and concatenate them into a single DataF
 
    # Export to CSV for future reuse (avoids recomputation)
    desc.get_all_descriptors(export=True, descriptors_export_filename="descriptors.csv")
+
+Parallel Computation
+~~~~~~~~~~~~~~~~~~~~
+
+For large datasets, pass ``n_jobs`` to the ``Descriptors`` constructor to enable parallel
+computation at two levels simultaneously:
+
+- **Sequence-level** — each descriptor's ``_calculate_descriptor_batch`` distributes sequences
+  across ``n_jobs`` threads using ``concurrent.futures.ThreadPoolExecutor``.
+- **Descriptor-level** — ``get_all_descriptors`` submits all descriptor getters concurrently
+  so multiple descriptor types are computed at the same time.
+
+.. code-block:: python
+
+   from pySAR.descriptors import Descriptors
+
+   # Use 8 threads — sequences and descriptor types are both parallelised
+   desc = Descriptors(config_file="config/thermostability.json", n_jobs=8)
+
+   # All 33 descriptors computed in parallel; export for reuse
+   all_desc = desc.get_all_descriptors(export=True, descriptors_export_filename="descriptors.csv")
+
+The default ``n_jobs=1`` preserves the original single-threaded behaviour. Values less than
+or equal to zero are silently clamped to 1.
 
 AAI Encoding
 ------------

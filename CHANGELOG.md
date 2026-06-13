@@ -3,6 +3,7 @@
 ## v2.5.2 - May 2026
 
 ### Added
+- `pySAR/descriptors.py`: added `n_jobs: int = 1` parameter to `Descriptors.__init__` — enables parallel descriptor computation at two levels: sequences within a descriptor are distributed across `n_jobs` threads in `_calculate_descriptor_batch`, and all descriptor getters in `get_all_descriptors` are submitted concurrently to a `ThreadPoolExecutor`. Values ≤ 0 are clamped to 1. Default of 1 preserves existing single-threaded behaviour.
 - `pySAR/pySAR.py`: new `predict_activity(sequences, return_uncertainty=False)` method on `PySAR` — re-encodes unseen protein sequences using the same strategy applied during the most recent `encode_aai()`, `encode_descriptor()`, or `encode_aai_descriptor()` call, applies the stored scaler (if any), and returns predicted activity values as a `np.ndarray`. When `return_uncertainty=True` and the underlying model is a `GaussianProcessRegressor`, returns a `(predictions, std)` tuple.
 - `pySAR/pySAR.py`: new `save_session(path)` method — serialises the entire fitted `PySAR` instance (model, scaler, encoding strategy, and all configuration attributes) to a pickle file for later restoration.
 - `pySAR/pySAR.py`: new `load_session(path, allow_pickle=True)` classmethod — deserialises a session file written by `save_session()`; `allow_pickle=False` raises `ValueError` as a safety gate; emits a `UserWarning` about untrusted sources.
@@ -62,6 +63,7 @@
 - `pySAR/pySAR.py`: `preprocessing()` no longer silently matches the wrong column when the requested name is absent; an explicit `UserWarning` is now raised when fuzzy fallback is used.
 
 ### Tests
+- `tests/test_descriptors.py`: added `test_n_jobs_parallel` — verifies that `n_jobs` defaults to 1, that zero/negative values are clamped to 1, that parallel sequence-level computation (`n_jobs=4`) produces numerically identical results to sequential for amino acid composition on the absorption dataset, and that `get_all_descriptors` with `n_jobs=4` returns the correct shape and contains no null values.
 - `tests/test_pyDSP.py`: added `test_filter_medfilt`, `test_filter_hilbert`, `test_filter_lfilter_with_coefficients`, and `test_filter_lfilter_without_ba` covering all four supported filter types.
 - `tests/test_pyDSP.py`: added `test_fft_power_is_magnitude_squared` — verifies `fft_power == |fft|^2`.
 - `tests/test_model.py`: `test_load` now verifies that predictions from a round-tripped (save → load) model are numerically identical to those from the original model; added cases for `allow_pickle=False` raising `ValueError` and loading emitting a `UserWarning`.

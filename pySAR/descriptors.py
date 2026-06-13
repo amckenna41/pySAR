@@ -12,6 +12,7 @@ import itertools
 import time
 from tqdm import tqdm
 from functools import lru_cache
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .utils import *
 import protpy as protpy
@@ -374,13 +375,15 @@ class Descriptors():
     [14] B. Hollas, “An analysis of the autocorrelation descriptor for molecules,” J. Math. Chem., 
         vol. 33, no. 2, pp. 91–101, 2003.
     """
-    def __init__(self, 
-                 config_file: str = "", 
-                 protein_seqs: Optional[Union[pd.Series, str]] = None, 
+    def __init__(self,
+                 config_file: str = "",
+                 protein_seqs: Optional[Union[pd.Series, str]] = None,
+                 n_jobs: int = 1,
                  **kwargs) -> None:
 
         self.config_file = config_file
         self.protein_seqs = protein_seqs
+        self.n_jobs = max(1, int(n_jobs))
         self.kwargs = locals()['kwargs'] #get any keyword argument variables of class
         self.config_parameters = {}
 
@@ -1995,55 +1998,40 @@ class Descriptors():
         #start time counter
         start = time.time() 
 
-        #iterate over all descriptors, calculating each using their respective function and the protpy package
-        for descr in tqdm(self.all_descriptors_list(), unit=" descriptor", position=0, 
-            desc="Descriptors", mininterval=30, ncols=90):
+        #map each descriptor name to its getter for sequential and parallel dispatch
+        _getter_map = [
+            ('amino_acid_composition',                  self.get_amino_acid_composition),
+            ('dipeptide_composition',                   self.get_dipeptide_composition),
+            ('tripeptide_composition',                  self.get_tripeptide_composition),
+            ('moreaubroto_autocorrelation',             self.get_moreaubroto_autocorrelation),
+            ('moran_autocorrelation',                   self.get_moran_autocorrelation),
+            ('geary_autocorrelation',                   self.get_geary_autocorrelation),
+            ('ctd',                                     self.get_ctd),
+            ('ctd_composition',                         self.get_ctd_composition),
+            ('ctd_transition',                          self.get_ctd_transition),
+            ('ctd_distribution',                        self.get_ctd_distribution),
+            ('conjoint_triad',                          self.get_conjoint_triad),
+            ('sequence_order_coupling_number',          self.get_sequence_order_coupling_number),
+            ('quasi_sequence_order',                    self.get_quasi_sequence_order),
+            ('pseudo_amino_acid_composition',           self.get_pseudo_amino_acid_composition),
+            ('amphiphilic_pseudo_amino_acid_composition', self.get_amphiphilic_pseudo_amino_acid_composition),
+        ]
 
-            #if descriptor attribute DF is empty then call its respective get_descriptor function
-            if (descr == "amino_acid_composition" and getattr(self, "amino_acid_composition").empty):
-                self.amino_acid_composition = self.get_amino_acid_composition()
-
-            if (descr == "dipeptide_composition" and getattr(self, "dipeptide_composition").empty):
-                    self.dipeptide_composition = self.get_dipeptide_composition()
-
-            if (descr == "tripeptide_composition" and getattr(self, "tripeptide_composition").empty):
-                    self.tripeptide_composition = self.get_tripeptide_composition()
-
-            if (descr == "moreaubroto_autocorrelation" and getattr(self, "moreaubroto_autocorrelation").empty):
-                self.moreaubroto_autocorrelation = self.get_moreaubroto_autocorrelation()
-
-            if (descr == "moran_autocorrelation" and getattr(self, "moran_autocorrelation").empty):
-                self.moran_autocorrelation = self.get_moran_autocorrelation()
-
-            if (descr == "geary_autocorrelation" and getattr(self, "geary_autocorrelation").empty):
-                self.geary_autocorrelation = self.get_geary_autocorrelation()
-
-            if (descr == "ctd" and getattr(self, "ctd").empty):
-                    self.ctd = self.get_ctd()
-
-            if (descr == "ctd_composition" and getattr(self, "ctd_composition").empty):
-                    self.ctd_composition = self.get_ctd_composition()
-
-            if (descr == "ctd_transition" and getattr(self, "ctd_transition").empty):
-                self.ctd_transition = self.get_ctd_transition()
-            
-            if (descr == "ctd_distribution" and getattr(self, "ctd_distribution").empty):
-                self.ctd_distribution = self.get_ctd_distribution()
-
-            if (descr == "conjoint_triad" and getattr(self, "conjoint_triad").empty):
-                    self.conjoint_triad = self.get_conjoint_triad()
-
-            if (descr == "sequence_order_coupling_number" and getattr(self, "sequence_order_coupling_number").empty):
-                    self.sequence_order_coupling_number = self.get_sequence_order_coupling_number()
-
-            if (descr == "quasi_sequence_order" and getattr(self, "quasi_sequence_order").empty):
-                    self.quasi_sequence_order = self.get_quasi_sequence_order()
-
-            if (descr == "pseudo_amino_acid_composition" and getattr(self, "pseudo_amino_acid_composition").empty):
-                    self.pseudo_amino_acid_composition = self.get_pseudo_amino_acid_composition()
-
-            if (descr == "amphiphilic_pseudo_amino_acid_composition" and getattr(self, "amphiphilic_pseudo_amino_acid_composition").empty):
-                    self.amphiphilic_pseudo_amino_acid_composition = self.get_amphiphilic_pseudo_amino_acid_composition()
+        if self.n_jobs > 1:
+            #compute descriptors concurrently; skip any already populated from a prior import
+            pending = [(name, getter) for name, getter in _getter_map if getattr(self, name).empty]
+            with ThreadPoolExecutor(max_workers=self.n_jobs) as executor:
+                futures = {executor.submit(getter): name for name, getter in pending}
+                for future in tqdm(as_completed(futures), total=len(futures), unit=" descriptor",
+                                   desc="Descriptors", ncols=90):
+                    name = futures[future]
+                    setattr(self, name, future.result())
+        else:
+            #iterate over all descriptors sequentially, calculating each using their respective function
+            for name, getter in tqdm(_getter_map, unit=" descriptor", position=0,
+                                     desc="Descriptors", mininterval=30, ncols=90):
+                if getattr(self, name).empty:
+                    setattr(self, name, getter())
 
         #stop time counter, calculate elapsed time
         end = time.time()      
@@ -2320,13 +2308,14 @@ class Descriptors():
 
        return all_descriptors
 
-    def _calculate_descriptor_batch(self, 
-                                   descriptor_func: Callable, 
+    def _calculate_descriptor_batch(self,
+                                   descriptor_func: Callable,
                                    desc_name: str = "",
                                    **kwargs) -> pd.DataFrame:
         """
         Generic helper method to calculate descriptors for all sequences, preventing code repetition.
-        
+        Uses self.n_jobs threads to parallelise across sequences when n_jobs > 1.
+
         Parameters
         ==========
         :descriptor_func: Callable
@@ -2335,16 +2324,28 @@ class Descriptors():
             Name of descriptor for progress tracking
         :kwargs: dict
             Additional keyword arguments to pass to descriptor function
-        
+
         Returns
         =======
         :pd.DataFrame
             Dataframe with calculated descriptor values for all sequences
         """
-        iterator = tqdm(self.protein_seqs, desc=f"Computing {desc_name}") if desc_name else self.protein_seqs
+        seqs = list(self.protein_seqs)
 
-        # accumulate results in a list to avoid O(n²) repeated concat
-        desc_list = [descriptor_func(seq, **kwargs) for seq in iterator]
+        if self.n_jobs <= 1:
+            iterator = tqdm(seqs, desc=f"Computing {desc_name}", ncols=90) if desc_name else seqs
+            # accumulate results in a list to avoid O(n²) repeated concat
+            desc_list = [descriptor_func(seq, **kwargs) for seq in iterator]
+        else:
+            desc_list = [None] * len(seqs)
+            with ThreadPoolExecutor(max_workers=self.n_jobs) as executor:
+                futures = {executor.submit(descriptor_func, seq, **kwargs): i
+                           for i, seq in enumerate(seqs)}
+                progress = tqdm(as_completed(futures), total=len(seqs),
+                                desc=f"Computing {desc_name}", ncols=90) if desc_name else as_completed(futures)
+                for future in progress:
+                    i = futures[future]
+                    desc_list[i] = future.result()
 
         return pd.concat(desc_list, ignore_index=False).reset_index(drop=True)
         
