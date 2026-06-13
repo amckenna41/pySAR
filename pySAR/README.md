@@ -362,6 +362,26 @@ geary_autocorrelation = desc.get_geary_autocorrelation()
 ```
 </details>
 
+<details><summary><b>Parallel descriptor computation using n_jobs:</b></summary><br>
+The <code>Descriptors</code> class accepts an <code>n_jobs</code> parameter that controls the number of worker threads used during computation. Setting it above 1 enables two levels of parallelism: descriptor groups are dispatched concurrently when calling <code>get_all_descriptors</code>, and individual sequences within each descriptor are processed in parallel threads. Values of 0 or below are silently clamped to 1 (sequential). The results are numerically identical to sequential computation.<br>
+
+```python
+from pySAR.descriptors import Descriptors
+
+# sequential computation (default) — n_jobs=1
+desc_seq = Descriptors(config_file="thermostability.json", n_jobs=1)
+
+# parallel computation using 4 threads
+desc_par = Descriptors(config_file="thermostability.json", n_jobs=4)
+
+# both paths produce identical results
+aa_comp = desc_par.get_amino_acid_composition()    # shape: (N, 20)
+
+# parallel is most effective when computing all descriptors at once
+all_desc = desc_par.get_all_descriptors()          # shape: (N, 10572+)
+```
+</details>
+
 <details><summary><b>Calculate and export all protein descriptors:</summary></b><br>
 Prior to evaluating the various available properties and features at which to encode a set of protein sequences, it is reccomened that you pre-calculate all the available descriptors in one go, saving them to a csv for later that <i>pySAR</i> will then import from. Output values are stored in a csv set by the <i>descriptors_csv</i> config parameter (the name of the exported csv via the <i>descriptors_export_filename</i> parameter can also be passed into the function). Output will be of the shape N x M, where N is the number of protein sequences in the dataset and M is the total number of features calculated from all 33 descriptors which varies depending on some descriptor-specific metaparameters. For example, using the thermostability dataset, the output will be 261 x 10572. <br>
 

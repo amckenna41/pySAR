@@ -4,7 +4,7 @@ All of the modules and functionalities of pySAR are thoroughly tested using the 
 
 Module Tests
 ------------
-* `test_descriptors` - tests for descriptors module and class.
+* `test_descriptors` - tests for descriptors module and class, including parallel descriptor computation via the `n_jobs` parameter (`test_n_jobs_parallel`).
 * `test_encoding` - tests for encoding module and class.
 * `test_model` - tests for model module and class.
 * `test_pyDSP` - tests for pyDSP module and class.

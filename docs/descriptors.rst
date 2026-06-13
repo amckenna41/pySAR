@@ -28,7 +28,7 @@ initialisation.
 Instantiation
 -------------
 
-``Descriptors.__init__(config_file, protein_seqs=None, **kwargs)``
+``Descriptors.__init__(config_file, protein_seqs=None, n_jobs=1, **kwargs)``
 
 .. list-table::
    :header-rows: 1
@@ -43,6 +43,9 @@ Instantiation
    * - ``protein_seqs``
      - ``None``
      - Protein sequences as a ``pd.Series`` or a single string. If ``None`` or empty, sequences are loaded from the dataset path specified in the config.
+   * - ``n_jobs``
+     - ``1``
+     - Number of worker threads to use for parallel descriptor computation. Values of 0 or below are clamped to 1 (sequential). See :ref:`parallelism` for details.
    * - ``**kwargs``
      - —
      - Keyword arguments (``dataset``, ``descriptors_csv``) that override the corresponding config file values.
@@ -57,6 +60,50 @@ On construction the class:
 Importing pre-calculated descriptors is strongly recommended for large datasets — set
 ``all_desc: 1`` in the ``[descriptors]`` config section on first run to generate the
 CSV, then subsequent runs will load from it directly without recalculating.
+
+----
+
+.. _parallelism:
+
+Parallelism
+-----------
+
+The ``n_jobs`` parameter controls how many threads the ``Descriptors`` class uses
+during computation. Two levels of parallelism are available:
+
+**Across descriptor groups** (``get_all_descriptors``)
+    When ``n_jobs > 1``, the 33 descriptor groups are dispatched concurrently to a
+    ``ThreadPoolExecutor``. Each group (e.g. amino acid composition, autocorrelation,
+    CTD) is computed in a separate thread, and results are merged once all futures
+    complete. With ``n_jobs=1`` the groups are computed sequentially in a fixed order.
+
+**Across sequences within a descriptor** (``_calculate_descriptor_batch``)
+    Individual descriptor methods (e.g. ``get_amino_acid_composition``) iterate over
+    every protein sequence. When ``n_jobs > 1``, sequences are split across threads so
+    multiple sequences are processed simultaneously; when ``n_jobs=1`` they are
+    processed one at a time.
+
+Both levels are active whenever ``n_jobs > 1``, so the speed-up is multiplicative when
+calling ``get_all_descriptors`` on large datasets.
+
+.. code-block:: python
+
+    # sequential (default)
+    desc = Descriptors(config_file="config/thermostability.json", n_jobs=1)
+
+    # use 4 threads — faster on multi-core machines with many sequences
+    desc = Descriptors(config_file="config/thermostability.json", n_jobs=4)
+
+    all_desc = desc.get_all_descriptors()
+
+.. note::
+
+    ``n_jobs`` uses Python threads (``ThreadPoolExecutor``), not processes, so it is
+    most effective when the per-sequence computation releases the GIL (e.g. NumPy
+    operations inside ``protpy``). Values of ``0`` or below are silently clamped to
+    ``1``. Pre-calculating descriptors to a CSV (see :ref:`Pre-calculated Descriptors
+    <pre-calculated-descriptors>`) remains the fastest option for repeated runs on the
+    same dataset.
 
 ----
 
@@ -730,8 +777,9 @@ Utility Methods
 ---------------
 
 ``get_all_descriptors()``
-    Calculates every descriptor in sequence and returns a concatenated DataFrame of all
-    features. Also exports to the ``descriptors_csv`` path if configured.
+    Calculates every descriptor and returns a concatenated DataFrame of all features.
+    Also exports to the ``descriptors_csv`` path if configured. When ``n_jobs > 1``
+    the descriptor groups are computed concurrently — see :ref:`parallelism`.
 
     .. code-block:: python
 
@@ -764,6 +812,8 @@ Utility Methods
     Returns the column names of the calculated DataFrame for descriptor ``name``.
 
 ----
+
+.. _pre-calculated-descriptors:
 
 Pre-calculated Descriptors
 ---------------------------
