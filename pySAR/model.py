@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, BaggingRe
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split, cross_val_score
 from sklearn.metrics import get_scorer_names
 from sklearn.feature_selection import SelectKBest, f_regression, VarianceThreshold, RFE, SelectFromModel, SequentialFeatureSelector
 from difflib import get_close_matches
@@ -215,9 +215,9 @@ class Model():
         if (Y_values.ndim != 2):
             Y_values = np.reshape(Y_values, (-1,1))
 
-        #if invalid test size input then set to default 0.2
+        #if invalid test size input then raise ValueError
         if (test_split <= 0 or test_split >=1):
-            test_split = 0.2
+            raise ValueError(f'test_split must be between 0 and 1 exclusive, got {test_split}.')
 
         #setting test_split attribute
         self.test_split = test_split     
@@ -231,6 +231,9 @@ class Model():
             scaler = StandardScaler()
             X_train = scaler.fit_transform(X_train)
             X_test = scaler.transform(X_test)
+            self.scaler = scaler
+        else:
+            self.scaler = None
 
         #set X and Y attributes
         self.X_train = X_train
@@ -302,9 +305,72 @@ class Model():
         #save model in pickle format
         try:
             with open(save_path, 'wb') as file:
-                pickle.dump(self.model, file)
+                pickle.dump({'model': self.model, 'scaler': getattr(self, 'scaler', None)}, file)
         except pickle.PickleError as e:
             raise RuntimeError(f"Error pickling model with path: {save_path}.") from e
+
+    @classmethod
+    def load(cls, path: str, allow_pickle: bool = True) -> 'Model':
+        """
+        Load a previously saved model and its scaler from a pickle file.
+
+        Parameters
+        ==========
+        :path: str
+            Filepath to the .pkl file created by save().
+        :allow_pickle: bool (default=True)
+            Must be True to load the file. Set to False to raise a ValueError
+            (useful to block accidental loading of untrusted sources).
+
+        Returns
+        =======
+        :instance: Model
+            Reconstructed Model instance with model and scaler restored.
+
+        Security
+        ========
+        Pickle deserialization can execute arbitrary code. Never load .pkl files
+        from untrusted sources. Pass allow_pickle=False to block loading entirely.
+        """
+        if not allow_pickle:
+            raise ValueError(
+                "allow_pickle=False: loading pickle files is disabled. "
+                "Pass allow_pickle=True only if you trust the source."
+            )
+        import warnings as _warnings
+        _warnings.warn(
+            "Model.load() deserializes a pickle file. Never load .pkl files "
+            "from untrusted sources as they can execute arbitrary code.",
+            UserWarning, stacklevel=2
+        )
+        if not os.path.isfile(path):
+            raise OSError(f'Model file not found at path: {path}.')
+        try:
+            with open(path, 'rb') as file:
+                payload = pickle.load(file)
+        except pickle.UnpicklingError as e:
+            raise RuntimeError(f'Error unpickling model at path: {path}.') from e
+
+        if not isinstance(payload, dict) or 'model' not in payload:
+            raise ValueError(
+                f'Unexpected pickle format in {path}. Expected a dict with a "model" key.'
+            )
+
+        instance = cls.__new__(cls)
+        instance.model = payload['model']
+        instance.scaler = payload.get('scaler')
+        instance.model_fit = instance.model  # mark as fitted
+        instance.algorithm = type(instance.model).__name__.lower()
+        instance.parameters = {}
+        instance.test_split = 0.2
+        instance.valid_models = list(cls.MODEL_CONSTRUCTORS.keys())
+        instance.X = None
+        instance.Y = None
+        instance.X_train = None
+        instance.X_test = None
+        instance.Y_train = None
+        instance.Y_test = None
+        return instance
 
     def hyperparameter_tuning(self, param_grid=None, metric='r2', cv=5, n_jobs=None, verbose=2):
         """
@@ -402,6 +468,7 @@ class Model():
         print('##############################################################')
         
         self.grid_result = grid_result
+        return self.grid_result
 
     def model_fitted(self):
         """
@@ -418,7 +485,7 @@ class Model():
         """
         return (self.model_fit is not None)
 
-    def feature_selection(self, method=""):
+    def feature_selection(self, method="", k=None):
         """
         Feature selection/dimensionality reduction on dataset and models.
         Return the best applicable features found using the technique selected
@@ -427,19 +494,23 @@ class Model():
         Parameters
         ==========
         :method: str (default="")
-            feature selection method to use.
+            feature selection method to use. One of: selectkbest, chi2,
+            variancethreshold, rfe, selectfrommodel, sequentialfeatureselector.
+        :k: int or None (default=None)
+            number of features to select for SelectKBest/chi2 methods.
+            Defaults to 1 for selectkbest and 2 for chi2 when None.
 
         Returns
         =======
         :X_new: np.ndarray
             best found features using training data.
-        
+
         References
         ==========
         [1] https://scikit-learn.org/stable/modules/feature_selection.html
         """
         #list of available sklearn feature selection techniques
-        valid_feature_selection = ["selectkbest", "chi2", "variancethreshold", "rfe", 
+        valid_feature_selection = ["selectkbest", "chi2", "variancethreshold", "rfe",
             "selectfrommodel", "sequentialfeatureselector"]
 
         #get closest valid feature selection method
@@ -448,29 +519,94 @@ class Model():
         selected_method = feature_matches[0] if feature_matches else "selectkbest"
 
         #apply feature selection method according to input parameter
-        if (selected_method == 'selectkbest'):
-            X_new = SelectKBest(f_regression, k=1).fit_transform(self.X, self.Y)
-        elif (selected_method == "variancethreshold"):
+        if selected_method == 'selectkbest':
+            k_val = k if k is not None else 1
+            X_new = SelectKBest(f_regression, k=k_val).fit_transform(self.X, self.Y)
+        elif selected_method == "variancethreshold":
             X_new = VarianceThreshold(1).fit_transform(self.X, self.Y)
-        elif (selected_method == "chi2"):
+        elif selected_method == "chi2":
             # chi2 is a classification scorer and requires non-negative features; f_regression
             # is used here because this class is exclusively for regression tasks.
-            # The "chi2" label selects k=2 features (vs selectkbest's k=1) for a wider feature set.
-            X_new = SelectKBest(f_regression, k=2).fit_transform(self.X, self.Y)
-        elif (selected_method == "rfe"):
+            # Defaults to k=2 features (wider feature set than selectkbest's default of 1).
+            k_val = k if k is not None else 2
+            X_new = SelectKBest(f_regression, k=k_val).fit_transform(self.X, self.Y)
+        elif selected_method == "rfe":
             selector = RFE(self.model, n_features_to_select=5, step=1)
             X_new = selector.fit_transform(self.X, self.Y)
-        elif (selected_method == "sequentialfeatureselector"):
+        elif selected_method == "sequentialfeatureselector":
             selector = SequentialFeatureSelector(self.model, n_features_to_select=3)
             X_new = selector.fit_transform(self.X, self.Y)
-        elif (selected_method == "selectfrommodel"):
+        elif selected_method == "selectfrommodel":
             selector = SelectFromModel(estimator=deepcopy(self.model))
             X_new = selector.fit_transform(self.X, self.Y)
         else:
-            X_new = SelectKBest(f_regression, k=1).fit_transform(self.X, self.Y)
+            k_val = k if k is not None else 1
+            X_new = SelectKBest(f_regression, k=k_val).fit_transform(self.X, self.Y)
 
         return X_new
-        
+
+    def cv_score(self, cv: int = 5, metric: str = 'r2', n_jobs: int = None) -> np.ndarray:
+        """
+        Evaluate the model using k-fold cross-validation on the full (X, Y) data.
+
+        Unlike :meth:`train_test_split` + :meth:`fit`, this method does not
+        permanently alter the model's fitted state; a deep copy of the model is
+        used internally so the original :attr:`model_fit` is preserved.
+
+        Parameters
+        ==========
+        :cv: int (default=5)
+            Number of cross-validation folds.
+        :metric: str (default='r2')
+            Sklearn scoring string.  See
+            https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
+        :n_jobs: int (default=None)
+            Number of parallel jobs.  ``None`` means 1; ``-1`` means all CPUs.
+
+        Returns
+        =======
+        :scores: np.ndarray
+            Array of *cv* scores, one per fold.
+
+        Raises
+        ======
+        :RuntimeError
+            If :meth:`train_test_split` has not been called yet (X/Y unavailable).
+        :ValueError
+            If *metric* is not a valid sklearn scoring string.
+        """
+        if self.X is None or self.Y is None:
+            raise RuntimeError('X and Y must be set before calling cv_score(). '
+                               'Call train_test_split() first.')
+
+        valid_scorers = sorted(get_scorer_names())
+        if metric not in valid_scorers:
+            raise ValueError(
+                f"Invalid scoring metric '{metric}'. "
+                f"See sklearn.metrics.get_scorer_names() for valid options."
+            )
+
+        if not isinstance(cv, int) or cv < 2:
+            import warnings as _warnings
+            _warnings.warn(f'Invalid cv value {cv!r}; must be an int >= 2. Defaulting to 5.',
+                           UserWarning, stacklevel=2)
+            cv = 5
+
+        X_values = self.X.values if isinstance(self.X, (pd.DataFrame, pd.Series)) else self.X
+        Y_values = self.Y.values if isinstance(self.Y, (pd.DataFrame, pd.Series)) else self.Y
+        X_values = np.asarray(X_values)
+        Y_values = np.asarray(Y_values).ravel()
+
+        scores = cross_val_score(
+            deepcopy(self.model),
+            X_values,
+            Y_values,
+            cv=cv,
+            scoring=metric,
+            n_jobs=n_jobs,
+        )
+        return scores
+
 ######################          Getters & Setters          ######################
 
     @property

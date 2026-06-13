@@ -7,6 +7,7 @@ import numpy as np
 import os
 import shutil
 import re
+import glob
 import unittest
 unittest.TestLoader.sortTestMethodsUsing = None
 
@@ -40,6 +41,8 @@ class PySARTests(unittest.TestCase):
         testing correct descriptor pysar encoding functionality.
     test_aai_desc_encoding:
         testing correct aai + descriptor pysar encoding functionality.
+    test_predict_activity:
+        testing predict_activity() method for AAI, descriptor and combined encoding strategies.
     """
     def setUp(self):
         """ Import the 4 config files for each of the 4 datasets used for testing the pySAR methods. """
@@ -69,8 +72,8 @@ class PySARTests(unittest.TestCase):
     # @unittest.skip("Skipping metadata tests.")
     def test_pySAR_metadata(self):
         """ Testing correct pySAR version and metadata. """
-        self.assertEqual(pysar_.__version__, "2.5.1", 
-            f"pySAR version is not correct, expected 2.5.1, got {pysar_.__version__}.")
+        self.assertEqual(pysar_.__version__, "2.5.2", 
+            f"pySAR version is not correct, expected 2.5.2, got {pysar_.__version__}.")
         self.assertEqual(pysar_.__name__, "pySAR", 
             f"pySAR software name is not correct, expected pySAR, got {pysar_.__name__}.")
         self.assertEqual(pysar_.__author__, "AJ McKenna: https://github.com/amckenna41", 
@@ -238,6 +241,25 @@ class PySARTests(unittest.TestCase):
         with self.assertRaises(TypeError, msg='Type Error raised, config file parameter not correct data type.'):
             pysar.PySAR(config_file=101)
             pysar.PySAR(config_file=False)
+
+    def test_preprocessing_fuzzy_column_matching(self):
+        """ Fuzzy column matching: close name emits UserWarning; no match raises ValueError. """
+        import warnings
+        # 'sequences' is close enough to 'sequence' (the real column name) — should match with a warning
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            p = pysar.PySAR(config_file=self.all_config_files[0], sequence_col="sequences")
+            user_warnings = [w for w in caught if issubclass(w.category, UserWarning)]
+            self.assertTrue(len(user_warnings) > 0,
+                "Expected a UserWarning when a fuzzy column match is found.")
+        self.assertEqual(p.sequence_col, "sequence",
+            f"Expected sequence_col to be resolved to 'sequence', got '{p.sequence_col}'.")
+        self.assertIsNotNone(p.sequences,
+            "Expected sequences to be loaded after fuzzy column resolution.")
+        # Completely unrecognisable name should raise ValueError (no fuzzy match possible)
+        with self.assertRaises(ValueError,
+                msg='ValueError expected when sequence_col has no close match.'):
+            pysar.PySAR(config_file=self.all_config_files[0], sequence_col="completelywrongcolumn")
 
     def test_sequences(self):
         """ Testing getting the protein sequences from the dataset. """
@@ -460,12 +482,14 @@ class PySARTests(unittest.TestCase):
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_thermostability[col].values)),
                     f"Column {col} expected to be of type np.float64 got {type(test_aai_thermostability[col])}.")  
-        self.assertTrue(os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME), 
-            f"Output dir storing encoding results not found: {self.test_output_folder + '_' + _globals.CURRENT_DATETIME}.")
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "aai_results.csv")),
-            f"Output csv storing encoding results not found: {os.path.join(self.test_output_folder + '_' + _globals.CURRENT_DATETIME, 'aai_results.csv')}.")
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")),
-            f"Output regression plot not found: {os.path.join(self.test_output_folder + '_' + _globals.CURRENT_DATETIME, 'model_regression_plot.png')}.")
+        _aai_output_dirs = sorted(glob.glob(self.test_output_folder + "_*"))
+        self.assertTrue(len(_aai_output_dirs) > 0,
+            f"Output dir storing encoding results not found (pattern: {self.test_output_folder}_*).")
+        _aai_output_dir = _aai_output_dirs[-1]
+        self.assertTrue(os.path.isfile(os.path.join(_aai_output_dir, "aai_results.csv")),
+            f"Output csv storing encoding results not found in: {_aai_output_dir}.")
+        self.assertTrue(os.path.isfile(os.path.join(_aai_output_dir, "model_regression_plot.png")),
+            f"Output regression plot not found in: {_aai_output_dir}.")
         test_pySAR_enantioselectivity = pysar.PySAR(config_file=self.all_config_files[1]) #enantioselectivity
         test_aai_enantioselectivity = test_pySAR_enantioselectivity.encode_aai(aai_indices=aa_indices_2, print_results=0, output_folder=self.test_output_folder)
         self.assertIsInstance(test_aai_enantioselectivity, pd.DataFrame, 
@@ -702,12 +726,14 @@ class PySARTests(unittest.TestCase):
         self.assertEqual(test_pySAR_localization.feature_space, (254, 400),
             f"Expected feature space dimensions to be 254 x 400, got {test_pySAR_localization.feature_space}.") 
 
-        self.assertTrue(os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME), 
-            f"Output dir storing encoding results not found: {self.test_output_folder + '_' + _globals.CURRENT_DATETIME}.")
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "desc_results.csv")),
-            f"Output csv storing encoding results not found: {os.path.join(self.test_output_folder + '_' + _globals.CURRENT_DATETIME, 'desc_results.csv')}.")
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")),
-            f"Output regression plot not found: {os.path.join(self.test_output_folder + '_' + _globals.CURRENT_DATETIME, 'model_regression_plot.png')}.")
+        _desc_output_dirs = sorted(glob.glob(self.test_output_folder + "_*"))
+        self.assertTrue(len(_desc_output_dirs) > 0,
+            f"Output dir storing encoding results not found (pattern: {self.test_output_folder}_*).")
+        _desc_output_dir = _desc_output_dirs[-1]
+        self.assertTrue(os.path.isfile(os.path.join(_desc_output_dir, "desc_results.csv")),
+            f"Output csv storing encoding results not found in: {_desc_output_dir}.")
+        self.assertTrue(os.path.isfile(os.path.join(_desc_output_dir, "model_regression_plot.png")),
+            f"Output regression plot not found in: {_desc_output_dir}.")
 #5.)
         with self.assertRaises(ValueError, msg='ValueError: Descriptor parameter cannot be None or an empty string.'):
             test_pySAR_thermostability.encode_descriptor(descriptors=None)
@@ -806,12 +832,14 @@ class PySARTests(unittest.TestCase):
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_aai_desc[col].values)),
                     f"Column {col} expected to be of type np.float64 got {type(test_aai_desc[col])}.")     
-        self.assertTrue(os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME), 
-            f"Output dir storing encoding results not found: {self.test_output_folder + '_' + _globals.CURRENT_DATETIME}")
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "aai_desc_results.csv")),
-            f"Output csv storing encoding results not found: {os.path.join(self.test_output_folder + '_' + _globals.CURRENT_DATETIME, 'aai_desc_results.csv')}")
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "model_regression_plot.png")),
-            f"Output regression plot not found: {os.path.join(self.test_output_folder + '_' + _globals.CURRENT_DATETIME, 'model_regression_plot.png')}")
+        _aai_desc_output_dirs = sorted(glob.glob(self.test_output_folder + "_*"))
+        self.assertTrue(len(_aai_desc_output_dirs) > 0,
+            f"Output dir storing encoding results not found (pattern: {self.test_output_folder}_*).")
+        _aai_desc_output_dir = _aai_desc_output_dirs[-1]
+        self.assertTrue(os.path.isfile(os.path.join(_aai_desc_output_dir, "aai_desc_results.csv")),
+            f"Output csv storing encoding results not found in: {_aai_desc_output_dir}.")
+        self.assertTrue(os.path.isfile(os.path.join(_aai_desc_output_dir, "model_regression_plot.png")),
+            f"Output regression plot not found in: {_aai_desc_output_dir}.")
         self.assertEqual(test_pySAR_absorption.feature_space, (254, 1373),
             f"Expected feature space dimensions to be 254 x 1373, got {test_pySAR_absorption.feature_space}.")  
 #5.)
@@ -833,6 +861,164 @@ class PySARTests(unittest.TestCase):
             test_pySAR_absorption.encode_aai_descriptor(descriptors=False, aai_indices=True)
             test_pySAR_absorption.encode_aai_descriptor(descriptors=2.9, aai_indices=9000)
 
+    def test_predict_activity(self):
+        """Testing predict_activity() after each of the three encoding strategies."""
+        import warnings
+#1.)    predict_activity() raises RuntimeError before any encode_* call
+        fresh = pysar.PySAR(config_file=self.all_config_files[0])
+        with self.assertRaises(RuntimeError,
+                msg='RuntimeError expected when predict_activity called before any encode_* method.'):
+            fresh.predict_activity("ACDEFGHIKLMNPQRSTVWY")
+#2.)    AAI encoding strategy
+        test_aai = pysar.PySAR(config_file=self.all_config_files[0])
+        test_aai.encode_aai(aai_indices="NAKH920102", print_results=0,
+                            output_folder=self.test_output_folder)
+        # Use the first two sequences from the dataset as unseen inputs
+        test_seqs = list(test_aai.sequences[:2])
+        preds = test_aai.predict_activity(test_seqs)
+        self.assertIsInstance(preds, np.ndarray,
+            f"predict_activity() should return np.ndarray, got {type(preds)}.")
+        self.assertEqual(len(preds), 2,
+            f"Expected 2 predictions, got {len(preds)}.")
+#3.)    Single string input returns length-1 array
+        single_pred = test_aai.predict_activity(test_seqs[0])
+        self.assertIsInstance(single_pred, np.ndarray,
+            "predict_activity() with a single string should still return np.ndarray.")
+        self.assertEqual(len(single_pred), 1,
+            f"Expected 1 prediction for single-sequence input, got {len(single_pred)}.")
+#4.)    Descriptor encoding strategy
+        test_desc = pysar.PySAR(config_file=self.all_config_files[0])
+        test_desc.encode_descriptor(descriptors="amino_acid_composition", print_results=0,
+                                    output_folder=self.test_output_folder)
+        desc_seqs = list(test_desc.sequences[:2])
+        preds_desc = test_desc.predict_activity(desc_seqs)
+        self.assertIsInstance(preds_desc, np.ndarray,
+            f"predict_activity() (descriptor) should return np.ndarray, got {type(preds_desc)}.")
+        self.assertEqual(len(preds_desc), 2,
+            f"Expected 2 predictions from descriptor strategy, got {len(preds_desc)}.")
+#5.)    Invalid sequences raise ValueError
+        with self.assertRaises(ValueError,
+                msg='ValueError expected for sequences containing invalid amino acids.'):
+            test_aai.predict_activity(["ZZZZZZZZZZ"])
+
+    def test_predict_activity_uncertainty(self):
+        """predict_activity(return_uncertainty=True) returns (preds, std) for GPR models."""
+        from sklearn.gaussian_process import GaussianProcessRegressor
+        # Build a PySAR instance with a GPR model by overriding algorithm
+        test_gpr = pysar.PySAR(config_file=self.all_config_files[0])
+        # Override algorithm to GaussianProcessRegressor
+        test_gpr.algorithm = 'GaussianProcessRegressor'
+        test_gpr.encode_aai(aai_indices="NAKH920102", print_results=0,
+                            output_folder=self.test_output_folder)
+        # Verify model is a GPR
+        if not isinstance(test_gpr.model.model_fit, GaussianProcessRegressor):
+            self.skipTest("Model is not a GaussianProcessRegressor — test N/A for this config.")
+        test_seqs = list(test_gpr.sequences[:2])
+        result = test_gpr.predict_activity(test_seqs, return_uncertainty=True)
+        self.assertIsInstance(result, tuple,
+            "return_uncertainty=True with GPR should return a tuple (preds, std).")
+        preds, std = result
+        self.assertIsInstance(preds, np.ndarray, "Predictions should be np.ndarray.")
+        self.assertIsInstance(std, np.ndarray, "Uncertainty std should be np.ndarray.")
+        self.assertEqual(len(preds), 2, f"Expected 2 predictions, got {len(preds)}.")
+        self.assertEqual(len(std), 2, f"Expected 2 std values, got {len(std)}.")
+        self.assertTrue(np.all(std >= 0), "Standard deviations must be non-negative.")
+
+    def test_encode_aai_random_state_cv(self):
+        """encode_aai() accepts random_state and cv parameters without raising errors."""
+        test_obj = pysar.PySAR(config_file=self.all_config_files[0])
+        result = test_obj.encode_aai(aai_indices="NAKH920102", print_results=0,
+                                     output_folder=self.test_output_folder,
+                                     random_state=42, cv=3)
+        self.assertIsInstance(result, pd.DataFrame,
+            "encode_aai() with random_state/cv should still return a DataFrame.")
+
+    def test_encode_descriptor_random_state_cv(self):
+        """encode_descriptor() accepts random_state and cv parameters without raising errors."""
+        test_obj = pysar.PySAR(config_file=self.all_config_files[0])
+        result = test_obj.encode_descriptor(descriptors="amino_acid_composition",
+                                            print_results=0,
+                                            output_folder=self.test_output_folder,
+                                            random_state=42, cv=3)
+        self.assertIsInstance(result, pd.DataFrame,
+            "encode_descriptor() with random_state/cv should still return a DataFrame.")
+
+    def test_encode_aai_descriptor_random_state_cv(self):
+        """encode_aai_descriptor() accepts random_state and cv parameters without raising errors."""
+        test_obj = pysar.PySAR(config_file=self.all_config_files[0])
+        result = test_obj.encode_aai_descriptor(aai_indices="NAKH920102",
+                                                descriptors="amino_acid_composition",
+                                                print_results=0,
+                                                output_folder=self.test_output_folder,
+                                                random_state=42, cv=3)
+        self.assertIsInstance(result, pd.DataFrame,
+            "encode_aai_descriptor() with random_state/cv should still return a DataFrame.")
+
+    def test_logger_parameter(self):
+        """PySAR accepts a custom logger; output_results uses it instead of print."""
+        import logging
+        import io
+        log_stream = io.StringIO()
+        handler = logging.StreamHandler(log_stream)
+        logger = logging.getLogger("test_pysar_logger")
+        logger.setLevel(logging.DEBUG)
+        logger.handlers = []
+        logger.addHandler(handler)
+        test_obj = pysar.PySAR(config_file=self.all_config_files[0], logger=logger)
+        self.assertIs(test_obj.logger, logger,
+            "PySAR should store the logger passed to __init__.")
+        # Run encoding so output_results is called
+        test_obj.encode_aai(aai_indices="NAKH920102", print_results=True,
+                            output_folder=self.test_output_folder)
+        captured = log_stream.getvalue()
+        self.assertIn("R2", captured,
+            "Logger should have captured 'R2' from output_results.")
+
+    def test_save_and_load_session(self):
+        """save_session() and load_session() round-trip a fitted PySAR instance."""
+        import tempfile
+        test_obj = pysar.PySAR(config_file=self.all_config_files[0])
+        test_obj.encode_aai(aai_indices="NAKH920102", print_results=0,
+                            output_folder=self.test_output_folder)
+        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as tmp:
+            session_path = tmp.name
+        try:
+            # Save session
+            test_obj.save_session(session_path)
+            self.assertTrue(os.path.isfile(session_path),
+                "save_session() should create a .pkl file.")
+            # Load session
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                loaded = pysar.PySAR.load_session(session_path)
+            self.assertIsInstance(loaded, pysar.PySAR,
+                "load_session() should return a PySAR instance.")
+            # Predictions from loaded session should match original
+            test_seqs = list(test_obj.sequences[:2])
+            preds_orig = test_obj.predict_activity(test_seqs)
+            preds_loaded = loaded.predict_activity(test_seqs)
+            np.testing.assert_array_almost_equal(preds_orig, preds_loaded,
+                err_msg="Predictions from loaded session should match original.")
+        finally:
+            if os.path.isfile(session_path):
+                os.remove(session_path)
+
+    def test_load_session_allow_pickle_false(self):
+        """load_session(allow_pickle=False) raises ValueError."""
+        with self.assertRaises(ValueError,
+                msg="load_session(allow_pickle=False) should raise ValueError."):
+            pysar.PySAR.load_session("dummy.pkl", allow_pickle=False)
+
+    def test_load_session_missing_file(self):
+        """load_session() raises FileNotFoundError for non-existent path."""
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            with self.assertRaises(FileNotFoundError,
+                    msg="load_session() should raise FileNotFoundError for missing file."):
+                pysar.PySAR.load_session("this_file_definitely_does_not_exist.pkl")
+
     def tearDown(self):
         """Clean up test outputs and temporary files created during test case."""
         # Remove the main test output folder created in setUp
@@ -840,8 +1026,8 @@ class PySARTests(unittest.TestCase):
             shutil.rmtree(self.test_output_folder, ignore_errors=False, onerror=None)
         
         # Remove any timestamped output folders created by pySAR
-        if os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME):
-            shutil.rmtree(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, ignore_errors=False, onerror=None)
+        for _ts_dir in glob.glob(self.test_output_folder + "_*"):
+            shutil.rmtree(_ts_dir, ignore_errors=True)
                 
 if __name__ == '__main__':
     #run all unit tests

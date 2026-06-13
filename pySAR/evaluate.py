@@ -31,7 +31,7 @@ class Evaluate():
     :mae: float
         Mean Absolute Error score.
     :rpd: float
-        Ratio of Performance to Deviation. Returns np.inf if MSE is 0.
+        Ratio of Performance to Deviation. Returns float('nan') if MSE is 0.
     :explained_var: float
         Explained Variance score.
     :max_error: float
@@ -182,10 +182,12 @@ class Evaluate():
         Returns
         =======
         :rpd: float
-            the RPD score for the model.
+            the RPD score for the model. Returns float('nan') when MSE is 0
+            (perfect predictions) to avoid inf values in output CSVs.
         """
-        # reuse already-computed self.mse to avoid a redundant sklearn call
-        return self.Y_true.std() / np.sqrt(self.mse) if self.mse > 0 else np.inf
+        # reuse already-computed self.mse to avoid a redundant sklearn call;
+        # return nan (not inf) when MSE=0 to keep output CSVs finite.
+        return self.Y_true.std() / np.sqrt(self.mse) if self.mse > 0 else float('nan')
 
     def explained_var_(self, multioutput='uniform_average'):
         """

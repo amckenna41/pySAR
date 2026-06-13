@@ -5,8 +5,12 @@
 import pandas as pd
 import numpy as np
 import os
+import pickle
 import warnings
+import logging
+from pathlib import Path
 from difflib import get_close_matches
+from typing import Optional
 import json
 import textwrap
 
@@ -17,6 +21,7 @@ from .evaluate import Evaluate
 from .utils import Map, valid_sequence, remove_gaps, zero_padding, save_results
 from .plots import plot_reg
 from .descriptors import Descriptors
+from .globals_ import get_current_datetime as _get_current_datetime
 
 class PySAR():
     """
@@ -86,88 +91,137 @@ class PySAR():
     output_results(results):
         print out the predictive model parameters/attributes and its results.
     """
-    def __init__(self, config_file="", **kwargs):
+    def __init__(self, config_file="", logger: Optional[logging.Logger] = None, **kwargs):
 
         self.kwargs = kwargs  # keyword arguments override config parameters
         self.config_parameters = {}
+        self.logger = logger
+        self.aai_indices = None
+        self.descriptors = None
+        self.feature_space = ()
 
-        config_filepath = ""
+        self._load_config(config_file)
+        self._extract_config_params()
+        self._load_data()
+        self._init_descriptors()
 
-        #open json config file and read in parameters
+    def _load_config(self, config_file):
+        """
+        Resolve and parse the JSON configuration file.  Sets self.config_file
+        and self.config_parameters (as a Map for dot-notation access).
+        """
         if not isinstance(config_file, str):
-            raise TypeError(f'JSON config file must be a filepath of type string, got type {type(config_file)}.')
+            raise TypeError(
+                f'JSON config file must be a filepath of type string, got type {type(config_file)}.'
+            )
 
-        #append extension if only filename input
-        if (os.path.splitext(config_file)[1] == ''):
-            config_file = config_file + '.json' 
+        #append extension if only filename given without one
+        if os.path.splitext(config_file)[1] == '':
+            config_file = config_file + '.json'
 
-        #set class config file after normalization
         self.config_file = config_file
 
-        if (os.path.isfile(self.config_file)):
-            config_filepath = self.config_file
-        elif (os.path.isfile(os.path.join('config', self.config_file))):
-            config_filepath = os.path.join('config', self.config_file)
+        config_filepath = ""
+        _config_path = Path(self.config_file).expanduser()
+        if _config_path.is_absolute() and _config_path.is_file():
+            config_filepath = str(_config_path)
+        elif _config_path.is_file():
+            config_filepath = str(_config_path.resolve())
+        elif (Path('config') / self.config_file).is_file():
+            config_filepath = str((Path('config') / self.config_file).resolve())
+        elif (Path(__file__).parent.parent / 'config' / self.config_file).is_file():
+            config_filepath = str(
+                (Path(__file__).parent.parent / 'config' / self.config_file).resolve()
+            )
         else:
-            raise OSError(f'JSON config file {self.config_file} not found at path: {config_filepath}.')
+            raise OSError(
+                f'JSON config file {self.config_file!r} not found. '
+                f'Checked: current directory, config/, and package config/.'
+            )
+
         try:
             with open(config_filepath) as f:
                 self.config_parameters = json.load(f)
         except json.JSONDecodeError as exc:
-            raise ValueError(f'Error parsing config JSON file: {config_filepath}.') from exc
+            raise ValueError(
+                f'Error parsing config JSON file: {config_filepath}.'
+            ) from exc
 
         #create instance of Map class so parameters can be accessed via dot notation
         self.config_parameters = Map(self.config_parameters)
 
+    def _extract_config_params(self):
+        """
+        Extract dataset, model and DSP parameters from self.config_parameters,
+        with **kwargs values taking precedence over the config file values.
+        """
+        kw = self.kwargs
+        cfg = self.config_parameters
+
         #dataset parameters
-        self.dataset = self.kwargs.get('dataset') if 'dataset' in self.kwargs else self.config_parameters.dataset["dataset"]
-        self.sequence_col = self.kwargs.get('sequence_col') if 'sequence_col' in self.kwargs else self.config_parameters.dataset["sequence_col"] 
-        self.activity_col = self.kwargs.get('activity_col') if 'activity_col' in self.kwargs else self.config_parameters.dataset["activity"]
+        self.dataset = kw.get('dataset') if 'dataset' in kw else cfg.dataset["dataset"]
+        self.sequence_col = (
+            kw.get('sequence_col') if 'sequence_col' in kw else cfg.dataset["sequence_col"]
+        )
+        self.activity_col = (
+            kw.get('activity_col') if 'activity_col' in kw else cfg.dataset["activity"]
+        )
 
         #model parameters
-        self.model_parameters = self.kwargs.get('model_parameters') if 'model_parameters' in self.kwargs else self.config_parameters.model["parameters"]
-        self.algorithm = self.kwargs.get('algorithm') if 'algorithm' in self.kwargs else self.config_parameters.model["algorithm"]
-        self.test_split = self.kwargs.get('test_split') if 'test_split' in self.kwargs else self.config_parameters.model["test_split"]
-
-        #aai parameters
-        self.aai_indices = None
-
-        #descriptors parameters
-        self.descriptors = None
+        self.model_parameters = (
+            kw.get('model_parameters') if 'model_parameters' in kw else cfg.model["parameters"]
+        )
+        self.algorithm = kw.get('algorithm') if 'algorithm' in kw else cfg.model["algorithm"]
+        self.test_split = (
+            kw.get('test_split') if 'test_split' in kw else cfg.model["test_split"]
+        )
 
         #pyDSP parameters - use_dsp, spectrum, window function, window filter
-        self.use_dsp = self.kwargs.get('use_dsp') if 'use_dsp' in self.kwargs else self.config_parameters.pyDSP["use_dsp"]
-        self.dsp_parameters = self.kwargs.get('dsp_parameters') if 'dsp_parameters' in self.kwargs else self.config_parameters.pyDSP
-        self.filter_parameters = self.kwargs.get('filter_parameters') if 'filter_parameters' in self.kwargs else self.dsp_parameters["filter"]
-        self.spectrum = self.kwargs.get('spectrum') if 'spectrum' in self.kwargs else self.config_parameters.pyDSP["spectrum"]
-        self.window_type = self.kwargs.get('window_type') if 'window_type' in self.kwargs else self.config_parameters.pyDSP["window"]["type"] 
-        self.filter_type = self.kwargs.get('filter_type') if 'filter_type' in self.kwargs else self.config_parameters.pyDSP["filter"]["type"]
+        self.use_dsp = kw.get('use_dsp') if 'use_dsp' in kw else cfg.pyDSP["use_dsp"]
+        self.dsp_parameters = kw.get('dsp_parameters') if 'dsp_parameters' in kw else cfg.pyDSP
+        self.filter_parameters = (
+            kw.get('filter_parameters') if 'filter_parameters' in kw else self.dsp_parameters["filter"]
+        )
+        self.spectrum = kw.get('spectrum') if 'spectrum' in kw else cfg.pyDSP["spectrum"]
+        self.window_type = (
+            kw.get('window_type') if 'window_type' in kw else cfg.pyDSP["window"]["type"]
+        )
+        self.filter_type = (
+            kw.get('filter_type') if 'filter_type' in kw else cfg.pyDSP["filter"]["type"]
+        )
 
-        #set use_dsp variable to true if any of the DSP parameters passed in as kwargs
-        if any(k in self.kwargs for k in ('spectrum', 'window_type', 'filter_type')):
+        #automatically enable DSP if any DSP kwargs are provided
+        if any(k in kw for k in ('spectrum', 'window_type', 'filter_type')):
             self.use_dsp = True
 
-        #import and read dataset
+    def _load_data(self):
+        """
+        Read the dataset, populate sequence/activity arrays, and run preprocessing.
+        Sets self.data, self.sequences, self.activity, self.num_seqs,
+        self.sequence_length.
+        """
         self.data = self.read_data()
-
-        #array of protein sequences
-        self.sequences = self.data[self.sequence_col]
-
-        #array of activity values
-        self.activity = self.data[self.activity_col]
-
-        #pre-process dataset and protein sequences
+        # Use a placeholder if the column doesn't exist yet; preprocessing() will
+        # fuzzy-match the column name and reload sequences/activity from the data.
+        self.sequences = (
+            self.data[self.sequence_col]
+            if self.sequence_col in self.data.columns
+            else pd.Series(dtype=str)
+        )
+        self.activity = (
+            self.data[self.activity_col]
+            if self.activity_col in self.data.columns
+            else pd.Series(dtype=float)
+        )
         self.preprocessing()
-
-        #get number of rows and cols of dataset
         self.num_seqs = len(self.sequences)
         self.sequence_length = len(max(self.sequences, key=len))
 
-        #feature space dimensions used in building the model
-        self.feature_space = ()
-
-        #create instance of Descriptors class using config file, protein sequences and any kwargs
-        self.descriptor = Descriptors(self.config_file, protein_seqs=self.sequences, **self.kwargs)
+    def _init_descriptors(self):
+        """Create the shared Descriptors instance used across all encode methods."""
+        self.descriptor = Descriptors(
+            self.config_file, protein_seqs=self.sequences, **self.kwargs
+        )
 
     def read_data(self):
         """
@@ -207,15 +261,25 @@ class PySAR():
         =======
         None
         """
-        #get closest match for sequence column name in dataset
-        sequence_col_matches = get_close_matches(self.sequence_col, self.data.columns, cutoff=0.6)
-
-        #set sequence col to the first match found, else raise error
-        if (sequence_col_matches != []):
-            self.sequence_col = sequence_col_matches[0]
+        #require exact match for sequence column; fall back to fuzzy match with a warning
+        if self.sequence_col in self.data.columns:
+            pass  # exact match found; nothing to do
         else:
-            raise ValueError(f'Sequence column ({self.sequence_col}) not present in dataset columns:\n{self.data.columns}.')
+            sequence_col_matches = get_close_matches(self.sequence_col, self.data.columns, cutoff=0.6)
+            if sequence_col_matches:
+                matched = sequence_col_matches[0]
+                warnings.warn(
+                    f"Sequence column '{self.sequence_col}' not found exactly; "
+                    f"using closest match '{matched}'.",
+                    UserWarning, stacklevel=3
+                )
+                self.sequence_col = matched
+            else:
+                raise ValueError(f'Sequence column ({self.sequence_col}) not present in dataset columns:\n{self.data.columns}.')
 
+        # Always reload sequences from data with the (possibly fuzzy-matched) column name
+        # so that a placeholder set in _load_data is replaced with the real data.
+        self.sequences = self.data[self.sequence_col]
         #remove any gaps found in sequences in dataset
         self.sequences = remove_gaps(self.sequences)
 
@@ -224,14 +288,21 @@ class PySAR():
         if invalid_seqs is not None:
             raise ValueError(f'Invalid amino acids found in protein sequence dataset: {invalid_seqs}.')
 
-        #get closest match for activity column name in dataset
-        activity_matches = get_close_matches(self.activity_col, self.data.columns, cutoff=0.6)
-
-        #set activity col to the first match found, else raise error
-        if (activity_matches != []):
-            self.activity_col = activity_matches[0]
+        #require exact match for activity column; fall back to fuzzy match with a warning
+        if self.activity_col in self.data.columns:
+            pass  # exact match found; nothing to do
         else:
-            raise ValueError(f'Activity column ({self.activity_col}) not present in dataset columns:\n{list(self.data.columns)}.')
+            activity_matches = get_close_matches(self.activity_col, self.data.columns, cutoff=0.6)
+            if activity_matches:
+                matched = activity_matches[0]
+                warnings.warn(
+                    f"Activity column '{self.activity_col}' not found exactly; "
+                    f"using closest match '{matched}'.",
+                    UserWarning, stacklevel=3
+                )
+                self.activity_col = matched
+            else:
+                raise ValueError(f'Activity column ({self.activity_col}) not present in dataset columns:\n{list(self.data.columns)}.')
 
         #remove any +/- infinity values or any Null/NAN's from activity values
         nan_count = self.data[self.activity_col].replace([np.inf, -np.inf], np.nan).isna().sum()
@@ -278,14 +349,14 @@ class PySAR():
             raise TypeError(f"Input indices parameter must be a string or list, got {type(aai_indices)}.")
 
         #cast index string to list, split multiple indices using comma
-        if (isinstance(aai_indices, str)):
-            if (',' in aai_indices):
+        if isinstance(aai_indices, str):
+            if ',' in aai_indices:
                 aai_indices = aai_indices.split(',')  #split on ',' just in case multiple indices passed in as str
             else:
                 aai_indices = [aai_indices]
 
-        #create zeros numpy array to store encoded sequence output
-        encoded_aai_ = np.zeros((self.num_seqs, self.sequence_length*len(aai_indices)))
+        #accumulate each index's encoding into a list, then concatenate once
+        encoded_parts = []
 
         #if multiple indices used then calculate AAI index encoding for each and concatenate after each calculation
         for index in range(0, len(aai_indices)):
@@ -293,35 +364,78 @@ class PySAR():
             #get values from aaindex record using its accession number and the aaindex package
             encoded_aai = aaindex1[aai_indices[index]].values
 
-            #initialise temp arrays to store encoded sequences
-            temp_seq_vals = []
-            temp_all_seqs = []
+            #build a lookup array indexed by ASCII ordinal for fast vectorized encoding
+            lookup = np.zeros(128, dtype="float32")
+            for aa_char, aa_val in encoded_aai.items():
+                ordinal = ord(aa_char)
+                if ordinal < 128:
+                    lookup[ordinal] = float(aa_val) if aa_val is not None else 0.0
 
-            #iterate through each protein sequence and amino acid, getting the AAI index encoding value
-            for protein in range(0, len(self.sequences)):
-                for aa in self.sequences[protein]:
-                    temp_seq_vals.append(encoded_aai[aa])
-
-                #append encoding and reset temp array
-                temp_all_seqs.append(temp_seq_vals)
-                temp_seq_vals = []
+            #vectorize: convert each sequence string to an array of ASCII codes, then index into lookup
+            encoded_rows = []
+            for seq in self.sequences:
+                char_codes = np.frombuffer(seq.encode('ascii'), dtype=np.uint8).astype(np.int32)
+                encoded_rows.append(lookup[char_codes])
 
             #zero-pad encoding list so that sequences are all the same length
-            temp_all_seqs = zero_padding(temp_all_seqs)
+            temp_all_seqs = zero_padding(encoded_rows)
 
             #convert list of lists into array
             temp_all_seqs = np.array(temp_all_seqs, dtype="float32")
 
-            #in first iteration through aai_indices (index=0) set encoded_aai_ to zero-initialised 
-            #numpy array, else concatenate to the array in previous iteration
-            if (index == 0):
-                encoded_aai_ = temp_all_seqs
-            else:
-                encoded_aai_ = np.concatenate((encoded_aai_, temp_all_seqs), axis=1)
-            
+            encoded_parts.append(temp_all_seqs)
+
+        #concatenate all per-index encodings along the feature axis
+        if len(encoded_parts) == 1:
+            encoded_aai_ = encoded_parts[0]
+        else:
+            encoded_aai_ = np.concatenate(encoded_parts, axis=1)
+
         return encoded_aai_
 
-    def encode_aai(self, aai_indices=None, show_plot=False, print_results=True, output_folder=""):
+    def _log(self, message: str, level: int = logging.INFO) -> None:
+        """Log to the configured logger or fall back to print."""
+        if self.logger is not None:
+            self.logger.log(level, message)
+        else:
+            print(message)
+
+    def _fit_and_evaluate(self, X, random_state=None, cv=None):
+        """
+        Shared pipeline used by encode_aai, encode_descriptor and encode_aai_descriptor.
+        Builds a model from feature matrix *X*, splits, fits, predicts and evaluates.
+
+        Sets self.feature_space and self.model as side effects.
+
+        Parameters
+        ==========
+        :X: pd.DataFrame
+            Feature matrix to train on.
+        :random_state: int or None (default=None)
+            Seed for the train/test split for reproducibility.
+        :cv: int or None (default=None)
+            When set, runs k-fold cross-validation and logs the mean CV R2.
+
+        Returns
+        =======
+        :(evaluation, Y_test, Y_pred): tuple
+            evaluation – Evaluate instance with all metrics.
+            Y_test     – held-out labels (np.ndarray).
+            Y_pred     – model predictions (np.ndarray).
+        """
+        self.feature_space = X.shape
+        self.model = Model(X, self.activity, self.algorithm, parameters=self.model_parameters)
+        self.model.train_test_split(test_split=self.test_split, random_state=random_state)
+        self.model.fit()
+        Y_pred = self.model.predict()
+        Y_test = self.model.Y_test
+        if cv is not None:
+            cv_scores = self.model.cv_score(cv=cv)
+            self._log(f'# CV R2 (k={cv}): mean={cv_scores.mean():.4f}, std={cv_scores.std():.4f}')
+        return Evaluate(Y_test, Y_pred), Y_test, Y_pred
+
+    def encode_aai(self, aai_indices=None, show_plot=False, print_results=True, output_folder="",
+                   random_state=None, cv=None):
         """
         Full pipeline for encoding proteins sequences in dataset using the input AAI indices 
         from the AAI database. If multiple indices/accession numbers input then calculate each 
@@ -372,10 +486,15 @@ class PySAR():
         #sort list of indices into alphabetical order
         self.aai_indices.sort()
 
-        #dataframe to store encoding of inputted aai indices
-        aai_encoding_df = pd.DataFrame()
+        #record encoding strategy for use by predict_activity() and save_session()
+        self._encoding_type = 'aai'
+        self._encoding_aai_indices = list(self.aai_indices)
+        self._encoding_descriptors = None
 
-        #iterate over each index, calculate its encoding, apply DSP functionality if applicable, concat into one dataframe
+        #accumulate per-index DataFrames into a list, then concatenate once to avoid O(n²) copies
+        aai_encoding_frames = []
+
+        #iterate over each index, calculate its encoding, apply DSP functionality if applicable
         for index in self.aai_indices:
 
             #get AAI index encodings specified by indices input parameter
@@ -383,46 +502,32 @@ class PySAR():
 
             #if use_dsp true then get protein spectra from encoded sequences via the AAI indices using PyDSP class,
             #else use the AAI indices encoding's themselves as the feature/training data (X)
-            if (self.use_dsp):
+            if self.use_dsp:
                 #if input spectrum is none or empty, raise error.
                 if self.spectrum is None or self.spectrum == "":
                     raise ValueError(f'Spectrum cannot be None or empty: {self.spectrum}.')
-                pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs)
+                pyDSP = PyDSP(self.config_file, protein_seqs=encoded_seqs,
+                              spectrum=self.spectrum, window_type=self.window_type,
+                              filter_type=self.filter_type)
                 X = pd.DataFrame(pyDSP.spectrum_encoding) #set training data to FFT spectrum encoding
             else:
                 X = pd.DataFrame(encoded_seqs)  #no DSP applied to encoded sequences
 
-            #concat encoding of current aai index with other encodings for training data
-            aai_encoding_df = pd.concat([aai_encoding_df, X], axis=1)
+            aai_encoding_frames.append(X)
+
+        #single pd.concat eliminates O(n²) intermediate copies from the previous loop pattern
+        aai_encoding_df = pd.concat(aai_encoding_frames, axis=1)
 
         #renaming columns in format aai_X, where X is the amino acid number in the sequence
         columns = ["aai_" + str(x) for x in range(1, len(aai_encoding_df.columns) + 1)]
         aai_encoding_df.columns = columns
 
-        #set class variable to the training data feature space
-        self.feature_space = aai_encoding_df.shape
-
-        #create instance of model class of type specified by algorithm parameter using X and Y data
-        self.model = Model(aai_encoding_df, self.activity, self.algorithm, parameters=self.model_parameters)
-        
-        #updating algorithm attribute
-        self.algorithm = repr(self.model)
-
-        #get training and test dataset split from model class
-        X_train, X_test, Y_train, Y_test = self.model.train_test_split(test_split=self.test_split)
-
-        #fit predictive model
-        self.model.fit()
-
-        #predict activity values for test data
-        Y_pred = self.model.predict()
-
-        #create instance of Evaluate class which will get all the evaluation metrics
-        evaluation = Evaluate(Y_test, Y_pred)
+        #build model, fit, predict and evaluate using shared helper
+        evaluation, Y_test, Y_pred = self._fit_and_evaluate(aai_encoding_df, random_state=random_state, cv=cv)
 
         #get categories for all indices in self.aai_indices
         index_cat = []
-        if (isinstance(self.aai_indices, list)):
+        if isinstance(self.aai_indices, list):
             for i in range(0, len(self.aai_indices)):
                 index_cat.append(aaindex1[self.aai_indices[i]].category)
         else:
@@ -438,16 +543,17 @@ class PySAR():
         #convert index and category from default Object type -> String datatypes
         aai_df['Index'] = aai_df['Index'].astype(pd.StringDtype())
         aai_df['Category'] = aai_df['Category'].astype(pd.StringDtype())
-        
+
         #print out results from encoding
         if (print_results):
             self.output_results(aai_df)
 
         #plot regression plot for predictive model
-        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot)
+        _ts = _get_current_datetime()
+        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot, timestamp=_ts)
 
         #save results of encoding to output folder specified by input param
-        save_results(aai_df, 'aai_results', output_folder=output_folder)
+        save_results(aai_df, 'aai_results', output_folder=output_folder, timestamp=_ts)
 
         return aai_df
 
@@ -521,7 +627,8 @@ class PySAR():
 
         return encoded_desc
 
-    def encode_descriptor(self, descriptors=None, show_plot=False, print_results=True, output_folder=""):
+    def encode_descriptor(self, descriptors=None, show_plot=False, print_results=True, output_folder="",
+                          random_state=None, cv=None):
         """
         
         Full pipeline for encoding the protein sequences in the dataset using protein 
@@ -542,8 +649,12 @@ class PySAR():
         :print_results: bool (default=True)
             if true, output verbose output of results and parameters from encoding process.
         :output_folder: str (default="")
-            output folder to store results csv to, if empty input it will be stored in 
+            output folder to store results csv to, if empty input it will be stored in
             the OUTPUT_FOLDER global var.
+        :random_state: int or None (default=None)
+            seed for the train/test split, enabling reproducible results.
+        :cv: int or None (default=None)
+            if set, performs k-fold cross-validation and logs CV R² mean and std.
 
         Returns
         =======
@@ -555,7 +666,7 @@ class PySAR():
             raise ValueError(f'Descriptors input parameter cannot be None or empty: {descriptors}.')
 
         #check input descriptor is of correct type (str or list), if not raise type error
-        if (not (isinstance(descriptors, str))) and (not (isinstance(descriptors, list))):
+        if not isinstance(descriptors, str) and not isinstance(descriptors, list):
             raise TypeError(f"Input descriptor parameter must be a string or list, got {type(descriptors)}.")
 
         #set class attribute        
@@ -572,52 +683,40 @@ class PySAR():
         #sort list of descriptors into alphabetical order
         self.descriptors.sort()
 
+        #record encoding strategy for use by predict_activity()
+        self._encoding_type = 'descriptor'
+        self._encoding_aai_indices = None
+        self._encoding_descriptors = list(self.descriptors)
+
         #reuse cached Descriptors instance created in __init__
         descr = self.descriptor
 
         #pandas dataframe to store all output results
         desc_df = pd.DataFrame(columns=['Descriptor', 'Group', 'R2', 'RMSE', 'MSE', 'MAE', 'RPD', 'Explained Variance'])
-        
-        #object to store sequence encodings for each input descriptor
-        descriptor_encoding_df = pd.DataFrame()
 
-        #iterate over each input descriptor, calculate its encoding from its respective function, concatenate with main encoding object
+        #accumulate descriptor DataFrames, then concat once
+        descriptor_frames = []
+
+        #iterate over each input descriptor, calculate its encoding from its respective function
         for desc in range(0, len(self.descriptors)):
 
             #get closest matching descriptor from descriptor input parameter using difflib library
             desc_matches = get_close_matches(self.descriptors[desc], descr.valid_descriptors, cutoff=0.6)
-            if (desc_matches != []):
+            if desc_matches != []:
                 self.descriptors[desc] = desc_matches[0]
             else:
                 raise ValueError('Could not find a match for the input descriptor ({}) in list of valid descriptors:\n{}.'.
                     format(self.descriptors[desc], descr.valid_descriptors))
 
-            #concatenate encoding of current descriptor to main encodng object
-            descriptor_encoding_df = pd.concat([descriptor_encoding_df, self.get_descriptor_encoding(descriptors=self.descriptors[desc])], axis=1)
-        
-        #set class variable to the training data feature space
-        self.feature_space = descriptor_encoding_df.shape
+            descriptor_frames.append(self.get_descriptor_encoding(descriptors=self.descriptors[desc]))
 
-        #create instance of model class of type specified by algorithm parameter using X and Y data
-        self.model = Model(descriptor_encoding_df, self.activity, self.algorithm, parameters=self.model_parameters)
+        descriptor_encoding_df = pd.concat(descriptor_frames, axis=1)
 
-        #updating algorithm attribute
-        self.algorithm = repr(self.model)
-
-        #get training and test dataset split using Model class
-        X_train, X_test, Y_train, Y_test = self.model.train_test_split(test_split=self.test_split)
-
-        #fit predictive model
-        self.model.fit()
-
-        #predict activity values for test data
-        Y_pred = self.model.predict()
-
-        #create instance of Evaluate class which will get all the evaluation metrics
-        evaluation = Evaluate(Y_test, Y_pred)
+        #build model, fit, predict and evaluate using shared helper
+        evaluation, Y_test, Y_pred = self._fit_and_evaluate(descriptor_encoding_df, random_state=random_state, cv=cv)
 
         #get groups for all descriptors in self.desciptors, put multiple descriptor groups into comma seperated list
-        if (isinstance(self.descriptors, list)):
+        if isinstance(self.descriptors, list):
             desc_group = []
             for desc_ in self.descriptors:
                 desc_group.append(descr.descriptor_groups[desc_])
@@ -641,17 +740,16 @@ class PySAR():
             self.output_results(desc_df)
 
         #plot regression plot for predictive model
-        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot)
+        _ts = _get_current_datetime()
+        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot, timestamp=_ts)
 
         #save results of encoding to output folder
-        save_results(desc_df, 'desc_results', output_folder=output_folder)
-
-        #reset descriptors instance variable
-        self.descriptors = None 
+        save_results(desc_df, 'desc_results', output_folder=output_folder, timestamp=_ts)
 
         return desc_df
 
-    def encode_aai_descriptor(self, aai_indices=None, descriptors=None, show_plot=False, print_results=True, output_folder=""):
+    def encode_aai_descriptor(self, aai_indices=None, descriptors=None, show_plot=False, print_results=True, output_folder="",
+                              random_state=None, cv=None):
         """
         Encode using both AAI indices and the physicochemical/structural descriptors from
         the get_aai_encoding() and get_descriptor_encoding() functions. The two outputs 
@@ -675,8 +773,12 @@ class PySAR():
         :print_results: bool (default=True)
             if true, output verbose output of results and parameters from encoding process.
         :output_folder: str (default="")
-            output folder to store results csv to, if empty input it will be stored in 
+            output folder to store results csv to, if empty input it will be stored in
             the OUTPUT_FOLDER global var.
+        :random_state: int or None (default=None)
+            seed for the train/test split, enabling reproducible results.
+        :cv: int or None (default=None)
+            if set, performs k-fold cross-validation and logs CV R² mean and std.
 
         Returns
         =======
@@ -718,45 +820,48 @@ class PySAR():
         #sort list of descriptors into alphabetical order
         self.descriptors.sort()
 
+        #record encoding strategy for use by predict_activity()
+        self._encoding_type = 'aai_descriptor'
+        self._encoding_aai_indices = list(self.aai_indices)
+        self._encoding_descriptors = list(self.descriptors)
+
         #create output results Dataframe
         aai_desc_df = pd.DataFrame(columns=['Index', 'Category', 'Descriptor', 'Group', 'R2', 'RMSE', \
             'MSE', 'MAE', 'RPD', 'Explained Variance'])
 
-        #dataframe to store the encodings for the AAI indices
-        aai_encoding_df = pd.DataFrame()
-
-        #iterate over each index code, calculate its encoding features using respective function, convert to dataframe and concat to main dataframe
+        #accumulate AAI index DataFrames then concat once (avoids O(n²) copies)
+        aai_encoding_frames = []
         for index in self.aai_indices:
-            aai_encoding_df = pd.concat([aai_encoding_df, pd.DataFrame(self.get_aai_encoding(index))], axis=1)
-        
+            aai_encoding_frames.append(pd.DataFrame(self.get_aai_encoding(index)))
+        aai_encoding_df = pd.concat(aai_encoding_frames, axis=1)
+
         #renaming columns in format aai_X, where X is the amino acid number in the sequence
         columns = ["aai_" + str(x) for x in range(1, len(aai_encoding_df.columns) + 1)]
         aai_encoding_df.columns = columns
 
         #if AAI indices encoding is empty, raise error
-        if (aai_encoding_df.empty):
+        if aai_encoding_df.empty:
             raise ValueError(f'AAI Indices encoding cannot be empty or None: {aai_indices}.')
 
         #reuse cached Descriptors instance from __init__
         descr = self.descriptor
 
-        #dataframe to store the encodings for the descriptors
-        descriptor_encoding_df = pd.DataFrame()
-
-        #iterate over each input descriptor, calculate its encoding from its respective function, concatenate with main encoding object
+        #accumulate descriptor DataFrames then concat once
+        descriptor_frames = []
         for desc in range(0, len(self.descriptors)):
 
             #get closest matching descriptor from descriptor input parameter using difflib library
             desc_matches = get_close_matches(self.descriptors[desc], descr.valid_descriptors, cutoff=0.6)
-            if (desc_matches != []):
+            if desc_matches != []:
                 self.descriptors[desc] = desc_matches[0]
             else:
                 raise ValueError('Could not find a match for the input descriptor ({}) in list of valid descriptors:\n{}.'.
                     format(self.descriptors[desc], descr.valid_descriptors))
 
-            #concatenate encoding of current descriptor to main encodng object
-            descriptor_encoding_df = pd.concat([descriptor_encoding_df, self.get_descriptor_encoding(descriptors=self.descriptors[desc])], axis=1)
-        
+            descriptor_frames.append(self.get_descriptor_encoding(descriptors=self.descriptors[desc]))
+
+        descriptor_encoding_df = pd.concat(descriptor_frames, axis=1)
+
         #reset index for aai indices and in descriptors output dataframe
         aai_encoding_df.reset_index(inplace=True, drop=True)
         descriptor_encoding_df.reset_index(inplace=True, drop=True)
@@ -764,40 +869,22 @@ class PySAR():
         #concatenate AAI index and Descriptor features to get training data (X)
         X = pd.concat([aai_encoding_df, descriptor_encoding_df], axis=1)
 
-        #set class variable to the training data feature space
-        self.feature_space = X.shape
-
-        #create instance of model class of type specified by algorithm parameter using X and Y data
-        self.model = Model(X, self.activity, self.algorithm, parameters=self.model_parameters)
-        
-        #updating algorithm attribute
-        self.algorithm = repr(self.model)
-
-        #get training and test dataset split using Model class
-        X_train, X_test, Y_train, Y_test = self.model.train_test_split(test_split=self.test_split)
-
-        #fit predictive model
-        self.model.fit()
-
-        #predict activity values for test data
-        Y_pred = self.model.predict()
-
-        #create instance of Evaluate class which will get all the evaluation metrics
-        evaluation = Evaluate(Y_test, Y_pred)
+        #build model, fit, predict and evaluate using shared helper
+        evaluation, Y_test, Y_pred = self._fit_and_evaluate(X, random_state=random_state, cv=cv)
 
         #get categories for all indices in self.aai_indices
         index_cat = []
-        if (isinstance(self.aai_indices, list)):
+        if isinstance(self.aai_indices, list):
             for i in range(0, len(self.aai_indices)):
                 index_cat.append(aaindex1[self.aai_indices[i]].category)
         else:
             index_cat = [aaindex1[self.aai_indices].category]
-        
+
         #seperate index categories into comma seperated string
         index_cat = ', '.join(index_cat)
 
         #get groups for all descriptors in self.desciptors, can be string or list of descriptors
-        if (isinstance(self.descriptors, list)):
+        if isinstance(self.descriptors, list):
             desc_group = []
             for desc_ in self.descriptors:
                 desc_group.append(descr.descriptor_groups[desc_])
@@ -820,12 +907,150 @@ class PySAR():
             self.output_results(aai_desc_df)
 
         #plot regression plot for predictive model
-        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot)
+        _ts = _get_current_datetime()
+        plot_reg(Y_test, Y_pred, evaluation.r2, output_folder, show_plot, timestamp=_ts)
 
         #save results of encoding to output folder
-        save_results(aai_desc_df, 'aai_desc_results', output_folder=output_folder)
+        save_results(aai_desc_df, 'aai_desc_results', output_folder=output_folder, timestamp=_ts)
 
         return aai_desc_df
+
+    def predict_activity(self, sequences, return_uncertainty=False):
+        """
+        Predict the activity/fitness value(s) for one or more unseen protein sequences.
+
+        The method re-encodes *sequences* using the same strategy that was applied
+        during the most recent ``encode_aai()``, ``encode_descriptor()``, or
+        ``encode_aai_descriptor()`` call, then applies the fitted scaler and
+        regression model.
+
+        Parameters
+        ==========
+        :sequences: str, list, or pd.Series
+            One or more protein sequences (amino-acid strings) to predict.
+        :return_uncertainty: bool (default=False)
+            If True and the underlying model is a GaussianProcessRegressor, return
+            a tuple ``(predictions, std)`` where ``std`` is the per-sequence standard
+            deviation of the predictive distribution.  For all other model types this
+            flag is ignored and only ``predictions`` is returned.
+
+        Returns
+        =======
+        :predictions: np.ndarray
+            Predicted activity values, one per input sequence.
+        :(predictions, std): tuple of np.ndarray
+            Only returned when ``return_uncertainty=True`` and the model is a
+            GaussianProcessRegressor.
+
+        Raises
+        ======
+        :RuntimeError
+            If no encoding has been run yet (i.e. none of the ``encode_*`` methods
+            have been called on this instance).
+        """
+        if not hasattr(self, '_encoding_type') or self._encoding_type is None:
+            raise RuntimeError(
+                'No encoding has been run yet. Call encode_aai(), encode_descriptor(), '
+                'or encode_aai_descriptor() before predict_activity().'
+            )
+        if self.model is None or not self.model.model_fitted():
+            raise RuntimeError('The model has not been fitted. Call an encode_* method first.')
+
+        #normalise input to list of strings
+        if isinstance(sequences, str):
+            sequences = [sequences]
+        elif isinstance(sequences, pd.Series):
+            sequences = sequences.tolist()
+        else:
+            sequences = list(sequences)
+
+        #remove gaps and validate input sequences
+        sequences = remove_gaps(sequences)
+        invalid = valid_sequence(sequences)
+        if invalid is not None:
+            raise ValueError(f'Invalid amino acids found in input sequences: {invalid}.')
+
+        #build feature matrix using the stored encoding strategy
+        encoding_type = self._encoding_type
+
+        if encoding_type in ('aai', 'aai_descriptor'):
+            #encode sequences using each stored AAI index and concatenate
+            _saved_sequences = self.sequences
+            _saved_num_seqs = self.num_seqs
+            _saved_seq_len = self.sequence_length
+
+            self.sequences = sequences
+            self.num_seqs = len(sequences)
+            self.sequence_length = len(max(sequences, key=len))
+
+            aai_encoding_parts = []
+            for index in self._encoding_aai_indices:
+                encoded = self.get_aai_encoding(index)
+                if self.use_dsp:
+                    if self.spectrum is None or self.spectrum == "":
+                        raise ValueError(f'Spectrum cannot be None or empty: {self.spectrum}.')
+                    pyDSP = PyDSP(self.config_file, protein_seqs=encoded,
+                                  spectrum=self.spectrum, window_type=self.window_type,
+                                  filter_type=self.filter_type)
+                    aai_encoding_parts.append(pd.DataFrame(pyDSP.spectrum_encoding))
+                else:
+                    aai_encoding_parts.append(pd.DataFrame(encoded))
+
+            #restore original sequences state before concat so state is clean on any error
+            self.sequences = _saved_sequences
+            self.num_seqs = _saved_num_seqs
+            self.sequence_length = _saved_seq_len
+
+            aai_encoding_df = pd.concat(aai_encoding_parts, axis=1)
+            aai_encoding_df.columns = ["aai_" + str(x) for x in range(1, len(aai_encoding_df.columns) + 1)]
+
+        if encoding_type in ('descriptor', 'aai_descriptor'):
+            #re-calculate descriptors for the new sequences using a temporary Descriptors instance.
+            #A new instance is required (not self.descriptor) because get_descriptor_encoding
+            #returns cached attributes computed from the training sequences.
+            #Pass descriptors_csv="" to prevent loading a pre-computed descriptor cache that
+            #belongs to the training data (different number of sequences).
+            from .descriptors import Descriptors as _Descriptors
+            tmp_descriptor = _Descriptors(self.config_file, protein_seqs=pd.Series(sequences), descriptors_csv="")
+            desc_parts = []
+            for desc_name in self._encoding_descriptors:
+                desc_parts.append(tmp_descriptor.get_descriptor_encoding(desc_name))
+            desc_df = pd.concat(desc_parts, axis=1)
+
+        if encoding_type == 'aai':
+            X = aai_encoding_df
+        elif encoding_type == 'descriptor':
+            X = desc_df
+        else:  # aai_descriptor
+            aai_encoding_df.reset_index(drop=True, inplace=True)
+            desc_df.reset_index(drop=True, inplace=True)
+            X = pd.concat([aai_encoding_df, desc_df], axis=1)
+
+        X_values = X.to_numpy(dtype=float)
+
+        # Align the feature count to match the training feature space (self.feature_space[1]).
+        # Zero-padding of sequences during encoding pads to the max length of the current
+        # batch, which may differ from the training batch's max length.
+        if hasattr(self, 'feature_space') and self.feature_space is not None:
+            n_train_features = self.feature_space[1]
+            if X_values.shape[1] < n_train_features:
+                X_values = np.pad(X_values, ((0, 0), (0, n_train_features - X_values.shape[1])))
+            elif X_values.shape[1] > n_train_features:
+                X_values = X_values[:, :n_train_features]
+
+        #apply the stored scaler if one was fitted
+        scaler = getattr(self.model, 'scaler', None)
+        if scaler is not None:
+            X_values = scaler.transform(X_values)
+
+        #return uncertainty for GaussianProcessRegressor when requested
+        if return_uncertainty:
+            from sklearn.gaussian_process import GaussianProcessRegressor as _GPR
+            if isinstance(self.model.model_fit, _GPR):
+                predictions, std = self.model.model_fit.predict(X_values, return_std=True)
+                return predictions, std
+
+        return self.model.model_fit.predict(X_values)
 
     def output_results(self, results):
         """
@@ -843,34 +1068,102 @@ class PySAR():
         #create text wrapper for aai indices, descriptors and model parameters text
         line_length = 90
 
-        print('##########################################################################################')
-        print('###################################### Parameters ########################################\n')
+        self._log('##########################################################################################')
+        self._log('###################################### Parameters ########################################\n')
         if (not (self.aai_indices is None)) and (len(self.aai_indices) <= 10):
-            print(textwrap.fill('# AAI Indices: {}'.format(', '.join(self.aai_indices)), line_length))        
+            self._log(textwrap.fill('# AAI Indices: {}'.format(', '.join(self.aai_indices)), line_length))
             if (self.use_dsp):
-                print('# DSP Parameters:\n  # Spectrum: {}\n  # Window Function: {} \
-                \n  # Filter Function: {}'.format(self.spectrum, self.window_type, self.filter_type))  
+                self._log('# DSP Parameters:\n  # Spectrum: {}\n  # Window Function: {} \
+                \n  # Filter Function: {}'.format(self.spectrum, self.window_type, self.filter_type))
         if (self.descriptors is not None):
-            print(textwrap.fill('# Descriptors: {}'.format(', '.join(self.descriptors)), line_length))
-        print('# Configuration File: {}\n# Dataset: {}\n# Number of Sequences/Sequence Length: {} x {} \
+            self._log(textwrap.fill('# Descriptors: {}'.format(', '.join(self.descriptors)), line_length))
+        self._log('# Configuration File: {}\n# Dataset: {}\n# Number of Sequences/Sequence Length: {} x {} \
             \n# Target Activity: {}'.format(os.path.basename(self.config_file), self.dataset, self.num_seqs, self.sequence_length, self.activity_col))
-        print(f"# Algorithm: {repr(self.model)}")
+        self._log(f"# Algorithm: {repr(self.model)}")
         if (self.model_parameters == "" or self.model_parameters is None or self.model_parameters == {}):
-            # print('# Model Parameters: {}'.format("\n\t".join(tw.wrap(', '.join(temp_model_parameters.model.get_params())))))        
-            print(textwrap.fill(f'# Model Parameters: {self.model.model.get_params()}', line_length))
+            self._log(textwrap.fill(f'# Model Parameters: {self.model.model.get_params()}', line_length))
         else:
-            print(textwrap.fill(f'# Model Parameters: {self.model_parameters}', line_length))
-        print(f'# Test Split: {self.test_split}\n# Feature Space: {self.feature_space}')
+            self._log(textwrap.fill(f'# Model Parameters: {self.model_parameters}', line_length))
+        self._log(f'# Test Split: {self.test_split}\n# Feature Space: {self.feature_space}')
 
-        print('\n##########################################################################################')
-        print('######################################## Results #########################################\n')
-        print('# R2: {}'.format(results['R2'].values[0]))
-        print('# RMSE: {} '.format(results['RMSE'].values[0]))
-        print('# MSE: {} '.format(results['MSE'].values[0]))
-        print('# MAE: {}'.format(results['MAE'].values[0]))
-        print('# RPD {}'.format(results['RPD'].values[0]))
-        print('# Explained Variance {}\n'.format(results['Explained Variance'].values[0]))
-        print('##########################################################################################\n')
+        self._log('\n##########################################################################################')
+        self._log('######################################## Results #########################################\n')
+        self._log('# R2: {}'.format(results['R2'].values[0]))
+        self._log('# RMSE: {} '.format(results['RMSE'].values[0]))
+        self._log('# MSE: {} '.format(results['MSE'].values[0]))
+        self._log('# MAE: {}'.format(results['MAE'].values[0]))
+        self._log('# RPD {}'.format(results['RPD'].values[0]))
+        self._log('# Explained Variance {}\n'.format(results['Explained Variance'].values[0]))
+        self._log('##########################################################################################\n')
+
+    def save_session(self, path: str) -> None:
+        """
+        Persist the fitted PySAR instance (model, scaler, encoding strategy, and all
+        configuration attributes) to a pickle file so that it can be restored later
+        with :meth:`load_session`.
+
+        Parameters
+        ==========
+        :path: str
+            Destination file path.  A ``.pkl`` extension is appended automatically
+            if the path does not already have one.
+
+        Returns
+        =======
+        None
+        """
+        if os.path.splitext(path)[1] == "":
+            path = path + ".pkl"
+        with open(path, 'wb') as f:
+            pickle.dump(self, f)
+        self._log(f"Session saved to {path!r}")
+
+    @classmethod
+    def load_session(cls, path: str, allow_pickle: bool = True) -> 'PySAR':
+        """
+        Restore a :class:`PySAR` instance that was previously saved with
+        :meth:`save_session`.
+
+        Parameters
+        ==========
+        :path: str
+            Path to the ``.pkl`` file written by :meth:`save_session`.
+        :allow_pickle: bool (default=True)
+            Set to False to disable loading and raise a ValueError.  Provided as
+            an opt-in safety gate; never load sessions from untrusted sources.
+
+        Returns
+        =======
+        :instance: PySAR
+            The restored PySAR instance.
+
+        Raises
+        ======
+        :ValueError
+            If *allow_pickle* is False.
+        :FileNotFoundError
+            If *path* does not exist.
+        """
+        if not allow_pickle:
+            raise ValueError(
+                "allow_pickle=False: loading pickle files is disabled. "
+                "Only load sessions from trusted sources."
+            )
+        import warnings as _warnings
+        _warnings.warn(
+            "PySAR.load_session() deserializes a pickle file. "
+            "Never load session files from untrusted sources.",
+            UserWarning, stacklevel=2,
+        )
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"Session file not found: {path!r}")
+        with open(path, 'rb') as f:
+            instance = pickle.load(f)
+        if not isinstance(instance, cls):
+            raise TypeError(
+                f"Loaded object is not a PySAR instance (got {type(instance).__name__!r})."
+            )
+        return instance
 
 ######################          Getters & Setters          ######################
 

@@ -142,3 +142,5 @@ dmypy.json
 FILE_CHECKLIST.md
 
 git_status_logs.txt
+
+.claude/

@@ -8,8 +8,11 @@ import time
 import itertools
 import logging
 import threading
+import warnings
+from dataclasses import dataclass, field
+from difflib import get_close_matches
 from enum import Enum
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable
 from tqdm import tqdm
@@ -46,6 +49,70 @@ class SortKey(str, Enum):
     MAE = MetricKey.MAE.value
     RPD = MetricKey.RPD.value
     EXPLAINED_VARIANCE = MetricKey.EXPLAINED_VARIANCE.value
+
+
+@dataclass
+class EncodingResult:
+    """
+    Structured container for the output of an encoding run.
+
+    Instances are returned by the convenience method
+    :meth:`Encoding.to_encoding_result` after any of the three encoding
+    methods has been called.  The raw :class:`pandas.DataFrame` returned
+    directly by those methods is also available as :attr:`metrics`.
+
+    Attributes
+    ==========
+    :metrics: pd.DataFrame
+        Full results dataframe sorted by *sort_by* (default R2 descending).
+    :best_index: str
+        The identifier of the best-performing encoding (AAI index name,
+        descriptor name, or ``'index+descriptor'`` pair).
+    :best_r2: float
+        R2 score of the best-performing encoding.
+    :best_model_path: str or None
+        Absolute path to the saved best model pickle, or ``None`` if
+        *export_best_model* was not requested.
+    :elapsed_time: float
+        Wall-clock seconds consumed by the encoding run.
+    """
+    metrics: pd.DataFrame
+    best_index: str
+    best_r2: float
+    best_model_path: Optional[str] = None
+    elapsed_time: float = 0.0
+
+    @classmethod
+    def from_dataframe(cls,
+                       df: pd.DataFrame,
+                       elapsed_time: float = 0.0,
+                       best_model_path: Optional[str] = None) -> 'EncodingResult':
+        """
+        Construct an :class:`EncodingResult` from a sorted metrics DataFrame.
+
+        The first column of *df* is used as the *best_index* identifier.
+
+        Parameters
+        ==========
+        :df: pd.DataFrame
+            Sorted encoding results dataframe (first row is the best model).
+        :elapsed_time: float
+            Elapsed wall-clock seconds for the encoding run.
+        :best_model_path: str or None
+            Path to the saved best model, or None.
+
+        Returns
+        =======
+        :EncodingResult
+        """
+        if df.empty:
+            return cls(metrics=df, best_index='', best_r2=float('nan'),
+                       best_model_path=best_model_path, elapsed_time=elapsed_time)
+        best_row = df.iloc[0]
+        best_index = str(best_row.iloc[0])
+        best_r2 = float(best_row.get(MetricKey.R2.value, float('nan')))
+        return cls(metrics=df, best_index=best_index, best_r2=best_r2,
+                   best_model_path=best_model_path, elapsed_time=elapsed_time)
 
 class Encoding(PySAR):
     """
@@ -109,21 +176,27 @@ class Encoding(PySAR):
         self.logger = logger
         self._aai_feature_cache: Dict[str, pd.DataFrame] = {}
         self._descriptor_feature_cache: Dict[str, pd.DataFrame] = {}
-        self._cache_lock: threading.Lock = threading.Lock()  # guards both caches for thread safety
+        self._cache_lock: threading.Lock = threading.Lock()  # guards both caches and inflight maps
+        # Per-key Future maps prevent redundant computation when concurrent threads miss the cache
+        # for the same key simultaneously (TOCTOU).  The first thread creates the Future and
+        # computes; subsequent threads wait on the existing Future instead of recomputing.
+        self._aai_inflight: Dict[str, "Future[pd.DataFrame]"] = {}
+        self._desc_inflight: Dict[str, "Future[pd.DataFrame]"] = {}
 
         #pass config file and kwargs into parent pySAR class
         super().__init__(self.config_file, **kwargs)
 
     def aai_encoding(self,
                      aai_indices: Optional[Union[str, List[str]]] = None,
-                     sort_by: str = 'R2',
+                     sort_by: Union[str, 'SortKey'] = 'R2',
                      output_folder: str = "",
                      n_jobs: int = 1,
                      random_state: Optional[int] = None,
                      max_models: Optional[int] = None,
                      sample_mode: bool = False,
                      resume: bool = False,
-                     resume_file: str = "") -> pd.DataFrame:
+                     resume_file: str = "",
+                     export_best_model: bool = False) -> pd.DataFrame:
         """
         Encoding all protein sequences using each of the available indices in the
         AAI and aaindex package. The protein spectra of the AAI indices can be generated 
@@ -272,20 +345,26 @@ class Encoding(PySAR):
             save_filename='aaindex_results',
             output_folder=output_folder,
             string_columns=[MetricKey.INDEX.value, MetricKey.CATEGORY.value],
-            resume_file=resume_file if resume else None
+            resume_file=resume_file if resume else None,
+            export_best_model=export_best_model,
+            best_model_feature_fn=lambda best_row: self.build_features(
+                feature_type="aai", index=best_row[MetricKey.INDEX.value]
+            ),
+            random_state=random_state,
         )
 
     def descriptor_encoding(self,
                             descriptors: Optional[Union[str, List[str]]] = None,
                             desc_combo: int = 1,
-                            sort_by: str = 'R2',
+                            sort_by: Union[str, 'SortKey'] = 'R2',
                             output_folder: str = "",
                             n_jobs: int = 1,
                             random_state: Optional[int] = None,
                             max_models: Optional[int] = None,
                             sample_mode: bool = False,
                             resume: bool = False,
-                            resume_file: str = "") -> pd.DataFrame:
+                            resume_file: str = "",
+                            export_best_model: bool = False) -> pd.DataFrame:
         """
         Encoding all protein sequences using the available physicochemical, biochemical
         and structural descriptors from the custom-built protpy package. The sequences 
@@ -468,21 +547,31 @@ class Encoding(PySAR):
             save_filename=save_filename,
             output_folder=output_folder,
             string_columns=[MetricKey.DESCRIPTOR.value, MetricKey.GROUP.value],
-            resume_file=resume_file if resume else None
+            resume_file=resume_file if resume else None,
+            export_best_model=export_best_model,
+            best_model_feature_fn=lambda best_row: self.build_features(
+                feature_type="descriptor",
+                descriptor_entry=tuple(best_row[MetricKey.DESCRIPTOR.value].split('+'))
+                    if '+' in best_row[MetricKey.DESCRIPTOR.value]
+                    else best_row[MetricKey.DESCRIPTOR.value],
+                desc_instance=desc,
+            ),
+            random_state=random_state,
         )
 
     def aai_descriptor_encoding(self,
                                 aai_indices: Optional[Union[str, List[str]]] = None,
                                 descriptors: Optional[Union[str, List[str]]] = None,
                                 desc_combo: int = 1,
-                                sort_by: str = 'R2',
+                                sort_by: Union[str, 'SortKey'] = 'R2',
                                 output_folder: str = "",
                                 n_jobs: int = 1,
                                 random_state: Optional[int] = None,
                                 max_models: Optional[int] = None,
                                 sample_mode: bool = False,
                                 resume: bool = False,
-                                resume_file: str = "") -> pd.DataFrame:
+                                resume_file: str = "",
+                                export_best_model: bool = False) -> pd.DataFrame:
         """
         Encoding all protein sequences using each of the available indices in the AAI and
         aaindex package in concatenation with the protein descriptors available via the 
@@ -702,7 +791,17 @@ class Encoding(PySAR):
                 MetricKey.DESCRIPTOR.value,
                 MetricKey.GROUP.value,
             ],
-            resume_file=resume_file if resume else None
+            resume_file=resume_file if resume else None,
+            export_best_model=export_best_model,
+            best_model_feature_fn=lambda best_row: self.build_features(
+                feature_type="aai_descriptor",
+                index=best_row[MetricKey.INDEX.value],
+                descriptor_entry=tuple(best_row[MetricKey.DESCRIPTOR.value].split('+'))
+                    if '+' in best_row[MetricKey.DESCRIPTOR.value]
+                    else best_row[MetricKey.DESCRIPTOR.value],
+                desc_instance=desc,
+            ),
+            random_state=random_state,
         )
 
     def _log(self, message: str, level: int = logging.INFO) -> None:
@@ -736,7 +835,27 @@ class Encoding(PySAR):
         values = sorted(list(set(values)))
         invalid_values = [value for value in values if value not in valid_values]
         if invalid_values:
-            raise ValueError(f"Invalid {input_name} value(s) found: {invalid_values}.")
+            # Attempt fuzzy correction for each invalid value using difflib.
+            corrected = []
+            unfixable = []
+            for bad_val in invalid_values:
+                matches = get_close_matches(bad_val, valid_values, n=1, cutoff=0.6)
+                if matches:
+                    corrected.append((bad_val, matches[0]))
+                else:
+                    unfixable.append(bad_val)
+            if unfixable:
+                raise ValueError(f"Invalid {input_name} value(s) found: {unfixable}.")
+            # Apply corrections: replace bad value with closest match
+            for bad_val, good_val in corrected:
+                idx = values.index(bad_val)
+                values[idx] = good_val
+                warnings.warn(
+                    f"{input_name} value '{bad_val}' not found exactly; using '{good_val}' instead.",
+                    UserWarning, stacklevel=2
+                )
+            # Re-deduplicate after fuzzy correction
+            values = sorted(list(set(values)))
 
         return values
 
@@ -777,8 +896,15 @@ class Encoding(PySAR):
         if not resume_path.exists():
             return [], set()
 
-        # Read existing results and build a set of completed keys based on specified key columns        
-        existing_df = pd.read_csv(resume_path)
+        # Read existing results and build a set of completed keys based on specified key columns
+        try:
+            existing_df = pd.read_csv(resume_path)
+        except Exception:
+            warnings.warn(
+                f"Could not read resume file {resume_path!r}; starting fresh.",
+                UserWarning, stacklevel=3
+            )
+            return [], set()
         if existing_df.empty:
             return [], set()
 
@@ -797,42 +923,86 @@ class Encoding(PySAR):
         pd.DataFrame(metrics_rows).to_csv(resume_file, index=False)
 
     def _get_aai_features(self, index: str) -> pd.DataFrame:
-        """ Return cached AAI features for an index, computing on first use. """
+        """ Return cached AAI features for an index, computing on first use.
+
+        Uses a per-key Future to prevent TOCTOU races under concurrent access:
+        the first thread to see a cache miss creates the Future and computes;
+        any racing thread waits on the same Future instead of recomputing.
+        """
         with self._cache_lock:
             if index in self._aai_feature_cache:
                 return self._aai_feature_cache[index]
+            if index in self._aai_inflight:
+                fut = self._aai_inflight[index]
+                should_compute = False
+            else:
+                fut: Future[pd.DataFrame] = Future()
+                self._aai_inflight[index] = fut
+                should_compute = True
 
-        # Compute features outside the lock to allow concurrent computation of different indices
-        encoded_seqs = self.get_aai_encoding(index)
-        if self.use_dsp:
-            py_dsp = PyDSP(
-                self.config_file,
-                protein_seqs=encoded_seqs,
-                spectrum=self.spectrum,
-                window_type=self.window_type,
-                filter_type=self.filter_type
-            )
-            # PyDSP.__init__ calls encode_sequences() internally; spectrum_encoding is already set.
-            features = pd.DataFrame(py_dsp.spectrum_encoding)
-        else:
-            features = pd.DataFrame(encoded_seqs)
+        if not should_compute:
+            # Another thread is already computing this index — wait for its result.
+            return fut.result()
 
-        # Vectorized renaming avoids repeated per-column operations.
-        features.columns = [f"aai_{i}" for i in range(1, len(features.columns) + 1)]
+        try:
+            encoded_seqs = self.get_aai_encoding(index)
+            if self.use_dsp:
+                py_dsp = PyDSP(
+                    self.config_file,
+                    protein_seqs=encoded_seqs,
+                    spectrum=self.spectrum,
+                    window_type=self.window_type,
+                    filter_type=self.filter_type
+                )
+                features = pd.DataFrame(py_dsp.spectrum_encoding)
+            else:
+                features = pd.DataFrame(encoded_seqs)
+
+            features.columns = [f"aai_{i}" for i in range(1, len(features.columns) + 1)]
+            fut.set_result(features)
+        except Exception as exc:
+            fut.set_exception(exc)
+            with self._cache_lock:
+                self._aai_inflight.pop(index, None)
+            raise
+
         with self._cache_lock:
             self._aai_feature_cache[index] = features
+            self._aai_inflight.pop(index, None)
         return features
 
     def _get_descriptor_features(self, descriptor_name: str, desc_instance: Descriptors) -> pd.DataFrame:
-        """ Return cached descriptor features, computing on first use. """
+        """ Return cached descriptor features, computing on first use.
+
+        Uses the same per-key Future pattern as _get_aai_features to prevent
+        redundant concurrent computation for the same descriptor key.
+        """
         with self._cache_lock:
             if descriptor_name in self._descriptor_feature_cache:
                 return self._descriptor_feature_cache[descriptor_name]
+            if descriptor_name in self._desc_inflight:
+                fut = self._desc_inflight[descriptor_name]
+                should_compute = False
+            else:
+                fut: Future[pd.DataFrame] = Future()
+                self._desc_inflight[descriptor_name] = fut
+                should_compute = True
 
-        # Compute outside the lock to allow concurrent computation of different descriptors
-        descriptor_df = desc_instance.get_descriptor_encoding(descriptor_name)
+        if not should_compute:
+            return fut.result()
+
+        try:
+            descriptor_df = desc_instance.get_descriptor_encoding(descriptor_name)
+            fut.set_result(descriptor_df)
+        except Exception as exc:
+            fut.set_exception(exc)
+            with self._cache_lock:
+                self._desc_inflight.pop(descriptor_name, None)
+            raise
+
         with self._cache_lock:
             self._descriptor_feature_cache[descriptor_name] = descriptor_df
+            self._desc_inflight.pop(descriptor_name, None)
         return descriptor_df
 
     def build_features(self,
@@ -939,7 +1109,15 @@ class Encoding(PySAR):
                 iterator = tqdm(iterator, total=len(futures), desc=tqdm_desc, unit=tqdm_unit, ncols=90)
 
             for future in iterator:
-                result = future.result()
+                try:
+                    result = future.result()
+                except Exception as exc:
+                    item = futures[future]
+                    warnings.warn(
+                        f"Task failed for item {item!r}: {exc}",
+                        RuntimeWarning, stacklevel=2
+                    )
+                    continue
                 if result is None:
                     continue
                 if isinstance(result, list):
@@ -956,13 +1134,19 @@ class Encoding(PySAR):
                                 save_filename: str,
                                 output_folder: str,
                                 string_columns: List[str],
-                                resume_file: Optional[str] = None) -> pd.DataFrame:
+                                resume_file: Optional[str] = None,
+                                export_best_model: bool = False,
+                                best_model_feature_fn: Optional[Callable] = None,
+                                random_state: Optional[int] = None) -> pd.DataFrame:
         """ Create, sort, save and return result dataframe from collected metric rows. """
         metrics_df = pd.DataFrame(metrics_rows, columns=columns)
         for column in string_columns:
             if column in metrics_df.columns:
                 metrics_df[column] = metrics_df[column].astype(pd.StringDtype())
 
+        # Normalise sort_by: accept SortKey enum instances or their string .value equivalents.
+        if isinstance(sort_by, SortKey):
+            sort_by = sort_by.value
         valid_sort_columns = [metric.value for metric in SortKey]
         if sort_by not in valid_sort_columns:
             sort_by = SortKey.R2.value
@@ -972,6 +1156,26 @@ class Encoding(PySAR):
         save_results(metrics_df, save_filename, output_folder=output_folder)
         if resume_file:
             metrics_df.to_csv(resume_file, index=False)
+
+        #optionally re-train on the best encoding and persist the model + scaler
+        if export_best_model and not metrics_df.empty and best_model_feature_fn is not None:
+            best_row = metrics_df.iloc[0].to_dict()
+            X_best = best_model_feature_fn(best_row)
+            model_parameters = self.model_parameters if isinstance(self.model_parameters, dict) else {}
+            best_model = Model(
+                X=X_best.to_numpy(dtype=float, copy=False),
+                Y=self.activity.to_numpy(copy=False) if isinstance(self.activity, pd.Series) else self.activity,
+                algorithm=self.algorithm,
+                parameters=model_parameters,
+                test_split=self.test_split,
+            )
+            best_model.train_test_split(test_split=self.test_split, random_state=random_state)
+            best_model.fit()
+            folder = output_folder if output_folder else 'outputs'
+            os.makedirs(folder, exist_ok=True)
+            best_model.save(folder, model_name='best_model.pkl')
+            self._log(f'\nBest model saved to: {os.path.join(folder, "best_model.pkl")}')
+
         return metrics_df
 
     def __str__(self) -> str:

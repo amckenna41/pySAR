@@ -7,9 +7,9 @@ import seaborn as sns
 import numpy as np
 from pathlib import Path
 
-from .globals_ import OUTPUT_FOLDER, CURRENT_DATETIME
+from .globals_ import get_output_folder, get_current_datetime
 
-def plot_reg(Y_true, Y_pred, r2, output_folder="", show_plot=False, filename="model_regression_plot.png"):
+def plot_reg(Y_true, Y_pred, r2, output_folder="", show_plot=False, filename="model_regression_plot.png", timestamp=None):
     """
     Plot regression plot of observed (Y_true) vs predicted activity values (Y_pred).
 
@@ -62,10 +62,13 @@ def plot_reg(Y_true, Y_pred, r2, output_folder="", show_plot=False, filename="mo
         filename = f"{filename}.png"
 
     # Resolve output folder and ensure it exists.
+    # Use the caller-supplied timestamp when provided so plot and CSV land in
+    # the same directory even when they are called milliseconds apart.
+    ts = timestamp if timestamp is not None else get_current_datetime()
     if output_folder in ("", None):
-        target_dir = Path(OUTPUT_FOLDER)
+        target_dir = Path(get_output_folder())
     else:
-        target_dir = Path(f"{output_folder}_{CURRENT_DATETIME}")
+        target_dir = Path(f"{output_folder}_{ts}")
     target_dir.mkdir(parents=True, exist_ok=True)
 
     save_path = target_dir / filename

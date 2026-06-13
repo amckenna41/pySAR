@@ -16,7 +16,31 @@ except ImportError:
     from numpy.fft import fft
 import warnings
 import json
+from typing import Union
 from .utils import Map, zero_padding
+
+# Dispatch table mapping window name -> scipy window function.
+# Avoids a ~100-line if-elif chain in pre_processing().
+_WINDOW_DISPATCH = {
+    'hamming': hamming,
+    'blackman': blackman,
+    'blackmanharris': blackmanharris,
+    'bartlett': bartlett,
+    'gaussian': gaussian,
+    'kaiser': kaiser,
+    'hann': hann,
+    'barthann': barthann,
+    'bohman': bohman,
+    'chebwin': chebwin,
+    'cosine': cosine,
+    'exponential': exponential,
+    'flattop': flattop,
+    'boxcar': boxcar,
+    'nuttall': nuttall,
+    'parzen': parzen,
+    'triang': triang,
+    'tukey': tukey,
+}
 
 class PyDSP():
     """
@@ -78,7 +102,7 @@ class PyDSP():
     max_freq():
         calculate max frequency of FFT
     """
-    def __init__(self, config_file="", protein_seqs=None, **kwargs):
+    def __init__(self, config_file: Union[str, dict] = "", protein_seqs=None, **kwargs):
 
         self.protein_seqs = protein_seqs
         self.config_file = config_file
@@ -96,12 +120,20 @@ class PyDSP():
             self.config_parameters = config_file
         elif config_file in (None, ""):
             self.config_parameters = {}
-        elif (isinstance(config_file, str) and os.path.isfile(self.config_file)):
-            config_filepath = self.config_file
-        elif (isinstance(config_file, str) and os.path.isfile(os.path.join('config', self.config_file))):
-            config_filepath = os.path.join('config', self.config_file)
-        else:
-            raise OSError(f'JSON config file not found at path: {config_filepath}.')
+        elif isinstance(config_file, str):
+            from pathlib import Path as _Path
+            _cfg = _Path(self.config_file).expanduser()
+            if _cfg.is_absolute() and _cfg.is_file():
+                config_filepath = str(_cfg)
+            elif _cfg.is_file():
+                config_filepath = str(_cfg.resolve())
+            elif (_Path('config') / self.config_file).is_file():
+                config_filepath = str((_Path('config') / self.config_file).resolve())
+            elif (_Path(__file__).parent.parent / 'config' / self.config_file).is_file():
+                config_filepath = str((_Path(__file__).parent.parent / 'config' / self.config_file).resolve())
+            else:
+                raise OSError(f'JSON config file {self.config_file!r} not found. '
+                              f'Checked: current directory, config/, and package config/.')
 
         if config_filepath:
             try:
@@ -205,110 +237,31 @@ class PyDSP():
                 self.spectrum = spectra_matches[0]   #closest match in array
 
         #get approximate window type from input, if None or invalid set window to 1 (no window)
-        if (self.window_type == None):
+        if self.window_type is None:
             self.window = 1       #window = 1 is the same as applying no window
         else:
             #get closest correct window function from user input
-            window_matches = (get_close_matches(self.window_type, all_windows, cutoff=0.6))
+            window_matches = get_close_matches(self.window_type, all_windows, cutoff=0.6)
 
             #remove any null or None values from window parameters in config
             self.window_parameters = {k: v for k, v in (self.window_parameters or {}).items() if v is not None}
-            window_parameters = {}
 
-            #get window function specified by window input parameter, if no match then window = 1,
-            #pass in specific window parameters from those in the config, else use default parameters
-            if (window_matches != []):
-                if (window_matches[0] == 'hamming'):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(hamming).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = hamming(self.signal_len, **window_parameters)
-                    self.window_type = "hamming"
-                elif (window_matches[0] == "blackman"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(blackman).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = blackman(self.signal_len, **window_parameters)
-                    self.window_type = "blackman"
-                elif (window_matches[0] == "blackmanharris"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(blackmanharris).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = blackmanharris(self.signal_len, **window_parameters)
-                    self.window_type = "blackmanharris"
-                elif (window_matches[0] == "bartlett"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(bartlett).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = bartlett(self.signal_len, **window_parameters)
-                    self.window_type = "bartlett"
-                elif (window_matches[0] == "gaussian"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(gaussian).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = gaussian(self.signal_len, std=7, **window_parameters)
-                    self.window_type = "gaussian"
-                elif (window_matches[0] == "kaiser"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(kaiser).args): window_parameters[k] = self.window_parameters[k]                    
-                    window_parameters = {k: v for k, v in window_parameters.items() if k != "alpha"} #remove alpha parameter
-                    self.window = kaiser(self.signal_len, **window_parameters)
-                    self.window_type = "kaiser"
-                elif (window_matches[0] == "hann"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(hann).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = hann(self.signal_len, **window_parameters)
-                    self.window_type = "hann"
-                elif (window_matches[0] == "barthann"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(barthann).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = barthann(self.signal_len, **window_parameters)
-                    self.window_type = "barthann"
-                elif (window_matches[0] == "bohman"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(bohman).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = bohman(self.signal_len, **window_parameters)
-                    self.window_type = "bohman"
-                elif (window_matches[0] == "chebwin"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(chebwin).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = chebwin(self.signal_len, at=100, **window_parameters)
-                    self.window_type = "chebwin"
-                elif (window_matches[0] == "cosine"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(cosine).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = cosine(self.signal_len, **window_parameters)
-                    self.window_type = "cosine"
-                elif (window_matches[0] == "exponential"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(exponential).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = exponential(self.signal_len, **window_parameters)
-                    self.window_type = "exponential"
-                elif (window_matches[0] == "flattop"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(flattop).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = flattop(self.signal_len, **window_parameters)
-                    self.window_type = "flattop"
-                elif (window_matches[0] == "boxcar"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(boxcar).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = boxcar(self.signal_len, **window_parameters)
-                    self.window_type = "boxcar"
-                elif (window_matches[0] == "nuttall"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(nuttall).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = nuttall(self.signal_len, **window_parameters)
-                    self.window_type = "nuttall"
-                elif (window_matches[0] == "parzen"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(parzen).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = parzen(self.signal_len, **window_parameters)
-                    self.window_type = "parzen"
-                elif (window_matches[0] == "triang"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(triang).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = triang(self.signal_len, **window_parameters)
-                    self.window_type = "triang"
-                elif (window_matches[0] == "tukey"):
-                    for k, v in self.window_parameters.items():
-                        if (k in inspect.getfullargspec(tukey).args): window_parameters[k] = self.window_parameters[k]
-                    self.window = tukey(self.signal_len, **window_parameters)
-                    self.window_type = "tukey"
+            if window_matches:
+                win_name = window_matches[0]
+                self.window_type = win_name
+                win_fn = _WINDOW_DISPATCH[win_name]
+                valid_args = set(inspect.getfullargspec(win_fn).args)
+                # Filter config params to only those accepted by this window function.
+                # kaiser uses 'beta' not 'alpha'; strip 'alpha' to avoid TypeError.
+                filtered = {k: v for k, v in self.window_parameters.items()
+                            if k in valid_args and not (win_name == 'kaiser' and k == 'alpha')}
+                # gaussian requires std; default to 7 if not specified
+                if win_name == 'gaussian' and 'std' not in filtered:
+                    filtered['std'] = 7
+                # chebwin requires 'at'; default to 100 if not specified
+                if win_name == 'chebwin' and 'at' not in filtered:
+                    filtered['at'] = 100
+                self.window = win_fn(self.signal_len, **filtered)
             else:
                 self.window = 1     #window = 1 is the same as applying no window
 
@@ -382,7 +335,8 @@ class PyDSP():
             elif (self.filter_type == 'medfilt'):        
                 for k, v in self.filter_parameters.items():
                     if (k in inspect.getfullargspec(medfilt).args): filter_parameters[k] = self.filter_parameters[k]
-                self.filter = medfilt(encoded_fft, **filter_parameters) 
+                # medfilt does not support complex dtypes — use magnitude of FFT
+                self.filter = medfilt(np.abs(encoded_fft).astype(np.float64), **filter_parameters) 
             elif (self.filter_type == 'lfilter'):
                 for k, v in self.filter_parameters.items():
                     if (k in inspect.getfullargspec(lfilter).args): filter_parameters[k] = self.filter_parameters[k]
@@ -395,7 +349,8 @@ class PyDSP():
             elif (self.filter_type == 'hilbert'):
                 for k, v in self.filter_parameters.items():
                     if (k in inspect.getfullargspec(hilbert).args): filter_parameters[k] = self.filter_parameters[k]
-                self.filter = hilbert(encoded_fft, **filter_parameters) 
+                # hilbert requires real-valued input — use the real part of the FFT
+                self.filter = hilbert(encoded_fft.real, **filter_parameters) 
             else:
                 self.filter = None #no filter
 
@@ -418,7 +373,7 @@ class PyDSP():
 
         #get individual spectral values, calculated from the FFT transformations
         self.fft_abs = abs(self.fft/self.signal_len)
-        self.fft_power = np.abs(self.fft[0:len(self.fft)])
+        self.fft_power = np.abs(self.fft) ** 2  # power spectrum = magnitude squared
         self.fft_real = self.fft.real
         self.fft_imag = self.fft.imag
 

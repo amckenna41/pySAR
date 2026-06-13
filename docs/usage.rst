@@ -400,7 +400,7 @@ hydrophilic distribution patterns along the chain. Default generates 80 features
 Calculating All Descriptors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To calculate all 36 descriptors at once and concatenate them into a single DataFrame:
+To calculate all 33 descriptors at once and concatenate them into a single DataFrame:
 
 .. code-block:: python
 
@@ -449,7 +449,7 @@ Build predictive models using one or more protein descriptors as feature matrice
        desc_combo=1, sort_by="R2"
    )
 
-   # All 36 descriptors (empty list = all)
+   # All 33 descriptors (empty list = all)
    results = enc.descriptor_encoding(descriptors=[], desc_combo=1, sort_by="R2")
    print(len(results))  # 36
 
@@ -497,3 +497,319 @@ The ``PySAR`` class provides the top-level workflow for building and evaluating 
        aai_indices="FAUJ880110",
        descriptors="amino_acid_composition"
    )
+
+Predicting Activity for New Sequences
+--------------------------------------
+
+After calling any of the ``encode_*`` methods, use ``predict_activity()`` to generate
+predictions for unseen protein sequences. The method re-encodes the new sequences using
+the same strategy (AAI, descriptor, or combined) that was applied during training:
+
+.. code-block:: python
+
+   from pySAR.pySAR import PySAR
+
+   pysar = PySAR(config_file="config/thermostability.json")
+   pysar.encode_aai(aai_indices="FAUJ880110")
+
+   # Predict for a single sequence
+   pred = pysar.predict_activity("ACDEFGHIKLMNPQRSTVWY")
+   print(pred)  # array([<predicted T50 value>])
+
+   # Predict for multiple sequences
+   new_seqs = ["ACDEFGHIKLMNPQRSTVWY", "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQVKVKALPDAQFEVVHSLAKWKRQTLGQHDFSAGEGLYTHMKALRPDEDRLSPLHSVYVDQWDWERVMGDGERQFSTLKSTVEAIWAGIKATEAAVSEEFGLAPFLPDQIHFVHSQELLSRYPDLDAKGRERAIAKDLGAVFLVGIGGKLSDGHRHDVRAPDYDDWSTPSELGHAGLNGDILVWNPSVISMLDLHPTQVSDFDFRDLHTGSQLAVICRPVGNLPNMDMREQAVEKRQRQAALQLQELQRESQ"]
+   preds = pysar.predict_activity(new_seqs)
+   print(preds.shape)  # (2,)
+
+``predict_activity()`` raises ``RuntimeError`` if called before any ``encode_*`` method,
+or ``ValueError`` if the input sequences contain invalid amino acids.
+
+GPR Uncertainty Estimation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When the underlying regression model is a ``GaussianProcessRegressor``, pass
+``return_uncertainty=True`` to ``predict_activity()`` to also receive the per-sequence
+predictive standard deviation:
+
+.. code-block:: python
+
+   from pySAR.pySAR import PySAR
+
+   pysar = PySAR(
+       config_file="config/thermostability.json",
+       algorithm="gaussianprocessregressor",
+   )
+   pysar.encode_aai(aai_indices="FAUJ880110")
+
+   preds, std = pysar.predict_activity(new_seqs, return_uncertainty=True)
+   print(preds)   # predicted activity values
+   print(std)     # per-sequence standard deviation (uncertainty)
+
+For non-GPR models the ``return_uncertainty`` flag is ignored and only ``preds`` is
+returned.
+
+Typed Configuration with PySARConfig
+-------------------------------------
+
+``PySARConfig`` is a typed dataclass that provides an IDE-friendly alternative to editing
+raw JSON files. All fields mirror the keys in the JSON configuration files and can be
+used as overrides via ``to_kwargs()``:
+
+.. code-block:: python
+
+   from pySAR import PySARConfig
+   from pySAR.pySAR import PySAR
+
+   cfg = PySARConfig(
+       config_file="config/thermostability.json",
+       algorithm="randomforest",
+       test_split=0.1,
+   )
+
+   pysar = PySAR(cfg.config_file, **cfg.to_kwargs())
+   pysar.encode_aai(aai_indices="FAUJ880110")
+
+Fields set to ``None`` are omitted from ``to_kwargs()`` and therefore fall back to the
+values defined in the JSON file. This lets you selectively override only the parameters
+you want to change:
+
+.. code-block:: python
+
+   cfg = PySARConfig(
+       config_file="config/thermostability.json",
+       test_split=0.15,   # override test split only
+   )
+
+   from pySAR.encoding import Encoding
+   enc = Encoding(cfg.config_file, **cfg.to_kwargs())
+
+Available ``PySARConfig`` fields:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Field
+     - Description
+   * - ``config_file``
+     - Path to the JSON config file (required to retain dataset/model defaults).
+   * - ``dataset``
+     - Path to the sequence/activity dataset.
+   * - ``sequence_col``
+     - Column name for protein sequences.
+   * - ``activity_col``
+     - Column name for activity/fitness values.
+   * - ``algorithm``
+     - Sklearn regression algorithm name (e.g. ``'randomforest'``).
+   * - ``parameters``
+     - Dict of algorithm-specific constructor kwargs.
+   * - ``test_split``
+     - Fraction of data reserved for testing.
+   * - ``use_dsp``
+     - Whether to apply the FFT/DSP pipeline.
+   * - ``spectrum``
+     - Spectrum type: ``'power'``, ``'real'``, ``'imaginary'``, or ``'absolute'``.
+   * - ``window_type``
+     - Window function for FFT (e.g. ``'hamming'``, ``'blackman'``).
+   * - ``filter_type``
+     - Post-FFT filter (e.g. ``'savgol'``, ``'medfilt'``).
+   * - ``descriptors_csv``
+     - Path to a pre-calculated descriptors CSV.
+
+EncodingResult Return Type
+---------------------------
+
+All three ``Encoding`` sweep methods return a ``pandas.DataFrame`` by default. An
+``EncodingResult`` dataclass is also available for convenient structured access:
+
+.. code-block:: python
+
+   from pySAR.encoding import Encoding, EncodingResult
+
+   enc = Encoding(config_file="config/thermostability.json")
+   df = enc.aai_encoding(aai_indices=["FAUJ880110", "BIGC670101"], sort_by="R2")
+
+   # Wrap in EncodingResult for structured access
+   result = EncodingResult.from_dataframe(df, elapsed_time=12.4)
+   print(result.best_index)  # 'FAUJ880110' (or whichever has the highest R2)
+   print(result.best_r2)     # 0.743
+   print(result.elapsed_time)  # 12.4
+
+Exporting the Best Model
+-------------------------
+
+Pass ``export_best_model=True`` to any ``Encoding`` sweep method to automatically
+re-train the best-performing model and save it to ``<output_folder>/best_model.pkl``:
+
+.. code-block:: python
+
+   from pySAR.encoding import Encoding
+
+   enc = Encoding(config_file="config/thermostability.json")
+   df = enc.aai_encoding(
+       aai_indices=["FAUJ880110", "BIGC670101", "GEIM800111"],
+       sort_by="R2",
+       output_folder="outputs/",
+       export_best_model=True,
+   )
+   # outputs/best_model.pkl now contains the best fitted model + scaler
+
+The saved pickle can be loaded back with ``Model.load()``:
+
+.. code-block:: python
+
+   from pySAR.model import Model
+
+   best = Model.load("outputs/best_model.pkl")
+   best.model_fitted()  # True
+
+Overriding Config Parameters with ``**kwargs``
+-----------------------------------------------
+
+Every JSON configuration parameter can be overridden at construction time by passing it
+as a keyword argument (``**kwargs``) to ``PySAR`` or ``Encoding``.  The keyword argument
+takes precedence over whatever the config file specifies.  This is useful for quick
+experiments without modifying the config file or for programmatic sweeps.
+
+.. code-block:: python
+
+   from pySAR.pySAR import PySAR
+
+   # Use the config file but swap in a different algorithm and test split
+   pysar = PySAR(
+       config_file="config/thermostability.json",
+       algorithm="randomforest",
+       test_split=0.15,
+   )
+
+   # Override the sequence column name (fuzzy matching will resolve close names)
+   pysar = PySAR(
+       config_file="config/thermostability.json",
+       sequence_col="sequences",   # close to 'sequence' — emits UserWarning, resolves automatically
+   )
+
+The following table lists all overridable keyword arguments:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 15 60
+
+   * - Keyword
+     - Type
+     - Description
+   * - ``dataset``
+     - ``str``
+     - Path to the sequence/activity data file (CSV or TXT).
+   * - ``sequence_col``
+     - ``str``
+     - Column name for protein sequences. Fuzzy matching is applied when the
+       exact name is not found; a ``UserWarning`` is emitted on a fuzzy match and
+       a ``ValueError`` is raised when no match exists.
+   * - ``activity_col``
+     - ``str``
+     - Column name for the target activity/fitness values.
+   * - ``algorithm``
+     - ``str``
+     - Regression algorithm to use (e.g. ``'plsregression'``, ``'randomforest'``,
+       ``'lasso'``).
+   * - ``parameters``
+     - ``dict``
+     - Algorithm-specific constructor keyword arguments forwarded to sklearn.
+   * - ``test_split``
+     - ``float``
+     - Fraction of data held out for testing (default ``0.2``).
+   * - ``use_dsp``
+     - ``bool``
+     - Apply the FFT/DSP spectral pipeline to AAI encodings (default ``False``).
+   * - ``spectrum``
+     - ``str``
+     - Spectrum type: ``'power'``, ``'real'``, ``'imaginary'``, or
+       ``'absolute'`` (used when ``use_dsp=True``).
+   * - ``window_type``
+     - ``str``
+     - Window function applied before FFT (e.g. ``'hamming'``, ``'blackman'``).
+   * - ``filter_type``
+     - ``str``
+     - Post-FFT smoothing filter (``'savgol'``, ``'medfilt'``, ``'lfilter'``,
+       or ``'hilbert'``).
+   * - ``filter_parameters``
+     - ``dict``
+     - Extra parameters forwarded to the chosen filter function (e.g.
+       ``{"window_length": 5, "polyorder": 2}`` for ``savgol``).
+   * - ``descriptors_csv``
+     - ``str``
+     - Path to a pre-calculated descriptors CSV to avoid recomputing descriptors.
+
+Any unrecognised keyword argument is silently ignored so that external tooling can pass
+extra metadata without causing errors.
+
+Reproducible Runs and Cross-Validation
+----------------------------------------
+
+All three ``encode_*`` methods accept ``random_state`` and ``cv`` keyword arguments:
+
+- ``random_state`` (``int``, default ``None``) — seeds the train/test split for
+  reproducible results.
+- ``cv`` (``int``, default ``None``) — when set, runs k-fold cross-validation after
+  fitting and logs ``CV R² mean ± std``.
+
+.. code-block:: python
+
+   from pySAR.pySAR import PySAR
+
+   pysar = PySAR(config_file="config/thermostability.json")
+
+   results = pysar.encode_aai(
+       aai_indices="FAUJ880110",
+       random_state=42,
+       cv=5,
+   )
+   # Output includes: "# CV R2 (k=5): mean=0.7413, std=0.0321"
+
+Structured Logging
+--------------------
+
+Pass a standard ``logging.Logger`` to ``PySAR.__init__`` to route all output through
+your logging infrastructure instead of ``print()``:
+
+.. code-block:: python
+
+   import logging
+   from pySAR.pySAR import PySAR
+
+   logging.basicConfig(level=logging.INFO)
+   logger = logging.getLogger("pysar")
+
+   pysar = PySAR(config_file="config/thermostability.json", logger=logger)
+   pysar.encode_aai(aai_indices="FAUJ880110")
+   # All encode/results output goes to the logger, not stdout
+
+Saving and Loading Sessions
+-----------------------------
+
+After fitting a model, use ``save_session()`` to persist the entire ``PySAR`` state
+(model, scaler, encoding strategy, configuration) to a pickle file:
+
+.. code-block:: python
+
+   from pySAR.pySAR import PySAR
+
+   pysar = PySAR(config_file="config/thermostability.json")
+   pysar.encode_aai(aai_indices="FAUJ880110")
+
+   pysar.save_session("my_run.pkl")   # saves to my_run.pkl
+
+Restore the session later and predict without re-training:
+
+.. code-block:: python
+
+   loaded = PySAR.load_session("my_run.pkl")
+   preds = loaded.predict_activity(new_seqs)
+
+.. warning::
+
+   ``save_session()`` / ``load_session()`` use Python pickle.  Never load session
+   files from untrusted or unverified sources — they can execute arbitrary code on
+   deserialization.  ``load_session(allow_pickle=False)`` raises ``ValueError``
+   and can be used to enforce this policy in code.
+

@@ -7,7 +7,7 @@ import numpy as np
 import os
 import csv
 
-from .globals_ import OUTPUT_FOLDER, CURRENT_DATETIME
+from .globals_ import get_output_folder, get_current_datetime
 
 class Map(dict):
     """
@@ -54,7 +54,10 @@ class Map(dict):
                 self[k] = v
 
     def __getattr__(self, attr):
-        return self.get(attr)
+        try:
+            return self[attr]
+        except KeyError:
+            raise AttributeError(f"Map has no attribute {attr!r}") from None
 
     def __setattr__(self, key, value):
         self.__setitem__(key, value)
@@ -145,9 +148,8 @@ def remove_gaps(sequences):
     if isinstance(sequences, pd.Series):
         return sequences.str.replace("-", "", regex=False).reset_index(drop=True)
 
-    #list/array input: treat as single sequence of chars — join after removing gap chars
-    cleaned = ''.join(str(c) for c in sequences if str(c) != '-')
-    return [cleaned]
+    #list/array input: remove gaps from each sequence independently
+    return [str(seq).replace('-', '') for seq in sequences]
 
 def zero_padding(sequences): 
     """ 
@@ -200,7 +202,7 @@ def zero_padding(sequences):
                 seqs_list[s] = seqs_list[s] + [0] * diff
         return np.array(seqs_list, dtype=object) if is_ndarray else seqs_list
 
-def save_results(results, file_name, output_folder=""):
+def save_results(results, file_name, output_folder="", timestamp=None):
     """
     Save object DataFrame/Series containing metric names and their values captured from
     the encoding process. Save the results in this object to a CSV file named according
@@ -222,11 +224,13 @@ def save_results(results, file_name, output_folder=""):
     if (os.path.splitext(file_name)[1] == ""):
         file_name = file_name + '.csv'
 
-    #set output folder to default (already timestamped) or append timestamp to custom folder
+    #set output folder to default (freshly timestamped) or append timestamp to custom folder
+    # Use the caller-supplied timestamp when provided so CSV and plot land in the same dir.
+    ts = timestamp if timestamp is not None else get_current_datetime()
     if not output_folder:
-        output_folder = OUTPUT_FOLDER
+        output_folder = get_output_folder()
     else:
-        output_folder = output_folder + '_' + CURRENT_DATETIME
+        output_folder = output_folder + '_' + ts
 
     #create output folder if it doesn't exist
     if not (os.path.isdir(output_folder)):
@@ -234,7 +238,7 @@ def save_results(results, file_name, output_folder=""):
 
     #output results to csv if results variable is a dictionary
     if (isinstance(results, dict)):
-        with open(os.path.join(output_folder, file_name), 'w') as f:
+        with open(os.path.join(output_folder, file_name), 'w', newline='') as f:
             w = csv.DictWriter(f, results.keys())
             w.writeheader()
             w.writerow(results)

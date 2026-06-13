@@ -2,6 +2,7 @@
 #################             Encoding Module Tests             #################
 #################################################################################
 
+import glob
 import pandas as pd
 import os
 import shutil
@@ -46,6 +47,10 @@ class EncodingTests(unittest.TestCase):
         testing that encoding results are sorted correctly by each supported metric.
     test_metric_value_ranges:
         testing that all numeric metric columns contain valid non-negative float64 values.
+    test_encoding_result_dataclass:
+        testing EncodingResult dataclass construction, attributes, and from_dataframe() factory.
+    test_export_best_model:
+        testing that export_best_model=True saves a best_model.pkl in the output folder.
     """
     def setUp(self):
         """ Import the 4 config files for each of the 4 datasets used for testing the Encoding methods. """
@@ -243,7 +248,7 @@ class EncodingTests(unittest.TestCase):
                     f"Column {col} expected to be of type np.float64 got {type(test_encoding_localization[col])}.")
 #5.)
         test_aai6 = "blahblah" 
-        test_aai7 = "DESM9001ZZ"
+        test_aai7 = "ZZZZZZZZXX"  # clearly invalid — no close AAI index match
         with self.assertRaises(ValueError):
             self.test_config_thermostability.aai_encoding(aai_indices=test_aai6, sort_by="RPD", output_folder=self.test_output_folder)
         with self.assertRaises(ValueError):
@@ -923,13 +928,127 @@ class EncodingTests(unittest.TestCase):
 #2.)    all metric columns must contain np.float64 values
         self._assert_metric_columns_are_float(result)
 
+    def test_encoding_result_dataclass(self):
+        """ Testing EncodingResult dataclass construction and attributes. """
+        from pySAR.encoding import EncodingResult
+
+        test_aai = ["FAUJ880110", "GEIM800111", "JOND750102"]
+        df = self.test_config_thermostability.aai_encoding(
+            aai_indices=test_aai, sort_by="R2", output_folder=self.test_output_folder)
+#1.)    from_dataframe returns an EncodingResult instance
+        er = EncodingResult.from_dataframe(df, elapsed_time=1.5)
+        self.assertIsInstance(er, EncodingResult,
+            f"from_dataframe() should return an EncodingResult, got {type(er)}.")
+#2.)    metrics attribute is the original DataFrame
+        self.assertIsInstance(er.metrics, pd.DataFrame,
+            "EncodingResult.metrics should be a DataFrame.")
+        self.assertEqual(len(er.metrics), len(df),
+            "EncodingResult.metrics should have same row count as input DataFrame.")
+#3.)    best_index is a non-empty string corresponding to the first row
+        self.assertIsInstance(er.best_index, str,
+            "EncodingResult.best_index should be a string.")
+        self.assertNotEqual(er.best_index, '',
+            "EncodingResult.best_index should not be empty.")
+        self.assertEqual(er.best_index, str(df.iloc[0, 0]),
+            f"best_index should match first row first column value: {df.iloc[0, 0]}.")
+#4.)    best_r2 is a float
+        self.assertIsInstance(er.best_r2, float,
+            "EncodingResult.best_r2 should be a float.")
+#5.)    elapsed_time is preserved
+        self.assertAlmostEqual(er.elapsed_time, 1.5, places=5,
+            msg="EncodingResult.elapsed_time should match the value passed to from_dataframe().")
+#6.)    best_model_path defaults to None
+        self.assertIsNone(er.best_model_path,
+            "EncodingResult.best_model_path should be None when not provided.")
+#7.)    from_dataframe with an empty DataFrame returns sensible defaults
+        empty_df = pd.DataFrame(columns=["Index", "Category", "R2"])
+        er_empty = EncodingResult.from_dataframe(empty_df)
+        self.assertEqual(er_empty.best_index, '',
+            "best_index should be empty string for empty DataFrame.")
+        self.assertTrue(np.isnan(er_empty.best_r2),
+            "best_r2 should be NaN for empty DataFrame.")
+
+    def test_get_aai_features_concurrent_cache(self):
+        """ _get_aai_features must return identical results for all concurrent callers.
+
+        Five threads request the same index simultaneously; the TOCTOU fix ensures
+        only one thread computes the features while the others wait on the shared Future.
+        All threads must receive equal DataFrames.
+        """
+        import threading
+        import pandas as pd
+
+        index = "ANDN920101"
+        results: dict = {}
+        errors: list = []
+
+        def worker(i: int) -> None:
+            try:
+                results[i] = self.test_config_thermostability._get_aai_features(index)
+            except Exception as exc:  # pragma: no cover
+                errors.append(exc)
+
+        threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(errors), 0,
+            f"Worker threads raised exceptions: {errors}")
+        self.assertEqual(len(results), 5,
+            "Expected results from all 5 threads.")
+        ref = results[0]
+        for i in range(1, 5):
+            pd.testing.assert_frame_equal(results[i], ref,
+                check_like=False,
+                obj=f"results[{i}] vs results[0]")
+
+    def test_export_best_model(self):
+        """ Testing that export_best_model=True saves a best_model.pkl inside the output folder. """
+        import tempfile
+        import pickle
+        from pySAR.model import Model
+
+        test_aai = ["FAUJ880110", "GEIM800111"]
+        tmp_dir = tempfile.mkdtemp(prefix="test_export_best_model_")
+        try:
+            df = self.test_config_thermostability.aai_encoding(
+                aai_indices=test_aai,
+                sort_by="R2",
+                output_folder=tmp_dir,
+                export_best_model=True,
+            )
+#1.)    return value is still a DataFrame
+            self.assertIsInstance(df, pd.DataFrame,
+                f"aai_encoding() with export_best_model=True should still return DataFrame, got {type(df)}.")
+#2.)    best_model.pkl was created somewhere under tmp_dir
+            pkl_files = []
+            for root, dirs, files in os.walk(tmp_dir):
+                for f in files:
+                    if f == 'best_model.pkl':
+                        pkl_files.append(os.path.join(root, f))
+            self.assertGreaterEqual(len(pkl_files), 1,
+                "Expected at least one best_model.pkl to be written under the output folder.")
+#3.)    the pickle is a valid dict with 'model' and 'scaler' keys
+            with open(pkl_files[0], 'rb') as fh:
+                payload = pickle.load(fh)
+            self.assertIsInstance(payload, dict,
+                "best_model.pkl should contain a dict.")
+            self.assertIn('model', payload,
+                "best_model.pkl dict should contain a 'model' key.")
+            self.assertIn('scaler', payload,
+                "best_model.pkl dict should contain a 'scaler' key.")
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
     def tearDown(self):
         """ Delete any temp files or folders created during testing process. """
         #removing any of the temp files created such as the results files, if
         #you want to verify the results files are actually being created then
         #comment out the below code block
-        if (os.path.isdir(self.test_output_folder + "_" + _globals.CURRENT_DATETIME)):
-            shutil.rmtree(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, ignore_errors=False, onerror=None)
+        for _ts_dir in glob.glob(self.test_output_folder + "_*"):
+            shutil.rmtree(_ts_dir, ignore_errors=True)
                 
 if __name__ == '__main__':
     #run all unit tests

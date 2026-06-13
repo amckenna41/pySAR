@@ -80,13 +80,13 @@ class EvaluateTests(unittest.TestCase):
             msg="max_error_ value does not match sklearn max_error output.")
 
     def test_rpd_zero_mse(self):
-        """Testing rpd_ returns np.inf when mse is 0."""
+        """Testing rpd_ returns nan when mse is 0 (division by zero)."""
 #1.)
         perfect_true = np.array([0.0, 1.0, 2.0, 3.0])
         perfect_pred = np.array([0.0, 1.0, 2.0, 3.0])
         eval_perfect = eval_.Evaluate(perfect_true, perfect_pred)
-        self.assertTrue(np.isinf(eval_perfect.rpd),
-            f"Expected rpd to be np.inf for perfect predictions, got {eval_perfect.rpd}.")
+        self.assertTrue(np.isnan(eval_perfect.rpd),
+            f"Expected rpd to be nan for perfect predictions (zero MSE), got {eval_perfect.rpd}.")
 
     def test_nan_inf_validation(self):
         """Testing ValueError is raised when inputs contain NaN or infinite values."""

@@ -48,8 +48,8 @@ class PlotTests(unittest.TestCase):
     def _patched_globals(self):
         return patch.multiple(
             plots,
-            OUTPUT_FOLDER=self.default_output,
-            CURRENT_DATETIME="2026-03-23_00-00-00",
+            get_output_folder=lambda: self.default_output,
+            get_current_datetime=lambda: "2026-03-23_00-00-00",
         )
 
     def test_plot_reg_creates_file_default_output(self):
@@ -76,7 +76,7 @@ class PlotTests(unittest.TestCase):
                 show_plot=False,
                 filename="custom_plot.png",
             )
-            expected_dir = f"{self.custom_base}_{plots.CURRENT_DATETIME}"
+            expected_dir = f"{self.custom_base}_2026-03-23_00-00-00"
             self.assertTrue(os.path.isfile(save_path), f"Expected saved plot file at {save_path}.")
             self.assertEqual(
                 os.path.dirname(save_path),
@@ -157,7 +157,7 @@ class PlotTests(unittest.TestCase):
 
             path_base = Path(self.custom_base)
             path_save = plots.plot_reg(self.y_true, self.y_pred, 0.62, output_folder=path_base)
-            expected_dir = f"{path_base}_{plots.CURRENT_DATETIME}"
+            expected_dir = f"{path_base}_2026-03-23_00-00-00"
             self.assertEqual(
                 os.path.dirname(path_save),
                 expected_dir,

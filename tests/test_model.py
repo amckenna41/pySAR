@@ -30,7 +30,11 @@ class ModelTests(unittest.TestCase):
     test_predict:
         testing correct predict functionality.
     test_save:
-        testing correct model saving functionality.
+        testing correct model saving functionality, including dict format and scaler persistence.
+    test_load:
+        testing Model.load() classmethod round-trip and error handling.
+    test_cv_score:
+        testing Model.cv_score() cross-validation method.
     test_parameters:
         testing correct parameters functionality.
     test_hyperparamter_tuning:
@@ -181,18 +185,11 @@ class ModelTests(unittest.TestCase):
         self.assertFalse(np.allclose(X_test_unscaled, X_test_scaled),
             "Scaled and unscaled test data should differ when scale=True.")
 #3.)
+        #test_split outside (0, 1) should raise ValueError, not silently reset
         model = Model(self.dummy_X_2, self.dummy_Y_2, 'bagging')
-        X_train, X_test, Y_train, Y_test = model.train_test_split(test_split=1234) #if test_split <0 or >1 then use 0.2 default
-
-        self.assertEqual(len(X_train), 40, f"Expected 40 rows in training data, got {len(X_train)}.")
-        self.assertEqual(len(Y_train), 40, f"Expected 40 rows in training data labels, got {len(Y_train)}.")
-        self.assertEqual(len(X_test), 10, f"Expected 10 rows in test data, got {len(X_test)}.")
-        self.assertEqual(len(Y_test), 10, f"Expected 10 rows in test data labels, got {len(Y_test)}.")
-
-        self.assertIsInstance(X_train, np.ndarray, "X_train training data expected to be a numpy array.")
-        self.assertIsInstance(Y_train, np.ndarray, "Y_train training data labels expected to be a numpy array.")
-        self.assertIsInstance(X_test, np.ndarray, "X_test test data expected to be a numpy array.")
-        self.assertIsInstance(Y_test, np.ndarray, "Y_test test data labels expected to be a numpy array.")
+        with self.assertRaises(ValueError,
+                msg='ValueError expected when test_split is outside (0, 1).'):
+            model.train_test_split(test_split=1234)
 #4.)
         model = Model(self.dummy_X_2, self.dummy_Y_2, 'plsreg')
         with self.assertRaises(TypeError, msg='Type Error raised, invalid test_split type input.'):
@@ -243,6 +240,119 @@ class ModelTests(unittest.TestCase):
 
         self.assertTrue(os.path.isfile(os.path.join(self.test_folder, 'test_model3.pkl')), 
             "Expected .pkl extension to be appended when missing.")
+#4.)    saved pickle must contain a dict with 'model' and 'scaler' keys
+        import pickle
+        pkl_path = os.path.join(self.test_folder, 'test_model3.pkl')
+        with open(pkl_path, 'rb') as fh:
+            payload = pickle.load(fh)
+        self.assertIsInstance(payload, dict,
+            "Saved pickle should be a dict.")
+        self.assertIn('model', payload,
+            "Saved pickle dict must contain a 'model' key.")
+        self.assertIn('scaler', payload,
+            "Saved pickle dict must contain a 'scaler' key.")
+#5.)    scaler is None when scale=False
+        unscaled = Model(self.dummy_X_2, self.dummy_Y_2, 'lasso')
+        unscaled.train_test_split(scale=False)
+        unscaled.fit()
+        unscaled.save(self.test_folder, 'test_model_unscaled.pkl')
+        with open(os.path.join(self.test_folder, 'test_model_unscaled.pkl'), 'rb') as fh:
+            up = pickle.load(fh)
+        self.assertIsNone(up['scaler'],
+            "Scaler should be None when scale=False was used during train_test_split.")
+#6.)    scaler is a fitted StandardScaler when scale=True
+        scaled = Model(self.dummy_X_2, self.dummy_Y_2, 'lasso')
+        scaled.train_test_split(scale=True)
+        scaled.fit()
+        scaled.save(self.test_folder, 'test_model_scaled.pkl')
+        from sklearn.preprocessing import StandardScaler
+        with open(os.path.join(self.test_folder, 'test_model_scaled.pkl'), 'rb') as fh:
+            sp = pickle.load(fh)
+        self.assertIsInstance(sp['scaler'], StandardScaler,
+            "Scaler should be a fitted StandardScaler when scale=True was used.")
+
+    def test_load(self):
+        """ Testing Model.load() classmethod that reconstructs a Model from a saved pickle. """
+#1.)    round-trip: save then load and verify model predictions match
+        model = Model(self.dummy_X_2D, self.dummy_Y, 'randomforest',
+                      parameters={'n_estimators': 10, 'random_state': 0})
+        model.train_test_split(test_split=0.2, scale=True, random_state=0)
+        model.fit()
+        original_preds = model.predict()
+        pkl_path = os.path.join(self.test_folder, 'test_load_model.pkl')
+        model.save(self.test_folder, 'test_load_model.pkl')
+
+        loaded = Model.load(pkl_path)
+        self.assertIsInstance(loaded, Model,
+            f"Model.load() should return a Model instance, got {type(loaded)}.")
+        self.assertTrue(loaded.model_fitted(),
+            "Loaded model should report as fitted.")
+        self.assertEqual(type(loaded.model).__name__, 'RandomForestRegressor',
+            f"Loaded model type should be RandomForestRegressor, got {type(loaded.model).__name__}.")
+#2.)    loaded model's scaler attribute is restored
+        from sklearn.preprocessing import StandardScaler
+        self.assertIsInstance(loaded.scaler, StandardScaler,
+            "Scaler on loaded model should be a StandardScaler.")
+#3.)    predictions from the loaded model match those of the original
+        loaded_preds = loaded.model_fit.predict(model.X_test)
+        np.testing.assert_array_almost_equal(
+            original_preds, loaded_preds,
+            err_msg="Loaded model should produce identical predictions to the original."
+        )
+#3.)    loaded model without scaler (scale=False)
+        no_scaler = Model(self.dummy_X_2, self.dummy_Y_2, 'lasso')
+        no_scaler.train_test_split(scale=False)
+        no_scaler.fit()
+        ns_path = os.path.join(self.test_folder, 'no_scaler_model.pkl')
+        no_scaler.save(self.test_folder, 'no_scaler_model.pkl')
+        loaded_ns = Model.load(ns_path)
+        self.assertIsNone(loaded_ns.scaler,
+            "Scaler should be None on a model saved without scaling.")
+#4.)    OSError when path does not exist
+        with self.assertRaises(OSError,
+                msg='OSError expected when loading from a non-existent path.'):
+            Model.load(os.path.join(self.test_folder, 'does_not_exist.pkl'))
+#5.)    allow_pickle=False raises ValueError
+        with self.assertRaises(ValueError,
+                msg='ValueError expected when allow_pickle=False.'):
+            Model.load(pkl_path, allow_pickle=False)
+#6.)    loading emits a UserWarning about pickle security
+        import warnings
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            Model.load(pkl_path)
+        warning_msgs = [str(w.message) for w in caught if issubclass(w.category, UserWarning)]
+        self.assertTrue(any("pickle" in m.lower() or "untrusted" in m.lower() for m in warning_msgs),
+            "Model.load() should emit a UserWarning mentioning pickle safety.")
+
+    def test_cv_score(self):
+        """ Testing Model.cv_score() cross-validation method. """
+#1.)    basic invocation returns an ndarray with cv entries
+        model = Model(self.dummy_X_2D, self.dummy_Y, 'randomforest',
+                      parameters={'n_estimators': 10, 'random_state': 0})
+        model.train_test_split(test_split=0.2, random_state=0)
+        scores = model.cv_score(cv=5, metric='r2')
+
+        self.assertIsInstance(scores, np.ndarray,
+            f"cv_score() should return np.ndarray, got {type(scores)}.")
+        self.assertEqual(len(scores), 5,
+            f"Expected 5 cv scores, got {len(scores)}.")
+#2.)    metric parameter is forwarded (neg_mean_squared_error gives negative values)
+        scores_mse = model.cv_score(cv=3, metric='neg_mean_squared_error')
+        self.assertEqual(len(scores_mse), 3,
+            "Expected 3 scores for cv=3.")
+        self.assertTrue(np.all(scores_mse <= 0),
+            "neg_mean_squared_error scores should be <= 0.")
+#3.)    invalid metric raises ValueError
+        with self.assertRaises(ValueError,
+                msg='ValueError expected for invalid scoring metric.'):
+            model.cv_score(metric='not_a_real_metric')
+#4.)    cv_score does not permanently alter model_fit
+        was_fitted = model.model_fitted()
+        model.cv_score(cv=3)
+        self.assertEqual(model.model_fitted(), was_fitted,
+            "cv_score() should not change the fitted state of the model.")
+
 
     def test_parameters(self):
         """ Testing parameters of Model class for specified algorithm match that of the sklearn 
@@ -377,6 +487,14 @@ class ModelTests(unittest.TestCase):
 #6.)
         fallback_selected = model.feature_selection("unknown_method_name")
         self.assertEqual(fallback_selected.shape, (30, 1), "Unknown methods should fall back to SelectKBest with 1 feature.")
+#7.)    configurable k parameter for selectkbest
+        selected_k3 = model.feature_selection("selectkbest", k=3)
+        self.assertEqual(selected_k3.shape, (30, 3),
+            "feature_selection('selectkbest', k=3) should return 3 features.")
+#8.)    configurable k parameter for chi2
+        chi2_selected_k1 = model.feature_selection("chi2", k=1)
+        self.assertEqual(chi2_selected_k1.shape, (30, 1),
+            "feature_selection('chi2', k=1) should return 1 feature.")
 
     def test_invalid_model_usage(self):
         """ Testing model error behavior when called out of sequence. """

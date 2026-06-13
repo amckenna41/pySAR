@@ -110,7 +110,55 @@ class TestPyDSP(unittest.TestCase):
         self.assertIsInstance(dsp.window, np.ndarray)
         self.assertIsNotNone(dsp.filter)
 
-    def test_max_freq_and_consensus_freq(self):
+    def test_filter_medfilt(self):
+        """medfilt filter should be applied and produce output of matching shape."""
+        dsp = PyDSP(
+            config_file="",
+            protein_seqs=self.protein_seqs,
+            spectrum="power",
+            filter_type="medfilt",
+        )
+        self.assertEqual(dsp.filter_type, "medfilt")
+        self.assertIsNotNone(dsp.filter)
+        self.assertEqual(dsp.spectrum_encoding.shape, self.protein_seqs.shape)
+
+    def test_filter_hilbert(self):
+        """hilbert filter should be applied and produce output of matching shape."""
+        dsp = PyDSP(
+            config_file="",
+            protein_seqs=self.protein_seqs,
+            spectrum="power",
+            filter_type="hilbert",
+        )
+        self.assertEqual(dsp.filter_type, "hilbert")
+        self.assertIsNotNone(dsp.filter)
+        self.assertEqual(dsp.spectrum_encoding.shape, self.protein_seqs.shape)
+
+    def test_filter_lfilter_with_coefficients(self):
+        """lfilter with explicit b/a coefficients should be applied successfully."""
+        dsp = PyDSP(
+            config_file="",
+            protein_seqs=self.protein_seqs,
+            spectrum="power",
+            filter_type="lfilter",
+            filter_parameters={"b": [1.0], "a": [1.0, -0.5]},
+        )
+        self.assertEqual(dsp.filter_type, "lfilter")
+        self.assertIsNotNone(dsp.filter)
+        self.assertEqual(dsp.spectrum_encoding.shape, self.protein_seqs.shape)
+
+    def test_filter_lfilter_without_ba(self):
+        """lfilter without b/a coefficients should leave filter as None."""
+        dsp = PyDSP(
+            config_file="",
+            protein_seqs=self.protein_seqs,
+            spectrum="power",
+            filter_type="lfilter",
+        )
+        self.assertEqual(dsp.filter_type, "lfilter")
+        self.assertIsNone(dsp.filter)
+
+
         """Frequency helper methods should return scalar values for 1D input."""
         dsp = PyDSP(config_file=self.basic_config, protein_seqs=self.protein_seqs)
 
@@ -170,6 +218,23 @@ class TestPyDSP(unittest.TestCase):
             "inverse_fft should return a numpy ndarray.")
         self.assertEqual(len(inv), n,
             f"inverse_fft output length should equal n={n}, got {len(inv)}.")
+
+    def test_fft_power_is_magnitude_squared(self):
+        """fft_power should equal |fft|^2 (power spectrum), not |fft| (magnitude spectrum)."""
+        dsp = PyDSP(config_file=self.basic_config, protein_seqs=self.protein_seqs)
+        expected_power = np.abs(dsp.fft) ** 2
+        np.testing.assert_array_almost_equal(
+            dsp.fft_power, expected_power,
+            err_msg="fft_power must be the power spectrum (|fft|^2), not the magnitude spectrum (|fft|).",
+        )
+        # Confirm it is NOT the raw magnitude (would fail if power==magnitude, i.e. all values are 0 or 1)
+        magnitude = np.abs(dsp.fft)
+        # They should differ whenever the magnitude is not 0 or 1
+        if not np.allclose(dsp.fft_power, magnitude):
+            self.assertFalse(
+                np.allclose(dsp.fft_power, magnitude),
+                "fft_power should differ from the raw magnitude spectrum for non-trivial inputs.",
+            )
 
 
 if __name__ == "__main__":

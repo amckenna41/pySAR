@@ -2,6 +2,7 @@
 #################             Utilities Module Tests           #################
 ################################################################################
 
+import glob
 import os
 import shutil
 import unittest
@@ -100,32 +101,45 @@ class UtilsTest(unittest.TestCase):
 
     def test_remove_gaps(self):
         """ Test utility function that removes any gaps from sequences. """
+        # Lists of individual characters: each character is a separate "sequence";
+        # remove_gaps strips '-' from each element individually, so length is preserved.
         seq1 = ["A", "B", "C", "D", "-"]
         seq2 = ["A", "B", "C", "D", "-", "-", "-", "E", "F", "-"]
         seq3 = 'ABCDFSDJWD---'
         seq4 = "YUJBVFGHYJ---ASD"
-#1.)
+#1.)    List of individual chars — length unchanged, '-' elements become empty strings
         seq1_test = utils.remove_gaps(seq1)
-        self.assertEqual(len(seq1_test), 1, f"Expected length of output to be 1, got {len(seq1_test)}.")
-        self.assertEqual(len(seq1_test[0]), 4, f"Expected length of output to be 4, got {len(seq1_test[0])}.")
+        self.assertEqual(len(seq1_test), 5, f"Expected length of output to be 5, got {len(seq1_test)}.")
         self.assertIsInstance(seq1_test, list, f"Expected output to be of type list, got {type(seq1_test)}.")
-        self.assertNotIn('-', seq1_test, "Expected there to be no gaps (-) in the sequence.")
-#2.)
+        self.assertNotIn('-', seq1_test, "Expected there to be no '-' elements in the result.")
+#2.)    List of individual chars — length unchanged
         seq2_test = utils.remove_gaps(seq2)
-        self.assertEqual(len(seq2_test), 1, f"Expected length of output to be 1, got {len(seq2_test)}.")
-        self.assertEqual(len(seq2_test[0]), 6, f"Expected length of output to be 6, got {len(seq2_test)}.")
+        self.assertEqual(len(seq2_test), 10, f"Expected length of output to be 10, got {len(seq2_test)}.")
         self.assertIsInstance(seq2_test, list, f"Expected output to be of type list, got {type(seq2_test)}.")
-        self.assertNotIn('-', seq2_test, "Expected there to be no gaps (-) in the sequence.")
-#3.)
+        self.assertNotIn('-', seq2_test, "Expected there to be no '-' elements in the result.")
+#3.)    String input — gaps stripped, length reduced
         seq3_test = utils.remove_gaps(seq3)
         self.assertEqual(len(seq3_test), 10, f"Expected length of output to be 10, got {len(seq3_test)}.")
         self.assertIsInstance(seq3_test, str, f"Expected output to be of type str, got {type(seq3_test)}.")
         self.assertNotIn('-', seq3_test, "Expected there to be no gaps (-) in the sequence.")
-#4.)
+#4.)    String input — gaps stripped, length reduced
         seq4_test = utils.remove_gaps(seq4)
         self.assertEqual(len(seq4_test), 13, f"Expected length of output to be 13, got {len(seq4_test)}.")
         self.assertIsInstance(seq4_test, str, f"Expected output to be of type str, got {type(seq4_test)}.")
         self.assertNotIn('-', seq4_test, "Expected there to be no gaps (-) in the sequence.")
+#5.)    List of full protein sequences — gaps removed from each sequence string
+        seq5 = ["ACDE-FGH", "MNOP-QRS"]
+        seq5_test = utils.remove_gaps(seq5)
+        self.assertEqual(len(seq5_test), 2, f"Expected 2 sequences, got {len(seq5_test)}.")
+        self.assertEqual(seq5_test[0], "ACDEFGH", f"Expected 'ACDEFGH', got '{seq5_test[0]}'.")
+        self.assertEqual(seq5_test[1], "MNOPQRS", f"Expected 'MNOPQRS', got '{seq5_test[1]}'.")
+        self.assertIsInstance(seq5_test, list, f"Expected output to be of type list, got {type(seq5_test)}.")
+#6.)    numpy array of full protein sequences — gaps removed from each sequence
+        seq6 = np.array(["AC--DE", "FG-HI"])
+        seq6_test = utils.remove_gaps(seq6)
+        self.assertNotIn('-', ''.join(seq6_test), "Expected no gaps in numpy-array input result.")
+        self.assertEqual(seq6_test[0].replace('-', ''), "ACDE", f"Expected 'ACDE', got '{seq6_test[0]}'.")
+
 
     def test_zero_padding(self):
         """ Test zero padding utility function that pads an array or list with 0's. """
@@ -249,6 +263,18 @@ class UtilsTest(unittest.TestCase):
                 utils.Map(1245)
                 utils.Map(10.4)
                 utils.Map(False)
+#7.)    missing attribute raises AttributeError (not returns None)
+        m = utils.Map({"a": 1})
+        with self.assertRaises(AttributeError,
+                msg="Accessing a non-existent Map attribute should raise AttributeError."):
+            _ = m.nonexistent_key
+#8.)    getattr() fallback works correctly when key is absent
+        fallback = getattr(m, "nonexistent_key", "default_value")
+        self.assertEqual(fallback, "default_value",
+            "getattr(map, missing_key, default) should return the default, not raise.")
+#9.)    existing key still accessible via dot notation
+        self.assertEqual(getattr(m, "a", None), 1,
+            "getattr(map, 'a', None) should return the value 1.")
 
     def tearDown(self):
         """ Delete any temp files or folders created during testing process. """
@@ -262,6 +288,5 @@ class UtilsTest(unittest.TestCase):
             shutil.rmtree(self.test_output_folder, ignore_errors=False, onerror=None)
 
         #remove any timestamped output folders created by save_results
-        timestamped_folder = self.test_output_folder + "_" + _globals.CURRENT_DATETIME
-        if os.path.isdir(timestamped_folder):
-            shutil.rmtree(timestamped_folder, ignore_errors=False, onerror=None)
+        for _ts_dir in glob.glob(self.test_output_folder + "_*"):
+            shutil.rmtree(_ts_dir, ignore_errors=True)
