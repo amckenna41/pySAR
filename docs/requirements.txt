@@ -1,4 +1,4 @@
 sphinx>=7.0
-sphinx_autodoc_typehints>=1.23.0
+sphinx_autodoc_typehints>=2.3.0
 sphinx_autodoc_defaultargs>=0.1.2
 sphinx-rtd-theme
