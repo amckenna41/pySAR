@@ -639,6 +639,10 @@ class Model():
 
     @test_split.setter
     def test_split(self, val):
+        if not isinstance(val, (int, float)):
+            raise TypeError(f"test_split must be a numeric value, got {type(val).__name__}.")
+        if not 0 < val < 1:
+            raise ValueError(f"test_split must be between 0 and 1 exclusive, got {val}.")
         self._test_split = val
 
     @property

@@ -340,6 +340,7 @@ class Encoding(PySAR):
                 MetricKey.MAE.value,
                 MetricKey.RPD.value,
                 MetricKey.EXPLAINED_VARIANCE.value,
+
             ],
             sort_by=sort_by,
             save_filename='aaindex_results',
@@ -542,6 +543,7 @@ class Encoding(PySAR):
                 MetricKey.MAE.value,
                 MetricKey.RPD.value,
                 MetricKey.EXPLAINED_VARIANCE.value,
+
             ],
             sort_by=sort_by,
             save_filename=save_filename,
@@ -781,6 +783,7 @@ class Encoding(PySAR):
                 MetricKey.MAE.value,
                 MetricKey.RPD.value,
                 MetricKey.EXPLAINED_VARIANCE.value,
+
             ],
             sort_by=sort_by,
             save_filename=save_filename,
@@ -899,13 +902,21 @@ class Encoding(PySAR):
         # Read existing results and build a set of completed keys based on specified key columns
         try:
             existing_df = pd.read_csv(resume_path)
-        except Exception:
+        except (OSError, pd.errors.ParserError, pd.errors.EmptyDataError):
             warnings.warn(
                 f"Could not read resume file {resume_path!r}; starting fresh.",
                 UserWarning, stacklevel=3
             )
             return [], set()
         if existing_df.empty:
+            return [], set()
+
+        missing_cols = [col for col in key_columns if col not in existing_df.columns]
+        if missing_cols:
+            warnings.warn(
+                f"Resume file {resume_path!r} is missing required columns {missing_cols}; starting fresh.",
+                UserWarning, stacklevel=3
+            )
             return [], set()
 
         # Convert existing rows to dicts and create a set of completed keys for quick lookup
@@ -1076,10 +1087,6 @@ class Encoding(PySAR):
         model.fit()
         y_pred = model.predict()
         return Evaluate(y_test, y_pred)
-
-    def collect_metrics(self, metrics_rows: List[Dict[str, Any]], row: Dict[str, Any]) -> None:
-        """ Append a metrics row to the list of result rows. """
-        metrics_rows.append(row)
 
     def _execute_jobs(self,
                       items: Sequence[Any],

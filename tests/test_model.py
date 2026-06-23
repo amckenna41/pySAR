@@ -194,6 +194,15 @@ class ModelTests(unittest.TestCase):
         model = Model(self.dummy_X_2, self.dummy_Y_2, 'plsreg')
         with self.assertRaises(TypeError, msg='Type Error raised, invalid test_split type input.'):
             model.train_test_split(test_split="ABCD")
+#5.)
+        #invalid test_split passed via __init__ should raise ValueError through the setter
+        with self.assertRaises(ValueError,
+                msg='ValueError expected when test_split is outside (0, 1) via __init__.'):
+            Model(self.dummy_X_2, self.dummy_Y_2, 'plsreg', test_split=5.0)
+#6.)
+        #non-numeric test_split via __init__ should raise TypeError through the setter
+        with self.assertRaises(TypeError, msg='TypeError expected for non-numeric test_split via __init__.'):
+            Model(self.dummy_X_2, self.dummy_Y_2, 'plsreg', test_split="invalid")
 
     def test_predict(self):
         """ Testing the prediction of values for unseen sequences using the trained model. """

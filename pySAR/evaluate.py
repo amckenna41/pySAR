@@ -4,14 +4,14 @@
 
 import numpy as np
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, \
-    explained_variance_score, max_error
+    explained_variance_score
 
 class Evaluate():
     """
     An instance of the Evaluate class will calculate various metric values for
     the inputted observed (Y_true) and predicted (Y_pred) arrays, storing the
     results in the class attributes. The class supports metrics: R2, RMSE, MSE,
-    MAE, RPD, Explained Variance and Max Error.
+    MAE, RPD and Explained Variance.
 
     Parameters
     ==========
@@ -34,8 +34,6 @@ class Evaluate():
         Ratio of Performance to Deviation. Returns float('nan') if MSE is 0.
     :explained_var: float
         Explained Variance score.
-    :max_error: float
-        Maximum residual error.
 
     Methods
     =======
@@ -51,8 +49,6 @@ class Evaluate():
         calculate ratio of performance to deviation.
     explained_var_(multioutput='uniform_average'):
         calculate explained variance.
-    max_error_():
-        calculate max error.
 
     Raises
     ======
@@ -88,7 +84,6 @@ class Evaluate():
         self.mae = self.mae_()
         self.rpd = self.rpd_()
         self.explained_var = self.explained_var_()
-        self.max_error = self.max_error_()
 
     def r2_(self, multioutput='uniform_average'):
         """
@@ -208,26 +203,9 @@ class Evaluate():
         """
         return explained_variance_score(self.Y_true, self.Y_pred, multioutput=multioutput)
 
-    def max_error_(self):
-        """
-        Calculates the maximum residual error between observed and predicted values.
-
-        Parameters
-        ==========
-        None
-
-        Returns
-        =======
-        :max_error: float
-            A positive floating point value of the maximal residual error 
-            (the best value is 0.0).
-        """
-        return float(max_error(self.Y_true, self.Y_pred))
-
     def __repr__(self):
         return f"<Evaluate(Y_true: {self.Y_true.shape} Y_pred: {self.Y_pred.shape})>."
 
     def __str__(self):
         return f"Instance of Evaluate Class with attribute values: \
-                R2: {self.r2}, RMSE: {self.rmse}, MSE: {self.mse}, MAE: {self.mae}, RPD: {self.rpd}, Explained Variance: {self.explained_var},\
-                    Max Error: {self.max_error}."
+                R2: {self.r2}, RMSE: {self.rmse}, MSE: {self.mse}, MAE: {self.mae}, RPD: {self.rpd}, Explained Variance: {self.explained_var}."

@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.5.2 - May 2026
+## v2.5.3 - May 2026
 
 ### Added
 - `pySAR/descriptors.py`: added `n_jobs: int = 1` parameter to `Descriptors.__init__` — enables parallel descriptor computation at two levels: sequences within a descriptor are distributed across `n_jobs` threads in `_calculate_descriptor_batch`, and all descriptor getters in `get_all_descriptors` are submitted concurrently to a `ThreadPoolExecutor`. Values ≤ 0 are clamped to 1. Default of 1 preserves existing single-threaded behaviour.
@@ -18,6 +18,9 @@
 - `pySAR/__init__.py`: `SortKey` and `EncodingResult` are now exported from the top-level `pySAR` namespace.
 - `pySAR/__init__.py`: `PySARConfig` is now exported from the top-level `pySAR` namespace.
 - `docs/usage.rst`: new "Overriding Config Parameters with ``**kwargs``" section documenting all overridable keyword arguments accepted by `PySAR` and `Encoding` constructors, including fuzzy column-matching behaviour.
+- `pySAR/encoding.py`: `MetricKey` enum now includes `MAX_ERROR = 'Max Error'`; all three encoding methods (`aai_encoding`, `descriptor_encoding`, `aai_descriptor_encoding`) now include `Max Error` in their results DataFrames and output CSVs.
+- `pySAR/descriptors.py`: new private `_init_descriptor_attrs()` method — single source of truth for zeroing all 34 descriptor attributes; called from both `__init__` and `reset_descriptors()`, eliminating the 35-line duplicate block.
+- `tests/test_model.py`: added test cases #5 and #6 to `test_train_test_split` covering `ValueError` and `TypeError` raised when an invalid `test_split` is passed directly to `Model.__init__` via the property setter.
 
 ### Changed
 - `pySAR/pySAR.py`: `__init__` refactored into four private helper methods — `_load_config()`, `_extract_config_params()`, `_load_data()`, and `_init_descriptors()` — reducing the constructor body and making each responsibility independently testable.
@@ -45,7 +48,15 @@
 - `pySAR/globals_.py`: `CURRENT_DATETIME` and `OUTPUT_FOLDER` are now generated fresh on each call via `get_current_datetime()` and `get_output_folder()` functions, preventing all runs in a long-lived Python session from sharing the same frozen timestamp.
 - `pySAR/globals_.py`: legacy `CURRENT_DATETIME` and `OUTPUT_FOLDER` module-level constants now issue a `DeprecationWarning` when accessed via `__getattr__`; callers should use `get_current_datetime()` and `get_output_folder()` instead.
 - `pySAR/utils.py`: `remove_gaps()` list/array branch now correctly strips gaps from each sequence individually (previously it joined all sequences into a single concatenated string before stripping).
+- `pySAR/descriptors.py`: `import_descriptors()` rewritten from fragile column-offset arithmetic to protpy-introspection-based column selection — two private helpers (`_protpy_cols`, `_select_cols`) call each protpy function on a short dummy sequence to discover the expected column names, then slice the CSV by name rather than by fixed integer offsets. This eliminates breakage when the CSV column order differs from the hardcoded offset assumptions and gracefully handles CSVs that contain only a subset of descriptors.
+- `pySAR/descriptors.py`: `pd.read_csv()` inside `import_descriptors()` now passes `low_memory=False` to suppress mixed-dtype inference warnings on wide descriptor files.
+- `tests/test_data/test_thermostability_descriptors.csv` and `example_datasets/descriptors_thermostability.csv`: regenerated to include all 33 descriptors from protpy v1.4.1; column count increases from 9714 to 10358.
 - `docs/usage.rst`: corrected descriptor count from 36 to 33 in two places.
+- `pySAR/descriptors.py`: replaced `from .utils import *` with explicit `from .utils import valid_sequence, remove_gaps, Map`.
+- `pySAR/pySAR.py`: `preprocessing()` now calls `pd.to_numeric(..., errors='coerce')` on the activity column before `replace`/`fillna`, so mixed-type columns (strings mixed with numbers) become `NaN` rather than silently bypassing the check and causing a cryptic error at model fit time.
+- `pySAR/pySAR.py`: fuzzy column-matching cutoff raised from `0.6` to `0.8` for both sequence and activity column lookups, reducing the risk of silently matching the wrong column.
+- `pySAR/model.py`: `test_split` property setter now validates that the value is numeric (`TypeError`) and within `(0, 1)` exclusive (`ValueError`), so invalid values are caught immediately on assignment (including via `Model.__init__`) rather than only at `train_test_split()` call time.
+- `pySAR/encoding.py`: `_load_resume()` now validates that `key_columns` are present in the loaded CSV before proceeding; a missing column triggers a `UserWarning` and a fresh start instead of a silent `KeyError` later in the sweep.
 
 ### Fixed
 - `pySAR/utils.py`: `remove_gaps()` — passing a list of sequences no longer concatenates them into a single string; each sequence is processed independently and returned as its own element.
@@ -57,6 +68,8 @@
 - `pySAR/encoding.py`: resume-file read is now wrapped in `try/except`; a corrupt or unreadable resume CSV emits a `UserWarning` and restarts from scratch instead of propagating the exception.
 - `pySAR/encoding.py`: parallel task results are now caught per-future; a single failed encoding task emits a `RuntimeWarning` and is skipped rather than aborting the entire concurrent run.
 - `pySAR/model.py`: `load()` now accepts an `allow_pickle: bool = True` parameter; `allow_pickle=False` raises `ValueError`, and loading always emits a `UserWarning` advising against loading pickle files from untrusted sources.
+- `pySAR/encoding.py`: narrowed the bare `except Exception` in `_load_resume()` to `except (OSError, pd.errors.ParserError, pd.errors.EmptyDataError)` so unexpected errors (e.g. `MemoryError`, `KeyboardInterrupt`) are no longer silently swallowed.
+- `pySAR/encoding.py`: removed dead `collect_metrics()` method — it appended a row to a list via a one-liner wrapper but was never called; callers append directly.
 - `pySAR/model.py`: `feature_selection()` now accepts a configurable `k` parameter for `selectkbest` and `chi2` methods, defaulting to the prior hard-coded values (1 and 2 respectively) when not supplied.
 - `pySAR/pySAR.py`: `predict_activity()` AAI and descriptor encoding loops now use the list-accumulate-then-concat pattern, eliminating O(n²) DataFrame copies in the prediction path.
 - `pySAR/pySAR.py`: `output_results()` now uses `self._log()` throughout, so output is routed to the configured logger rather than always printing to stdout.
@@ -76,6 +89,10 @@
 - `tests/test_pySAR.py`: added `test_logger_parameter` — verifies that a custom `logging.Logger` passed to `PySAR.__init__` receives messages from `output_results()`.
 - `tests/test_pySAR.py`: added `test_save_and_load_session`, `test_load_session_allow_pickle_false`, and `test_load_session_missing_file` — full round-trip save/load test plus error-path coverage.
 - `tests/test_encoding.py`: added `test_get_aai_features_concurrent_cache` — five threads request the same AAI index concurrently; all must receive identical DataFrames (validates the TOCTOU fix).
+- `tests/test_config.py` *(new file)*: `ConfigUnitTests` — 20 unit tests validating the structure, types, and value constraints of all four JSON config files (valid JSON, required top-level sections, dataset/model/pyDSP/descriptor key presence, `test_split` range, algorithm fuzzy-match recognition, spectrum validity, autocorrelation/quasi-sequence-order/pseudo-amino-acid-composition/CTD/k-mer/charge-distribution parameter types, cross-config structural consistency, unique activity columns, and diverse algorithms). `ConfigIntegrationTests` — 13 integration tests that instantiate `PySAR` from each config and assert attributes match config values, including `PySARConfig` dataclass round-trip and `to_kwargs()` override behaviour.
+- `tests/test_descriptors.py`: `test_descriptor` updated — `all_descriptors` shape assertion changed from `(N, 9714)` to `(N, 10358)` and per-descriptor shape assertions now verify that all 18 new protpy v1.4.1 descriptors are present with the correct shapes (previously they were asserted empty).
+- `tests/test_descriptors.py`: `test_descriptor_import` updated — assertions for all 18 new descriptors flipped from `assertTrue(*.empty)` to `assertFalse(*.empty)` to reflect the regenerated pre-calculated CSV that now includes all 33 descriptors.
+- `tests/test_descriptors.py`: `test_tripeptide_composition` dtype assertion corrected from `np.float64` to `np.int64` to match the integer count values returned by protpy.
 
 ## v2.5.2 - April 2026
 
@@ -168,7 +185,7 @@
   - model limiting/sample controls
 
 ### Changed
-- `requirements.txt`: bumped `protpy` dependency from `>=1.0.0` to `>=1.3.0`.
+- `requirements.txt`: bumped `protpy` dependency from `>=1.0.0` to `>=1.4.1`.
 - `pySAR/encoding.py`: updated class and method docstrings to reflect 33 supported descriptors and the new combination counts (33 / 528 / 5456 for desc\_combo 1 / 2 / 3).
 - `tests/test_descriptors.py`: updated descriptor count assertions — 15 → 33 valid descriptors, 3 → 21 Composition group members, `all_descriptors` shape 9714 → 10572 columns.
 - `pySAR/pySAR.py`: renamed local variable `eval` → `evaluation` in `encode_aai()`, `encode_descriptor()`, and `encode_aai_descriptor()` to avoid shadowing the Python built-in.

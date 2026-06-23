@@ -8,13 +8,14 @@ import pandas as pd
 import numpy as np
 from difflib import get_close_matches
 import json
+import os
 import itertools
 import time
 from tqdm import tqdm
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from .utils import *
+from .utils import valid_sequence, remove_gaps, Map
 import protpy as protpy
 
 # Descriptor feature dimension constants
@@ -452,42 +453,8 @@ class Descriptors():
         self.num_seqs = len(self.protein_seqs)
 
         #initialise all descriptor attributes to empty dataframes
-        self.amino_acid_composition = pd.DataFrame()
-        self.dipeptide_composition = pd.DataFrame()
-        self.tripeptide_composition = pd.DataFrame()
-        # new composition descriptors (protpy >= 1.3.0)
-        self.gravy = pd.DataFrame()
-        self.aromaticity = pd.DataFrame()
-        self.instability_index = pd.DataFrame()
-        self.isoelectric_point = pd.DataFrame()
-        self.molecular_weight = pd.DataFrame()
-        self.charge_distribution = pd.DataFrame()
-        self.hydrophobic_polar_charged_composition = pd.DataFrame()
-        self.secondary_structure_propensity = pd.DataFrame()
-        self.kmer_composition = pd.DataFrame()
-        self.reduced_alphabet_composition = pd.DataFrame()
-        self.motif_composition = pd.DataFrame()
-        self.amino_acid_pair_composition = pd.DataFrame()
-        self.aliphatic_index = pd.DataFrame()
-        self.extinction_coefficient = pd.DataFrame()
-        self.boman_index = pd.DataFrame()
-        self.aggregation_propensity = pd.DataFrame()
-        self.hydrophobic_moment = pd.DataFrame()
-        self.shannon_entropy = pd.DataFrame()
-        self.moreaubroto_autocorrelation = pd.DataFrame()
-        self.moran_autocorrelation = pd.DataFrame()
-        self.geary_autocorrelation = pd.DataFrame()
-        self.ctd = pd.DataFrame()
-        self.ctd_composition = pd.DataFrame()
-        self.ctd_transition = pd.DataFrame()
-        self.ctd_distribution = pd.DataFrame()
-        self.conjoint_triad = pd.DataFrame()
-        self.sequence_order_coupling_number = pd.DataFrame()
-        self.quasi_sequence_order = pd.DataFrame()
-        self.pseudo_amino_acid_composition = pd.DataFrame()
-        self.amphiphilic_pseudo_amino_acid_composition = pd.DataFrame()
-        self.all_descriptors = pd.DataFrame()
-        
+        self._init_descriptor_attrs()
+
         #append extension if just the filename input as descriptors csv
         if ((self.descriptors_csv != '' and self.descriptors_csv != None) 
             and (os.path.splitext(self.descriptors_csv)[1] == '')):
@@ -524,17 +491,54 @@ class Descriptors():
             'pseudo_amino_acid_composition', 'amphiphilic_pseudo_amino_acid_composition'
         ]
 
+    def _init_descriptor_attrs(self) -> None:
+        """ Set all 34 descriptor attributes to empty DataFrames. Called from __init__ and reset_descriptors. """
+        self.amino_acid_composition = pd.DataFrame()
+        self.dipeptide_composition = pd.DataFrame()
+        self.tripeptide_composition = pd.DataFrame()
+        self.gravy = pd.DataFrame()
+        self.aromaticity = pd.DataFrame()
+        self.instability_index = pd.DataFrame()
+        self.isoelectric_point = pd.DataFrame()
+        self.molecular_weight = pd.DataFrame()
+        self.charge_distribution = pd.DataFrame()
+        self.hydrophobic_polar_charged_composition = pd.DataFrame()
+        self.secondary_structure_propensity = pd.DataFrame()
+        self.kmer_composition = pd.DataFrame()
+        self.reduced_alphabet_composition = pd.DataFrame()
+        self.motif_composition = pd.DataFrame()
+        self.amino_acid_pair_composition = pd.DataFrame()
+        self.aliphatic_index = pd.DataFrame()
+        self.extinction_coefficient = pd.DataFrame()
+        self.boman_index = pd.DataFrame()
+        self.aggregation_propensity = pd.DataFrame()
+        self.hydrophobic_moment = pd.DataFrame()
+        self.shannon_entropy = pd.DataFrame()
+        self.moreaubroto_autocorrelation = pd.DataFrame()
+        self.moran_autocorrelation = pd.DataFrame()
+        self.geary_autocorrelation = pd.DataFrame()
+        self.ctd = pd.DataFrame()
+        self.ctd_composition = pd.DataFrame()
+        self.ctd_transition = pd.DataFrame()
+        self.ctd_distribution = pd.DataFrame()
+        self.conjoint_triad = pd.DataFrame()
+        self.sequence_order_coupling_number = pd.DataFrame()
+        self.quasi_sequence_order = pd.DataFrame()
+        self.pseudo_amino_acid_composition = pd.DataFrame()
+        self.amphiphilic_pseudo_amino_acid_composition = pd.DataFrame()
+        self.all_descriptors = pd.DataFrame()
+
     def import_descriptors(self, descriptor_filepath: str = "") -> None:
         """
         Import descriptors from descriptors csv, setting the class attributes to their values.
-        It is recommended that after calculating the descriptors for a dataset of sequences 
-        that the calculated values are exported to a csv; this means they don't need to be 
-        recalculated each time. The all_descriptors class attribute is a dataframe of all 
+        It is recommended that after calculating the descriptors for a dataset of sequences
+        that the calculated values are exported to a csv; this means they don't need to be
+        recalculated each time. The all_descriptors class attribute is a dataframe of all
         concatenated descriptors from the csv.
 
         Parameters
         ==========
-        :descriptor_filepath: str 
+        :descriptor_filepath: str
             filepath to pre-calculated descriptor csv file.
 
         Returns
@@ -551,111 +555,148 @@ class Descriptors():
 
         #import descriptors csv as dataframe
         try:
-            descriptor_df = pd.read_csv(descriptor_filepath)
+            descriptor_df = pd.read_csv(descriptor_filepath, low_memory=False)
         except (FileNotFoundError, IOError, pd.errors.ParserError) as e:
             raise DescriptorError(f'Error reading descriptors csv file {descriptor_filepath}: {e}')
 
         #replacing any +/- infinity or NAN values with 0
         descriptor_df = descriptor_df.replace([np.inf, -np.inf], np.nan).fillna(0)
 
-        '''
-        calculate dimension of each descriptor in the csv according to the properties of each
-        descriptor, pull each descriptor value from the csv according to its dimension, 
-        setting the values to the class instance variables
-        '''
-        amino_acid_composition_dim = (0, AA_COUNT)
-        self.amino_acid_composition = descriptor_df.iloc[:,amino_acid_composition_dim[0]:amino_acid_composition_dim[1]]
+        # Dummy sequence covering all 20 canonical AAs, long enough for lag-dependent descriptors (lag<=30)
+        _DUMMY = "ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWY"
 
-        dipeptide_composition_dim = (AA_COUNT, AA_COUNT + DIPEPTIDE_FEATURES)
-        self.dipeptide_composition = descriptor_df.iloc[:,dipeptide_composition_dim[0]:dipeptide_composition_dim[1]]
+        def _select_cols(df, cols):
+            """Return df subset to cols that exist; return empty DataFrame if none found."""
+            present = [c for c in cols if c in df.columns]
+            return df[present] if present else pd.DataFrame()
 
-        tripeptide_composition_dim = (AA_COUNT + DIPEPTIDE_FEATURES, AA_COUNT + DIPEPTIDE_FEATURES + TRIPEPTIDE_FEATURES)
-        self.tripeptide_composition = descriptor_df.iloc[:,tripeptide_composition_dim[0]:tripeptide_composition_dim[1]]
+        def _protpy_cols(fn, **kwargs):
+            """Call a protpy function on the dummy sequence and return its column names."""
+            return list(fn(_DUMMY, **kwargs).columns)
 
-        #dimension of autocorrelation (moreaubroto, moran and geary) descriptors depends on the lag value and number of properties
-        _comp_offset = AA_COUNT + DIPEPTIDE_FEATURES + TRIPEPTIDE_FEATURES
-        moreaubroto_dim = (_comp_offset,
-            _comp_offset + (self.desc_parameters.moreaubroto_autocorrelation["lag"] * len(self.desc_parameters.moreaubroto_autocorrelation["properties"])))
-        self.moreaubroto_autocorrelation = descriptor_df.iloc[:,moreaubroto_dim[0]:moreaubroto_dim[1]]
+        # Amino acid, dipeptide and tripeptide composition
+        self.amino_acid_composition = _select_cols(descriptor_df, _protpy_cols(protpy.amino_acid_composition))
+        self.dipeptide_composition = _select_cols(descriptor_df, _protpy_cols(protpy.dipeptide_composition))
+        self.tripeptide_composition = _select_cols(descriptor_df, _protpy_cols(protpy.tripeptide_composition))
 
-        moran_auto_dim = (moreaubroto_dim[1], moreaubroto_dim[1] +
-            (self.desc_parameters.moran_autocorrelation["lag"] * len(self.desc_parameters.moran_autocorrelation["properties"])))
-        self.moran_autocorrelation = descriptor_df.iloc[:,moran_auto_dim[0]: moran_auto_dim[1]]
+        # Physicochemical descriptors (no extra parameters)
+        self.gravy = _select_cols(descriptor_df, _protpy_cols(protpy.gravy))
+        self.aromaticity = _select_cols(descriptor_df, _protpy_cols(protpy.aromaticity))
+        self.instability_index = _select_cols(descriptor_df, _protpy_cols(protpy.instability_index))
+        self.isoelectric_point = _select_cols(descriptor_df, _protpy_cols(protpy.isoelectric_point))
+        self.molecular_weight = _select_cols(descriptor_df, _protpy_cols(protpy.molecular_weight))
+        self.aliphatic_index = _select_cols(descriptor_df, _protpy_cols(protpy.aliphatic_index))
+        self.boman_index = _select_cols(descriptor_df, _protpy_cols(protpy.boman_index))
+        self.shannon_entropy = _select_cols(descriptor_df, _protpy_cols(protpy.shannon_entropy))
+        self.hydrophobic_polar_charged_composition = _select_cols(descriptor_df, _protpy_cols(protpy.hydrophobic_polar_charged_composition))
+        self.secondary_structure_propensity = _select_cols(descriptor_df, _protpy_cols(protpy.secondary_structure_propensity))
+        self.extinction_coefficient = _select_cols(descriptor_df, _protpy_cols(protpy.extinction_coefficient))
+        self.amino_acid_pair_composition = _select_cols(descriptor_df, _protpy_cols(protpy.amino_acid_pair_composition))
 
-        geary_auto_dim = (moran_auto_dim[1], moran_auto_dim[1] +
-            (self.desc_parameters.geary_autocorrelation["lag"] * len(self.desc_parameters.geary_autocorrelation["properties"])))
-        self.geary_autocorrelation = descriptor_df.iloc[:,geary_auto_dim[0]:geary_auto_dim[1]]
+        # Physicochemical descriptors (parameterized)
+        ph_params = getattr(self.desc_parameters, 'charge_distribution', {})
+        ph = ph_params.get('ph', 7.4) if ph_params else 7.4
+        self.charge_distribution = _select_cols(descriptor_df, _protpy_cols(protpy.charge_distribution, ph=ph))
 
-        #get CTD parameters from config to determine the dimensions of the CTD descriptors
+        kmer_params = getattr(self.desc_parameters, 'kmer_composition', {})
+        k = kmer_params.get('k', 2) if kmer_params else 2
+        self.kmer_composition = _select_cols(descriptor_df, _protpy_cols(protpy.kmer_composition, k=k))
+
+        rac_params = getattr(self.desc_parameters, 'reduced_alphabet_composition', {})
+        alphabet_size = rac_params.get('alphabet_size', 6) if rac_params else 6
+        self.reduced_alphabet_composition = _select_cols(descriptor_df, _protpy_cols(protpy.reduced_alphabet_composition, alphabet_size=alphabet_size))
+
+        motif_params = getattr(self.desc_parameters, 'motif_composition', {})
+        motifs = (motif_params.get('motifs', None) if motif_params else None) or None
+        self.motif_composition = _select_cols(descriptor_df, _protpy_cols(protpy.motif_composition, motifs=motifs))
+
+        agg_params = getattr(self.desc_parameters, 'aggregation_propensity', {})
+        self.aggregation_propensity = _select_cols(descriptor_df, _protpy_cols(
+            protpy.aggregation_propensity,
+            window=agg_params.get('window', 5) if agg_params else 5,
+            hydrophobicity_threshold=agg_params.get('hydrophobicity_threshold', 2.0) if agg_params else 2.0,
+            charge_threshold=agg_params.get('charge_threshold', 1) if agg_params else 1
+        ))
+
+        hm_params = getattr(self.desc_parameters, 'hydrophobic_moment', {})
+        self.hydrophobic_moment = _select_cols(descriptor_df, _protpy_cols(
+            protpy.hydrophobic_moment,
+            window=hm_params.get('window', 11) if hm_params else 11,
+            angle=hm_params.get('angle', 100) if hm_params else 100
+        ))
+
+        # Autocorrelation descriptors
+        self.moreaubroto_autocorrelation = _select_cols(descriptor_df, _protpy_cols(
+            protpy.moreaubroto_autocorrelation,
+            lag=self.desc_parameters.moreaubroto_autocorrelation["lag"],
+            properties=self.desc_parameters.moreaubroto_autocorrelation["properties"],
+            normalize=self.desc_parameters.moreaubroto_autocorrelation["normalize"]
+        ))
+        self.moran_autocorrelation = _select_cols(descriptor_df, _protpy_cols(
+            protpy.moran_autocorrelation,
+            lag=self.desc_parameters.moran_autocorrelation["lag"],
+            properties=self.desc_parameters.moran_autocorrelation["properties"],
+            normalize=self.desc_parameters.moran_autocorrelation["normalize"]
+        ))
+        self.geary_autocorrelation = _select_cols(descriptor_df, _protpy_cols(
+            protpy.geary_autocorrelation,
+            lag=self.desc_parameters.geary_autocorrelation["lag"],
+            properties=self.desc_parameters.geary_autocorrelation["properties"],
+            normalize=self.desc_parameters.geary_autocorrelation["normalize"]
+        ))
+
+        # CTD - derive expected columns from protpy then split sub-components by name prefix
         ctd_property = self.desc_parameters.ctd["property"]
-        if not (isinstance(ctd_property, list)):
-            ctd_property = ctd_property.split(',')
-        ctd_all_ctd = self.desc_parameters.ctd["all"]
-        
-        #if using all properties in CTD calculation, 147 features generated, 21 features per 7 properties
-        if (ctd_all_ctd):
-            ctd_dim = (geary_auto_dim[1], geary_auto_dim[1]+147) #21 CTD features per 7 properties = 147
-            ctd_comp_dim = (geary_auto_dim[1], geary_auto_dim[1] + 21) #3 CTD_Comp features per 7 properties = 21
-            ctd_trans_dim = (ctd_comp_dim[1], ctd_comp_dim[1] + 21) #3 CTD_Trans features per 7 properties = 21
-            ctd_distr_dim = (ctd_trans_dim[1], ctd_trans_dim[1] + 105) #15 CTD_Distr features per 7 properties = 105
-        #only using a pre-determined list of physicochemical properties, 21 features per property
-        else: 
-            ctd_comp_dim = (geary_auto_dim[1], geary_auto_dim[1] + (len(ctd_property) * 3)) #3 CTD_Comp features per property
-            ctd_trans_dim = (ctd_comp_dim[1], ctd_comp_dim[1] + (len(ctd_property) * 3)) #3 CTD_Trans features per property
-            ctd_distr_dim = (ctd_trans_dim[1], ctd_trans_dim[1] + (len(ctd_property) * 15)) #15 CTD_Distr features per property
-            ctd_dim = (geary_auto_dim[1], ctd_distr_dim[1]) #21 CTD features per property
-        
-        self.ctd =  descriptor_df.iloc[:,ctd_dim[0]:ctd_dim[1]]  
+        all_ctd = self.desc_parameters.ctd["all"]
+        _ctd_all_cols = _protpy_cols(protpy.ctd_, property=ctd_property, all_ctd=all_ctd)
+        self.ctd = _select_cols(descriptor_df, _ctd_all_cols)
 
-        self.ctd_composition = descriptor_df.iloc[:,ctd_comp_dim[0]:ctd_comp_dim[1]]
-    
-        self.ctd_transition = descriptor_df.iloc[:,ctd_trans_dim[0]:ctd_trans_dim[1]]
+        _present_ctd = [c for c in _ctd_all_cols if c in descriptor_df.columns]
+        _ctd_c = [c for c in _present_ctd if 'CTD_C_' in c]
+        _ctd_t = [c for c in _present_ctd if 'CTD_T_' in c]
+        _ctd_d = [c for c in _present_ctd if 'CTD_D_' in c]
+        self.ctd_composition = descriptor_df[_ctd_c] if _ctd_c else pd.DataFrame()
+        self.ctd_transition = descriptor_df[_ctd_t] if _ctd_t else pd.DataFrame()
+        self.ctd_distribution = descriptor_df[_ctd_d] if _ctd_d else pd.DataFrame()
 
-        self.ctd_distribution = descriptor_df.iloc[:,ctd_distr_dim[0]:ctd_distr_dim[1]]
+        # Conjoint Triad
+        self.conjoint_triad = _select_cols(descriptor_df, _protpy_cols(protpy.conjoint_triad))
 
-        conjoint_triad_dim = (ctd_distr_dim[1], ctd_distr_dim[1] + CONJOINT_TRIAD_FEATURES)
-
-        self.conjoint_triad = descriptor_df.iloc[:,conjoint_triad_dim[0]:conjoint_triad_dim[1]]
-        
-        #socn value dependant on value of lag and distance matrix
+        # Sequence Order Coupling Number
         socn_lag = self.desc_parameters.sequence_order_coupling_number["lag"]
-        socn_distance_matrix = self.desc_parameters.sequence_order_coupling_number["distance_matrix"]
-
-        #if no distance matrix speciifed in config then both are used for descriptor calculation
-        if (socn_distance_matrix == "" or socn_distance_matrix == None):
-            socn_dim = (conjoint_triad_dim[1], conjoint_triad_dim[1] + (socn_lag * 2))
-        #distance matrix specified in config
+        socn_dm = self.desc_parameters.sequence_order_coupling_number["distance_matrix"]
+        if not socn_dm:
+            _socn_cols = _protpy_cols(protpy.sequence_order_coupling_number_all, lag=socn_lag)
         else:
-            socn_dim = (conjoint_triad_dim[1], conjoint_triad_dim[1] + socn_lag)
+            _socn_cols = _protpy_cols(protpy.sequence_order_coupling_number, lag=socn_lag, distance_matrix=socn_dm)
+        self.sequence_order_coupling_number = _select_cols(descriptor_df, _socn_cols)
 
-        self.sequence_order_coupling_number = descriptor_df.iloc[:,socn_dim[0]:socn_dim[1]]
-
-        quasi_seq_order_lag = self.desc_parameters.quasi_sequence_order["lag"]
-        quasi_seq_order_dist_matrix = self.desc_parameters.quasi_sequence_order["distance_matrix"]
-
-        #if no distance matrix speciifed in config then both are used for descriptor calculation
-        if (quasi_seq_order_dist_matrix == "" or quasi_seq_order_dist_matrix == None):
-            quasi_seq_order_dim = (socn_dim[1], socn_dim[1] + ((quasi_seq_order_lag+20) * 2))
-        #distance matrix specified in config
+        # Quasi Sequence Order
+        qso_lag = self.desc_parameters.quasi_sequence_order["lag"]
+        qso_weight = self.desc_parameters.quasi_sequence_order["weight"]
+        qso_dm = self.desc_parameters.quasi_sequence_order["distance_matrix"]
+        if not qso_dm:
+            _qso_cols = _protpy_cols(protpy.quasi_sequence_order_all, lag=qso_lag, weight=qso_weight)
         else:
-            quasi_seq_order_dim = (socn_dim[1], socn_dim[1] + (quasi_seq_order_lag+20))
+            _qso_cols = _protpy_cols(protpy.quasi_sequence_order, lag=qso_lag, weight=qso_weight, distance_matrix=qso_dm)
+        self.quasi_sequence_order = _select_cols(descriptor_df, _qso_cols)
 
-        self.quasi_sequence_order = descriptor_df.iloc[:,quasi_seq_order_dim[0]:quasi_seq_order_dim[1]]
+        # Pseudo Amino Acid Composition
+        paac_lamda = self.desc_parameters.pseudo_amino_acid_composition["lambda"]
+        paac_weight = self.desc_parameters.pseudo_amino_acid_composition["weight"]
+        paac_props = self.desc_parameters.pseudo_amino_acid_composition["properties"]
+        self.pseudo_amino_acid_composition = _select_cols(descriptor_df, _protpy_cols(
+            protpy.pseudo_amino_acid_composition, lamda=paac_lamda, weight=paac_weight, properties=paac_props
+        ))
 
-        #paac value dependant on lambda value
-        paac_lambda = self.desc_parameters.pseudo_amino_acid_composition["lambda"]
-        
-        pseudo_amino_acid_composition_dim = (quasi_seq_order_dim[1], quasi_seq_order_dim[1] + (20 + paac_lambda))
-        self.pseudo_amino_acid_composition = descriptor_df.iloc[:,pseudo_amino_acid_composition_dim[0]:pseudo_amino_acid_composition_dim[1]]
+        # Amphiphilic Pseudo Amino Acid Composition
+        apaac_lamda = self.desc_parameters.amphiphilic_pseudo_amino_acid_composition["lambda"]
+        apaac_weight = self.desc_parameters.amphiphilic_pseudo_amino_acid_composition["weight"]
+        self.amphiphilic_pseudo_amino_acid_composition = _select_cols(descriptor_df, _protpy_cols(
+            protpy.amphiphilic_pseudo_amino_acid_composition, lamda=apaac_lamda, weight=apaac_weight
+        ))
 
-        apaac_lambda = self.desc_parameters.amphiphilic_pseudo_amino_acid_composition["lambda"]
-     
-        amphiphilic_pseudo_amino_acid_composition_dim = (pseudo_amino_acid_composition_dim[1], 
-            pseudo_amino_acid_composition_dim[1] + (20 + (2*apaac_lambda)))
-        self.amphiphilic_pseudo_amino_acid_composition = descriptor_df.iloc[:,amphiphilic_pseudo_amino_acid_composition_dim[0]:
-            amphiphilic_pseudo_amino_acid_composition_dim[1]]
-
-        self.all_descriptors = descriptor_df.iloc[:,:]
+        self.all_descriptors = descriptor_df
 
     def validate_descriptors(self, descriptors: Union[str, List[str]]) -> List[str]:
         """
@@ -1958,114 +1999,6 @@ class Descriptors():
 
         return self.amphiphilic_pseudo_amino_acid_composition
 
-    def get_all_descriptors(self, export: bool = False, descriptors_export_filename: str = "") -> pd.DataFrame:
-        """
-        Calculate all individual descriptor values, concatenating each descriptor
-        Dataframe into one storing all descriptors. The number of descriptor
-        features calculated is dependant on several additional meta parameters of 
-        some descriptors, including the number of properties and max lag for the 
-        Autocorrelation, SOCN and QSO and the number of properties and lamda for 
-        PAAComp and the lambda for APAAComp. 
-        
-        To export all descriptors to a csv set export=True when calling the function, 
-        this saves having to recalculate all the descriptor values when using them 
-        in multiple encoding processes, and the descriptors can be imported using the 
-        import_descriptors function. By default, the function will save the output
-        csv to the value at the "descriptors_csv" parameter in the config file,
-        although the name for this exported csv can be set by the 
-        descriptors_export_filename input parameter.
-
-        Parameters
-        ==========
-        :export: bool (default=False)
-            if true then all calculated descriptors from the protpy package will be 
-            exported to a CSV. This allows for pre-calculated descriptors for a 
-            dataset to be easily imported and not have to be recalculated again.
-        :descriptors_export_filename: str
-            filepath/filename for the exported csv of all the calculated descriptor
-            values if input parameter export=True
-
-        Returns
-        =======
-        :all_descriptor_df: pd.DataFrame
-            concatenated dataframe of all individual descriptors. Using the default
-            attributes and their associated values, the output will be of the shape
-            N x 10572, where N is the number of protein sequences and 10572 is the 
-            number of descriptor features. 
-        """
-        print('############################### Exporting all descriptors ################################\n')
-
-        #start time counter
-        start = time.time() 
-
-        #map each descriptor name to its getter for sequential and parallel dispatch
-        _getter_map = [
-            ('amino_acid_composition',                  self.get_amino_acid_composition),
-            ('dipeptide_composition',                   self.get_dipeptide_composition),
-            ('tripeptide_composition',                  self.get_tripeptide_composition),
-            ('moreaubroto_autocorrelation',             self.get_moreaubroto_autocorrelation),
-            ('moran_autocorrelation',                   self.get_moran_autocorrelation),
-            ('geary_autocorrelation',                   self.get_geary_autocorrelation),
-            ('ctd',                                     self.get_ctd),
-            ('ctd_composition',                         self.get_ctd_composition),
-            ('ctd_transition',                          self.get_ctd_transition),
-            ('ctd_distribution',                        self.get_ctd_distribution),
-            ('conjoint_triad',                          self.get_conjoint_triad),
-            ('sequence_order_coupling_number',          self.get_sequence_order_coupling_number),
-            ('quasi_sequence_order',                    self.get_quasi_sequence_order),
-            ('pseudo_amino_acid_composition',           self.get_pseudo_amino_acid_composition),
-            ('amphiphilic_pseudo_amino_acid_composition', self.get_amphiphilic_pseudo_amino_acid_composition),
-        ]
-
-        if self.n_jobs > 1:
-            #compute descriptors concurrently; skip any already populated from a prior import
-            pending = [(name, getter) for name, getter in _getter_map if getattr(self, name).empty]
-            with ThreadPoolExecutor(max_workers=self.n_jobs) as executor:
-                futures = {executor.submit(getter): name for name, getter in pending}
-                for future in tqdm(as_completed(futures), total=len(futures), unit=" descriptor",
-                                   desc="Descriptors", ncols=90):
-                    name = futures[future]
-                    setattr(self, name, future.result())
-        else:
-            #iterate over all descriptors sequentially, calculating each using their respective function
-            for name, getter in tqdm(_getter_map, unit=" descriptor", position=0,
-                                     desc="Descriptors", mininterval=30, ncols=90):
-                if getattr(self, name).empty:
-                    setattr(self, name, getter())
-
-        #stop time counter, calculate elapsed time
-        end = time.time()      
-        elapsed = end - start
-
-        print(f'\nElapsed time for calculating all descriptors: {elapsed/60:.2f} minutes.')
-        print('\n##########################################################################################')
-
-        #append all calculated descriptors to list
-        all_desc = [
-            self.amino_acid_composition, self.dipeptide_composition, self.tripeptide_composition,
-            self.moreaubroto_autocorrelation, self.moran_autocorrelation,
-            self.geary_autocorrelation, self.ctd_composition, self.ctd_transition,
-            self.ctd_distribution, self.conjoint_triad, self.sequence_order_coupling_number,
-            self.quasi_sequence_order, self.pseudo_amino_acid_composition, self.amphiphilic_pseudo_amino_acid_composition
-            ]
-
-        #concatenate individual descriptor dataframe attributes
-        all_descriptor_df = pd.concat(all_desc, axis = 1)
-        self.all_descriptors = all_descriptor_df     
-
-        #export pre-calculated descriptor values to a csv, use default name if parameter empty
-        if (export):
-            if (descriptors_export_filename == ""):
-                if (self.desc_config.descriptors_csv == "" or self.desc_config.descriptors_csv == None):
-                    self.desc_config.descriptors_csv = "descriptors_output.csv"            
-                self.all_descriptors.to_csv(self.desc_config.descriptors_csv, index=0)
-            else:
-                #append extension if not present on filename - export to csv
-                if (os.path.splitext(os.path.basename(descriptors_export_filename))[1] == ""):
-                    descriptors_export_filename = descriptors_export_filename + ".csv"
-                self.all_descriptors.to_csv(descriptors_export_filename, index=0)
-
-        return all_descriptor_df
 
     def get_descriptor_encoding(self, descriptor: str) -> Optional[pd.DataFrame]:
         """
@@ -2702,33 +2635,109 @@ Quasi Sequence Order: {self.quasi_sequence_order.shape}
 Pseudo Amino Acid Composition: {self.pseudo_amino_acid_composition.shape}
 Amphiphilic Pseudo Amino Acid Composition: {self.amphiphilic_pseudo_amino_acid_composition.shape}'''
 
-    def get_all_descriptors(self, 
-                           descriptors: Optional[List[str]] = None) -> pd.DataFrame:
+    def get_all_descriptors(self, export: bool = False, descriptors_export_filename: str = "",
+                            descriptors: Optional[List[str]] = None, verbose: bool = False,
+                            sequence_col: Optional[str] = None) -> pd.DataFrame:
         """
-        Calculate multiple descriptors efficiently in batch.
-        
+        Calculate all individual descriptor values and return them as one concatenated
+        DataFrame.
+
+        ``ctd`` is intentionally excluded from the default concatenation because its
+        columns are fully covered by ``ctd_composition``, ``ctd_transition`` and
+        ``ctd_distribution``; including it would produce duplicate columns in the output.
+        Users can still call ``get_ctd()`` directly to obtain the combined CTD frame.
+
         Parameters
         ==========
+        :export: bool (default=False)
+            If True, write the concatenated DataFrame to a CSV file.  Pre-calculating
+            and exporting descriptors is recommended so they don't need to be
+            recomputed on every run; import them later via ``import_descriptors()``.
+        :descriptors_export_filename: str
+            Path/filename for the exported CSV.  Falls back to the ``descriptors_csv``
+            config parameter, then to ``"descriptors_output.csv"`` if both are empty.
         :descriptors: list of str, optional
-            List of specific descriptors to calculate. If None, calculates all.
-        
+            Specific subset of descriptor names to calculate.  If None, all valid
+            descriptors except ``'ctd'`` are calculated.
+        :verbose: bool (default=False)
+            If True, print progress messages and timing information during calculation.
+        :sequence_col: str, optional (default=None)
+            Column name in the dataset to prepend as the first column of the output
+            DataFrame/CSV, so each row can be identified (e.g. ``'name'`` for the
+            thermostability dataset).  Requires the class to have been initialised
+            with a dataset file.  Ignored if None.
+
         Returns
         =======
-        :pd.DataFrame
-            DataFrame with all calculated descriptor values concatenated
+        :all_descriptor_df: pd.DataFrame
+            Concatenated DataFrame of all requested descriptor values.  Using default
+            config attributes the output will be of shape N x 10572+, where N is the
+            number of protein sequences.
         """
+        start = time.time()
+
         if descriptors is None:
-            descriptors = self.valid_descriptors
+            # Exclude 'ctd' — its features are fully covered by ctd_composition,
+            # ctd_transition, and ctd_distribution, so including it would duplicate
+            # all CTD columns in the exported CSV.
+            descriptors = [d for d in self.valid_descriptors if d != 'ctd']
         else:
             descriptors = self.validate_descriptors(descriptors)
-        
-        results = {}
-        for desc in tqdm(descriptors, desc="Computing all descriptors"):
-            method = getattr(self, f'get_{desc}')
-            results[desc] = method()
-        
-        self.all_descriptors = pd.concat(results.values(), axis=1)
-        return self.all_descriptors
+
+        if verbose:
+            print(f'Calculating {len(descriptors)} descriptors for {len(self.sequences)} sequences '
+                  f'(n_jobs={self.n_jobs})...')
+
+        if self.n_jobs > 1:
+            pending = [(desc, getattr(self, f'get_{desc}')) for desc in descriptors
+                       if getattr(self, desc).empty]
+            if verbose:
+                print(f'{len(pending)} descriptors need computing ({len(descriptors) - len(pending)} already cached).')
+            with ThreadPoolExecutor(max_workers=self.n_jobs) as executor:
+                futures = {executor.submit(getter): desc for desc, getter in pending}
+                for future in tqdm(as_completed(futures), total=len(futures),
+                                   unit=" descriptor", desc="Descriptors", ncols=90,
+                                   disable=not verbose):
+                    desc = futures[future]
+                    setattr(self, desc, future.result())
+        else:
+            for i, desc in enumerate(tqdm(descriptors, unit=" descriptor", position=0,
+                                          desc="Descriptors", mininterval=30, ncols=90,
+                                          disable=not verbose), start=1):
+                if getattr(self, desc).empty:
+                    if verbose:
+                        print(f'  [{i}/{len(descriptors)}] Computing {desc}...')
+                    getattr(self, f'get_{desc}')()
+
+        elapsed = time.time() - start
+        if verbose:
+            print(f'All descriptors calculated in {elapsed/60:.2f} minutes.')
+
+        all_descriptor_df = pd.concat(
+            [getattr(self, desc) for desc in descriptors],
+            axis=1
+        )
+        self.all_descriptors = all_descriptor_df
+
+        if sequence_col is not None:
+            if not self.dataset_filepath or not os.path.isfile(self.dataset_filepath):
+                raise DescriptorError(
+                    f"sequence_col='{sequence_col}' requires a dataset file, but none is available.")
+            dataset = pd.read_csv(self.dataset_filepath, sep=",", header=0)
+            if sequence_col not in dataset.columns:
+                raise ValueError(
+                    f"Column '{sequence_col}' not found in dataset. "
+                    f"Available columns: {list(dataset.columns)}")
+            id_col = dataset[sequence_col].reset_index(drop=True)
+            all_descriptor_df = pd.concat([id_col, all_descriptor_df.reset_index(drop=True)], axis=1)
+
+        if export:
+            out_path = descriptors_export_filename or self.descriptors_csv or "descriptors_output.csv"
+            if os.path.splitext(os.path.basename(out_path))[1] == "":
+                out_path += ".csv"
+            all_descriptor_df.to_csv(out_path, index=False)
+
+        return all_descriptor_df
 
     def get_descriptor_info(self, descriptor_name: str) -> Dict[str, Any]:
         """
@@ -2776,40 +2785,7 @@ Amphiphilic Pseudo Amino Acid Composition: {self.amphiphilic_pseudo_amino_acid_c
         =======
         None
         """
-        self.amino_acid_composition = pd.DataFrame()
-        self.dipeptide_composition = pd.DataFrame()
-        self.tripeptide_composition = pd.DataFrame()
-        self.gravy = pd.DataFrame()
-        self.aromaticity = pd.DataFrame()
-        self.instability_index = pd.DataFrame()
-        self.isoelectric_point = pd.DataFrame()
-        self.molecular_weight = pd.DataFrame()
-        self.charge_distribution = pd.DataFrame()
-        self.hydrophobic_polar_charged_composition = pd.DataFrame()
-        self.secondary_structure_propensity = pd.DataFrame()
-        self.kmer_composition = pd.DataFrame()
-        self.reduced_alphabet_composition = pd.DataFrame()
-        self.motif_composition = pd.DataFrame()
-        self.amino_acid_pair_composition = pd.DataFrame()
-        self.aliphatic_index = pd.DataFrame()
-        self.extinction_coefficient = pd.DataFrame()
-        self.boman_index = pd.DataFrame()
-        self.aggregation_propensity = pd.DataFrame()
-        self.hydrophobic_moment = pd.DataFrame()
-        self.shannon_entropy = pd.DataFrame()
-        self.moreaubroto_autocorrelation = pd.DataFrame()
-        self.moran_autocorrelation = pd.DataFrame()
-        self.geary_autocorrelation = pd.DataFrame()
-        self.ctd = pd.DataFrame()
-        self.ctd_composition = pd.DataFrame()
-        self.ctd_transition = pd.DataFrame()
-        self.ctd_distribution = pd.DataFrame()
-        self.conjoint_triad = pd.DataFrame()
-        self.sequence_order_coupling_number = pd.DataFrame()
-        self.quasi_sequence_order = pd.DataFrame()
-        self.pseudo_amino_acid_composition = pd.DataFrame()
-        self.amphiphilic_pseudo_amino_acid_composition = pd.DataFrame()
-        self.all_descriptors = pd.DataFrame()
+        self._init_descriptor_attrs()
 
     def clear_cache(self) -> None:
         """

@@ -144,3 +144,9 @@ FILE_CHECKLIST.md
 git_status_logs.txt
 
 .claude/
+
+CLAUDE.md
+
+pysar_examples.py
+
+calc_desc.py

@@ -15,6 +15,7 @@ import pySAR.encoding as pysar_
 import pySAR.globals_ as _globals
 from pySAR.descriptors import Descriptors
 
+# @unittest.skip("")
 class EncodingTests(unittest.TestCase):
     """
     Test suite for testing encoding module and functionality in pySAR package. 
@@ -100,7 +101,7 @@ class EncodingTests(unittest.TestCase):
             'ctd', 'ctd_composition', 'ctd_transition', 'ctd_distribution', 'conjoint_triad',
             'sequence_order_coupling_number', 'quasi_sequence_order',
             'pseudo_amino_acid_composition', 'amphiphilic_pseudo_amino_acid_composition',
-            # new protpy v1.3.0 descriptors
+            # new protpy v1.4.1 descriptors
             'gravy', 'aromaticity', 'instability_index', 'isoelectric_point', 'molecular_weight',
             'charge_distribution', 'hydrophobic_polar_charged_composition', 'secondary_structure_propensity',
             'kmer_composition', 'reduced_alphabet_composition', 'motif_composition',
@@ -364,7 +365,7 @@ class EncodingTests(unittest.TestCase):
             else:
                 self.assertTrue(all(isinstance(row, np.float64) for row in list(test_encoding_absorption[col].values)),
                     f"Column {col} expected to be of type np.float64 got {type(test_encoding_absorption[col])}.") 
-#4.) New composition descriptors from protpy>=1.3.0 - single-value outputs
+#4.) New composition descriptors from protpy>=1.4.1 - single-value outputs
         test_desc4a = "gravy"
         test_encoding_gravy = self.test_config_thermostability.descriptor_encoding(descriptors=test_desc4a, desc_combo=1,
             sort_by="R2", output_folder=self.test_output_folder)
@@ -583,7 +584,7 @@ class EncodingTests(unittest.TestCase):
             "Output dir storing encoding results not found.")
         self.assertTrue(os.path.isfile(os.path.join(self.test_output_folder + "_" + _globals.CURRENT_DATETIME, "aai_desc_results.csv")),
             "Output csv storing encoding results not found.")
-#5.) New composition descriptors (protpy>=1.3.0) combined with AAI encoding
+#5.) New composition descriptors (protpy>=1.4.1) combined with AAI encoding
         test_aai5a = "FAUJ880110"
         test_desc5a = "gravy"
         test_encoding_gravy = self.test_config_thermostability.aai_descriptor_encoding(aai_indices=test_aai5a, descriptors=test_desc5a,

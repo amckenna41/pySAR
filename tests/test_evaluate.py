@@ -4,13 +4,14 @@
 
 import unittest
 import numpy as np
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, explained_variance_score, max_error
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, explained_variance_score
 
 import pySAR.evaluate as eval_
 
 unittest.TestLoader.sortTestMethodsUsing = None
 
 
+# @unittest.skip("")
 class EvaluateTests(unittest.TestCase):
     """
     Test suite for testing evaluate module and functionality in pySAR package.
@@ -52,7 +53,7 @@ class EvaluateTests(unittest.TestCase):
         self.assertEqual(self.eval_obj.Y_pred.shape, (5, 1),
             f"Expected Y_pred shape (5, 1), got {self.eval_obj.Y_pred.shape}.")
 #3.)
-        for metric_name in ["r2", "rmse", "mse", "mae", "rpd", "explained_var", "max_error"]:
+        for metric_name in ["r2", "rmse", "mse", "mae", "rpd", "explained_var"]:
             self.assertTrue(hasattr(self.eval_obj, metric_name),
                 f"Expected Evaluate instance to have attribute '{metric_name}'.")
 
@@ -75,10 +76,6 @@ class EvaluateTests(unittest.TestCase):
 #5.)
         self.assertAlmostEqual(self.eval_obj.explained_var_(), explained_variance_score(y_t, y_p), places=12,
             msg="explained_var_ value does not match sklearn explained_variance_score output.")
-#6.)
-        self.assertAlmostEqual(self.eval_obj.max_error_(), float(max_error(y_t, y_p)), places=12,
-            msg="max_error_ value does not match sklearn max_error output.")
-
     def test_rpd_zero_mse(self):
         """Testing rpd_ returns nan when mse is 0 (division by zero)."""
 #1.)
@@ -144,7 +141,7 @@ class EvaluateTests(unittest.TestCase):
         self.assertIsInstance(str_out, str,
             f"Expected __str__ output to be str, got {type(str_out)}.")
 #2.)
-        for token in ["R2", "RMSE", "MSE", "MAE", "RPD", "Explained Variance", "Max Error"]:
+        for token in ["R2", "RMSE", "MSE", "MAE", "RPD", "Explained Variance"]:
             self.assertIn(token, str_out,
                 f"Expected __str__ output to contain token '{token}', got:\n{str_out}")
 

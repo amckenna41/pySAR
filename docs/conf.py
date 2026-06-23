@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'pySAR'
 copyright = '2026, AJ McKenna'
 author = 'AJ McKenna'
-release = '2.5.2'
+release = '2.5.3'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

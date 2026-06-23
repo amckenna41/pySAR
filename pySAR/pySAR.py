@@ -265,7 +265,7 @@ class PySAR():
         if self.sequence_col in self.data.columns:
             pass  # exact match found; nothing to do
         else:
-            sequence_col_matches = get_close_matches(self.sequence_col, self.data.columns, cutoff=0.6)
+            sequence_col_matches = get_close_matches(self.sequence_col, self.data.columns, cutoff=0.8)
             if sequence_col_matches:
                 matched = sequence_col_matches[0]
                 warnings.warn(
@@ -292,7 +292,7 @@ class PySAR():
         if self.activity_col in self.data.columns:
             pass  # exact match found; nothing to do
         else:
-            activity_matches = get_close_matches(self.activity_col, self.data.columns, cutoff=0.6)
+            activity_matches = get_close_matches(self.activity_col, self.data.columns, cutoff=0.8)
             if activity_matches:
                 matched = activity_matches[0]
                 warnings.warn(
@@ -304,6 +304,9 @@ class PySAR():
             else:
                 raise ValueError(f'Activity column ({self.activity_col}) not present in dataset columns:\n{list(self.data.columns)}.')
 
+        #coerce to numeric so mixed-type columns (strings mixed with numbers) become NaN rather than
+        #silently passing through and causing a cryptic sklearn error at fit time
+        self.data[self.activity_col] = pd.to_numeric(self.data[self.activity_col], errors='coerce')
         #remove any +/- infinity values or any Null/NAN's from activity values
         nan_count = self.data[self.activity_col].replace([np.inf, -np.inf], np.nan).isna().sum()
         if nan_count > 0:

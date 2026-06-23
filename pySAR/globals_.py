@@ -29,7 +29,7 @@ def __getattr__(name: str):
     if name in _LEGACY_CONSTANTS:
         replacement = 'get_current_datetime()' if name == 'CURRENT_DATETIME' else 'get_output_folder()'
         warnings.warn(
-            f"globals_.{name} is deprecated in pySAR 2.5.2. "
+            f"globals_.{name} is deprecated in pySAR 2.5.3. "
             f"Use globals_.{replacement} instead.",
             DeprecationWarning,
             stacklevel=2,

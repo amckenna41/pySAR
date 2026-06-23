@@ -120,7 +120,7 @@ Descriptor Encoding
 -------------------
 
 pySAR supports 33 protein descriptors via the ``Descriptors`` class. Descriptors are
-calculated using the `protpy <https://github.com/amckenna41/protpy>`_ package (>=1.3.0).
+calculated using the `protpy <https://github.com/amckenna41/protpy>`_ package (>=1.4.1).
 
 **Initialising the Descriptors class:**
 
@@ -413,6 +413,13 @@ To calculate all 33 descriptors at once and concatenate them into a single DataF
 
    # Export to CSV for future reuse (avoids recomputation)
    desc.get_all_descriptors(export=True, descriptors_export_filename="descriptors.csv")
+
+   # Prepend an identifier column from the dataset so each row is labelled
+   all_desc = desc.get_all_descriptors(sequence_col='name')
+   print(all_desc.columns[0])  # 'name'
+
+   # Combine with export — the id column appears as the first column in the CSV
+   desc.get_all_descriptors(export=True, descriptors_export_filename="descriptors.csv", sequence_col='name')
 
 Parallel Computation
 ~~~~~~~~~~~~~~~~~~~~

@@ -15,7 +15,34 @@
       
     "descriptors":
     {
-      "descriptors_csv": "tests/test_data/test_thermostability_descriptors.csv",
+      "descriptors_csv": "",
+      "charge_distribution":
+        {
+        "ph": 7.4
+        },
+      "kmer_composition":
+        {
+        "k": 2
+        },
+      "reduced_alphabet_composition":
+        {
+        "alphabet_size": 6
+        },
+      "motif_composition":
+        {
+        "motifs": null
+        },
+      "aggregation_propensity":
+        {
+        "window": 5,
+        "hydrophobicity_threshold": 2.0,
+        "charge_threshold": 1
+        },
+      "hydrophobic_moment":
+        {
+        "window": 11,
+        "angle": 100
+        },
       "moreaubroto_autocorrelation":
         {
         "lag": 30,
@@ -73,7 +100,7 @@
         "window": {
           "type": "hamming",
           "sym": 1,
-          "beta": 10,
+          "beta": null,
           "alpha": null,
           "nbar": null,
           "sll": null,
@@ -90,4 +117,3 @@
         }
       }
   }
-  
