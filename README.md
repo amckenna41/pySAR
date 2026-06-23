@@ -73,16 +73,16 @@ An important preliminary stage in the building of these predictive models is the
 
 Requirements
 ============
-* [python][python] >= 3.8
+* [python][python] >= 3.9
 * [aaindex][aaindex] >= 1.3.0
 * [protpy][protpy] >= 1.4.1
-* [numpy][numpy] >= 1.21
-* [pandas][pandas] >= 1.3
-* [scikit-learn][sklearn] >= 1.0
-* [scipy][scipy] >= 1.7
-* [tqdm][tqdm] >= 4.60
-* [matplotlib][matplotlib] >= 3.4
-* [seaborn][seaborn] >= 0.11
+* [numpy][numpy] >= 2.4.4
+* [pandas][pandas] >= 2.0
+* [scikit-learn][sklearn] >= 1.4
+* [scipy][scipy] >= 1.11
+* [tqdm][tqdm] >= 4.65
+* [matplotlib][matplotlib] >= 3.7
+* [seaborn][seaborn] >= 0.13
 
 Installation
 ============
