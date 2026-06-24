@@ -87,8 +87,8 @@ jobs:
           pip install pySAR --upgrade
           echo "Verifying installation..."
           python -c "import pySAR; print(f'pySAR {pySAR.__version__} installed successfully')"
+          pip check
         timeout-minutes: 5
-        continue-on-error: true
 
       - name: Verify package version
         run: |

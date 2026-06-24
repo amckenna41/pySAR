@@ -74,6 +74,7 @@
 - `pySAR/pySAR.py`: `predict_activity()` AAI and descriptor encoding loops now use the list-accumulate-then-concat pattern, eliminating O(n²) DataFrame copies in the prediction path.
 - `pySAR/pySAR.py`: `output_results()` now uses `self._log()` throughout, so output is routed to the configured logger rather than always printing to stdout.
 - `pySAR/pySAR.py`: `preprocessing()` no longer silently matches the wrong column when the requested name is absent; an explicit `UserWarning` is now raised when fuzzy fallback is used.
+- Fixed dependency issue with package, added additional step in workflow that capture any dependencies issues via pip check
 
 ### Tests
 - `tests/test_descriptors.py`: added `test_n_jobs_parallel` — verifies that `n_jobs` defaults to 1, that zero/negative values are clamped to 1, that parallel sequence-level computation (`n_jobs=4`) produces numerically identical results to sequential for amino acid composition on the absorption dataset, and that `get_all_descriptors` with `n_jobs=4` returns the correct shape and contains no null values.
