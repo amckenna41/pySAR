@@ -18,6 +18,7 @@ on:
       - 'config/**'
       - LICENSE
       - .gitignore
+      - '.github/workflows/**'
   pull_request:
     branches: [ master, main ]
   workflow_dispatch:
