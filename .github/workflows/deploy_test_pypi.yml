@@ -29,7 +29,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Cache pip
         uses: actions/cache@v6
@@ -103,7 +103,7 @@ jobs:
           echo "## TestPyPI Deployment Summary 📦" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Package**: pySAR" >> $GITHUB_STEP_SUMMARY
-          echo "- **Python Version**: 3.10" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python Version**: 3.11" >> $GITHUB_STEP_SUMMARY
           echo "- **Target**: TestPyPI" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
