@@ -5,5 +5,5 @@ scikit-learn>=1.7.2
 matplotlib>=3.10.9
 seaborn>=0.13.2
 tqdm>=4.68.3
-aaindex>=1.3.0
-protpy>=1.4.1
+aaindex>=1.3.1
+protpy>=1.4.2

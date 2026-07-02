@@ -74,8 +74,8 @@ An important preliminary stage in the building of these predictive models is the
 Requirements
 ============
 * [python][python] >= 3.9
-* [aaindex][aaindex] >= 1.3.0
-* [protpy][protpy] >= 1.4.1
+* [aaindex][aaindex] >= 1.3.1
+* [protpy][protpy] >= 1.4.2
 * [numpy][numpy] >= 2.4.4
 * [pandas][pandas] >= 2.0
 * [scikit-learn][sklearn] >= 1.4
