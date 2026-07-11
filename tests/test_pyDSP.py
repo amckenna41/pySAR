@@ -63,6 +63,11 @@ class TestPyDSP(unittest.TestCase):
         with self.assertRaises(ValueError):
             PyDSP(config_file=self.basic_config, protein_seqs=None)
 
+    def test_none_spectrum_raises(self):
+        """spectrum=None should raise ValueError instead of silently passing."""
+        with self.assertRaises(ValueError):
+            PyDSP(config_file="", protein_seqs=self.protein_seqs, spectrum=None)
+
     def test_preprocessing_sanitizes_nan_and_inf(self):
         """NaN/Inf values should be cleaned during preprocessing."""
         dirty = np.array(

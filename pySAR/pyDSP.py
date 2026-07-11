@@ -5,7 +5,6 @@
 import numpy as np
 from difflib import get_close_matches
 import inspect
-import os
 from scipy.signal import savgol_filter, medfilt, lfilter, hilbert
 from scipy.signal.windows import blackman, hann, hamming, bartlett, blackmanharris, \
      kaiser, gaussian, barthann, bohman, chebwin, cosine, exponential, boxcar, \
@@ -226,7 +225,7 @@ class PyDSP():
                        'flattop', 'hann', 'boxcar', 'nuttall', 'parzen', 'triang', 'tukey']
 
         #get approximate spectrum type from input, raise error if spectrum None or invalid
-        if (self.spectrum == None):
+        if (self.spectrum is None):
             raise ValueError('Spectrum parameter cannot be empty of None.')
         else:
             #get closest correct spectra from user input, if no close match then raise error
@@ -266,7 +265,7 @@ class PyDSP():
                 self.window = 1     #window = 1 is the same as applying no window
 
         #get approximate filter type from input
-        if ((self.filter_type != None) and (self.filter_type != "")):
+        if ((self.filter_type is not None) and (self.filter_type != "")):
             filter_matches = get_close_matches(self.filter_type, all_filters, cutoff=0.4)
         
             #set filter attribute according to approximate user input
@@ -321,7 +320,7 @@ class PyDSP():
             encoded_fft = fft(encoded_seq_copy[seq] * self.window)
           
           #apply filter to encoded sequences if filter_type not empty in config
-          if ((self.filter_type != None) and (self.filter_type != "")):
+          if ((self.filter_type is not None) and (self.filter_type != "")):
 
             #remove any null or None values from filter parameters in config
             self.filter_parameters = {k: v for k, v in (self.filter_parameters or {}).items() if v is not None}

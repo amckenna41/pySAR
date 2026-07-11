@@ -1073,7 +1073,7 @@ class PySAR():
 
         self._log('##########################################################################################')
         self._log('###################################### Parameters ########################################\n')
-        if (not (self.aai_indices is None)) and (len(self.aai_indices) <= 10):
+        if (self.aai_indices is not None) and (len(self.aai_indices) <= 10):
             self._log(textwrap.fill('# AAI Indices: {}'.format(', '.join(self.aai_indices)), line_length))
             if (self.use_dsp):
                 self._log('# DSP Parameters:\n  # Spectrum: {}\n  # Window Function: {} \

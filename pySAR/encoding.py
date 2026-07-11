@@ -9,7 +9,7 @@ import itertools
 import logging
 import threading
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from difflib import get_close_matches
 from enum import Enum
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
