@@ -446,7 +446,7 @@ class Descriptors():
 
         #validate that all input protein sequences are valid and only contain valid amino acids, if not then raise ValueError
         invalid_seqs = valid_sequence(self.protein_seqs)
-        if (invalid_seqs != None):
+        if (invalid_seqs is not None):
             raise InvalidSequenceError(f'Invalid Amino Acids found in protein sequence dataset: {invalid_seqs}.')
 
         #get the total number of inputted protein sequences
@@ -456,7 +456,7 @@ class Descriptors():
         self._init_descriptor_attrs()
 
         #append extension if just the filename input as descriptors csv
-        if ((self.descriptors_csv != '' and self.descriptors_csv != None) 
+        if ((self.descriptors_csv != '' and self.descriptors_csv is not None) 
             and (os.path.splitext(self.descriptors_csv)[1] == '')):
             self.descriptors_csv = self.descriptors_csv + ".csv"
 
@@ -1842,7 +1842,7 @@ class Descriptors():
         #calculate descriptor value, for each sequence, concatenate descriptor values
         for seq in self.protein_seqs:
             #if no distance matrix present in config then calculate SOCN using both matrices
-            if (distance_matrix == "" or distance_matrix == None):
+            if (distance_matrix == "" or distance_matrix is None):
                 sequence_order_coupling_number_seq = protpy.sequence_order_coupling_number_all(seq, lag=lag)
             else:
                 sequence_order_coupling_number_seq = protpy.sequence_order_coupling_number(seq, lag=lag, distance_matrix=distance_matrix)
@@ -1892,7 +1892,7 @@ class Descriptors():
         #calculate descriptor value, for each sequene, concatenate descriptor values
         for seq in self.protein_seqs:
             #if no distance matrix present in config then calculate quasi seq order using both matrices
-            if (distance_matrix == "" or distance_matrix == None):
+            if (distance_matrix == "" or distance_matrix is None):
                 quasi_sequence_order_seq = protpy.quasi_sequence_order_all(seq, lag=lag, weight=weight)
             else:
                 quasi_sequence_order_seq = protpy.quasi_sequence_order(seq, lag=lag, weight=weight, 

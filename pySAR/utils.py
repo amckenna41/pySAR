@@ -178,7 +178,8 @@ def zero_padding(sequences):
     max_len = len(max(sequences, key=len))
 
     #check if any sequence is shorter than max_len
-    seq_at = lambda i: sequences.iloc[i] if is_series else sequences[i]
+    def seq_at(i):
+        return sequences.iloc[i] if is_series else sequences[i]
     if not any(len(seq_at(s)) < max_len for s in range(len(sequences))):
         return sequences
 
